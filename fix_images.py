@@ -32,8 +32,6 @@ from keras.optimizers import Adam
 h5py.run_tests()
 
 # %% Preprocessing Image function
-
-
 def image_grayscale(image):
     '''
         Convete uma imagem de BGR para GRAY
@@ -45,7 +43,6 @@ def image_grayscale(image):
     cv_gray = cv.COLOR_BGR2GRAY
     return cv.cvtColor(image, cv_gray)
 
-
 def image_rescale(image, scale=255.0):
     '''
         Args:
@@ -55,7 +52,6 @@ def image_rescale(image, scale=255.0):
             image - np.array
     '''
     return image/scale
-
 
 def equalize_histogram(image):
     '''
@@ -67,7 +63,6 @@ def equalize_histogram(image):
     '''
     return cv.equalizeHist(image)
 
-
 def invert_image(image):
     '''
         Função para inverter a imagem
@@ -77,7 +72,6 @@ def invert_image(image):
             Retorna a imagem como sendo um vetor np.array
     '''
     return cv.bitwise_not(image)
-
 
 def read_image(path):
     '''
@@ -90,7 +84,6 @@ def read_image(path):
             Retorna a imagem como sendo um vetor np.array 
     '''
     return cv.imread(path)
-
 
 def image_resize(image, size=256):
     '''
@@ -112,7 +105,6 @@ def normalize_image(image, dim):
     image = equalize_histogram(image)
     return image_rescale(image)
 
-
 def Up_plus_Concatenate(layer, connection, i):
     # Define names of layers
     up_name = 'UpSampling{}_1'.format(i)
@@ -122,7 +114,6 @@ def Up_plus_Concatenate(layer, connection, i):
     layer = Concatenate(axis=-1,
                         name=conc_name)([layer, connection])
     return layer
-
 
 def conv_unet(
         layer,
@@ -140,7 +131,6 @@ def conv_unet(
     # layer = BatchNormalization(name=bn_name)(layer)
     layer = Activation(act, name=act_name)(layer)
     return layer
-
 
 def model_unet(
         input_size=(None, 256, 256, 1),
@@ -200,7 +190,6 @@ def model_unet(
 
     return Model(inputs, outputs, name="UNet")
 
-
 def dice_coef(y_true, y_pred):
     ''' Dice Coefficient
     Project: BraTs   Author: cv-lee   File: unet.py    License: MIT License
@@ -240,21 +229,25 @@ def dice_coef(y_true, y_pred):
 
     return total_loss
 
-
 def dice_coef_loss(y_true, y_pred):
     accuracy = 1 - dice_coef(y_true, y_pred)
     return accuracy
-
 
 def numpy_to_keras(nparray, dim):
     keras = np.array(nparray)
     keras = keras.reshape(1, dim, dim, 1)
     return keras
 
+def numpy_to_cv(image):
+    return image.astype(np.uint8)
 
+def segmentation_lung(lung,mask):
+    mask = (mask > 0.8).astype(np.float32)
+    return lung*mask
+    
 # %% processing image
 DIM = 256
-DIM_NEW = 512
+DIM_NEW = 1024
 weight_path = './.model/weight.h5'
 # Metrica de salvamento
 checkpoint = ModelCheckpoint(
@@ -305,13 +298,6 @@ model.load_weights(weight_path)
 new_data = './data'
 old_data = os.listdir('./old_data')
 
-def numpy_to_cv(image):
-    return image.astype(np.uint8)
-
-def segmentation_lung(lung,mask):
-    mask = (mask > 0.8).astype(np.float32)
-    return lung*mask
-
 # %%
 for _type in old_data:
     type_path = os.path.join('./old_data', _type)
@@ -355,9 +341,4 @@ for _type in old_data:
             seg_lung = numpy_to_cv(seg_lung)
             cv.imwrite(new_path, seg_lung)
             id += 1
-# %%
-cv.imwrite('./data/test/002.png',seg_lung)
-
-# %%
-new_path
 # %%
