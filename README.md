@@ -1,14 +1,16 @@
-- [x] Segmentação do pulmão
+# Task List
+- [x] **Segmentação do pulmão**
     - [x] Leitura do dataset
         - [x] Leitura dos pulmões
             - [x] Leitura da imagem com OpenCV
             - [x] Redimensionamento da imagem
             - [x] Conversão em escala de cinza
             - [x] Normalização do histograma
-            - [x] Ajuste da gama da Image
+            - [x] Ajuste da gama da Imagem
             - [x] Rescalonamento da Imagem de -1 a 1
         - [x] Leitura da mascara
             - [x] Leitura da imagem com OpenCV
+            - [x] Redimensionamento da imagem
             - [x] Rescalonamento da Imagem de -1 a 1
     - [x] Criação do modelo do Deep Learning
         - [x] Criação do modelo U-Net
@@ -18,3 +20,9 @@
         - [x] Apresentar as metricas de availação
         - [x] Apresentar as predições com o dataset de treino
         - [x] Comparar as mascaras obtidas com as mascaras reais
+- [ ] **Classificação das Imagens**
+    - [ ] Leitura do dataset
+        - [x] Ler as imagens
+        - [x] Recortar as imagens sem as partes negras
+        - [ ] Rescalar as imagens
+        - [ ] Gerar os datasets

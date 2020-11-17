@@ -54,17 +54,23 @@ def find_start(image_with_black, size=1024):
     Returns:
         (tuple): Primeira linha e coluna contendo um pixel não zero.
     """
-    rows, columns = [], []
-    for image in image_with_black:
-        for row in range(size):
-            if np.sum(image_with_black[row]) > 0:
+    if isinstance(image_with_black,list):
+        start = []
+        for img in image_with_black:
+            row, column = find_start(img,size)
+            start.append((row,column))
+        return start
+    else:
+        row_start, column_start = 0,0
+        for i in range(size):
+            if np.sum(image_with_black[i]) > 0:
+                    row_start = i
+                    break
+        for j in range(size):
+            if np.sum(image_with_black[:, j]) > 0:
+                column_start = j
                 break
-        for column in range(size):
-            if np.sum(image_with_black[:, column]) > 0:
-                break
-        rows.append(row)
-        columns.append(column)
-    return (rows,columns)
+        return row_start, column_start
 
 def find_end(image_with_black, size=1024):
     """ Encontra o primeiro pixel não zero da direita para a esquerda
@@ -76,19 +82,25 @@ def find_end(image_with_black, size=1024):
     Returns:
         (tuple): Primeira linha e coluna contendo um pixel não zero.
     """
-    rows, columns = [], []
-    for image in image_with_black:
-        for row in range(size-1, 0, -1):
-            if np.sum(image[row]) > 0:
+    if isinstance(image_with_black,list):
+        ends = []
+        for image in image_with_black:
+            row, column = find_end(image,size)
+            ends.append((row,column))
+        return ends
+    else:
+        row_end, column_end = 0, 0
+        for i in range(size - 1, -1, -1):
+            if np.sum(image_with_black[i]) > 0:
+                row_end = i
                 break
-        for column in range(size-1, 0, -1):
-            if np.sum(image[:, columnj]) > 0:
+        for j in range(size - 1, -1, -1):
+            if np.sum(image_with_black[:, j]) > 0:
+                column_end = j
                 break
-        rows.append(row)
-        columns.append(columns)
-    return rows, columns
+        return row_end, column_end
 
-def gray_to_RGB(gray_image):
+def gray2rgb(gray_image):
     """Transforma imagens em escala de cinza em coloridas.
 
     Args:
@@ -97,46 +109,87 @@ def gray_to_RGB(gray_image):
     Returns:
         (np.array): Imagens colorida.
     """
-    coloreds = []
-    for image in gray_image:
-        colored = cv.cvtColor(gray_image, cv.COLOR_GRAY2RGB)
-        coloreds.append(colored)
-    return coloreds
+    if isinstance(gray_image,list):
+        coloreds = []
+        for gray in gray_image:
+            colored = gray2rgb(gray)
+            coloreds.append(colored)
+        return coloreds
+    else:
+        return cv.cvtColor(gray, cv.COLOR_GRAY2RGB)
 
-def split_images_without_black(
-        image,
-        start=(0, 0),
-        end=(1024, 1024),
-        n_split=100,
-        dim_split=224):
-    """ Recorta a imagem em n_split vezes de tamanhos dim_split começando
-        start até end ignorando recortes totalmente pretos.
+def bgr2gray(colored_images):
+    """Transforma imagens coloridas em escala de cinza.
+
+    Args:
+        colored_images (np.array): Imagem colorida.
+
+    Returns:
+        (np.array): Imagens em escala cinza.
+    """
+    if isinstance(colored_images,list):
+        grays = []
+        for color in colored_images:
+            gray = bgr2gray(color)
+            grays.append(gray)
+        return grays
+    else:
+        return cv.cvtColor(colored_images, cv.COLOR_BGR2GRAY)
+
+def split_images_n_times(image,n_split=100,dim_orig=1024,dim_split=224):
+    """ Recorta a imagem em n_split vezes de tamanhos dim_split começando start até end ignorando recortes totalmente pretos.
 
     Args:
         image (np.array): imagem a ser recortada
-        start (tuple, optional): comeco da imagem onde aparece algo. Defaults to (0, 0).
-        end (tuple, optional): fim da imagem onde aparece algo. Defaults to (1024, 1024).
         n_split (int, optional): numero de vezes a serem cortadas. Defaults to 100.
+        dim_orig (int, optional): tamanho original  da imagem. Defaults to 1024.
         dim_split (int, optional): tamanho dos recortes. Defaults to 224.
 
     Returns:
-        [np.array]: recortes das imagens
+        (tuple): recortes das imagens, x inicias dos recortes e y iniciais dos recortes.
     """    
-    split_images, x_split, y_split = [], [], []
+    if not isinstance(image,list):
+        split_images, split_x, split_y = [], [], []
+        lung_start = find_start(image,dim_orig)
+        lung_end = find_end(image,dim_orig)
+        print(lung_start)
+        print(lung_end)
+        for _ in tqdm(range(n_split)):
 
-    for _ in tqdm(range(n_split)):
+            pos = random_xy(lung_start, lung_end, dim_split)
+            recort = create_recort(image,pos,dim_split)
 
-        x, y = random_xy(start, end, dim_split)
+            while(np.sum(recort) < 255):
+                pos = random_xy(lung_start, lung_end, dim_split)
+                recort = create_recort(image,pos,dim_split)
 
-        recort = image[x:x+dim_split, y:y+dim_split]
-        while(np.sum(recort) < 255):
-            x, y = random_xy(start, end, dim_split)
-            recort = image[x:x+dim_split, y:y+dim_split]
-        split_images.append(recort)
-        x_split.append(x)
-        y_split.append(y)
+            split_images.append(recort)
+            split_x.append(pos[0])
+            split_y.append(pos[1])
 
-    return split_images, x_split, y_split
+        return split_images, split_x, split_y
+    else:
+        split_image, split_x, split_y = [], [], []
+        for img in image:
+            img_split_images, img_split_x, img_split_y = split_images_n_times(
+                img, n_split, dim_orig, dim_split)
+            split_image.append(img_split_images)
+            split_x.append(img_split_x)
+            split_y.append(img_split_y)
+        return split_image, split_x, split_y
+
+def create_recort(image,pos_start=(0,0),dim_split=224):
+    """Cria um recorte da imagem indo da posicao inicial até a dimensão do recorte
+
+    Args:
+        image (np.array): [description]
+        pos_start (tuple, optional): Posicao do recorte. Defaults to (0,0).
+        dim_split (int, optional): Dimensão do recorte. Defaults to 224.
+    Return:
+        (np.array): Recorte da imagem
+    """
+    pos_end = (pos_start[0]+dim_split, pos_start[1]+dim_split)
+    return image[pos_start[0]:pos_end[0],pos_start[1]:pos_end[1]]
 
 def normalize_image(recorts):
     """Normaliza os recortes para que todos variem de -1 a 1.
@@ -155,7 +208,7 @@ def normalize_image(recorts):
     return normalize
 
 def random_xy(start=(0,0), end=(0,0), dim_split=224):
-    """ Criam x e y randomicamente comecando de start até end menos a dimensão maxima do corte
+    """ Criam x e y randomicamente comecando de start até end menos a dimensão maxima do corte.
 
     Args:
         start (tuple, optional): Valores iniciais de x e y. Defaults to (0,0).
@@ -184,27 +237,90 @@ def rescale_image(original_image, scale=255):
     half_scale = scale/2
     return (original_image-half_scale)/half_scale
 
-def reads_images_by_id(images_paths='./data/img.png', id_start=0, id_end=-1):
+def rescale_images(original_image, scale=255):
+    """ Rescala a imagem para ir de -1 a 1
+
+    Args:
+        original_image (list or np.array): imagem ainda não rescalada
+        scale (int, optional): escala da nova imagem. Defaults to 255.
+
+    Returns:
+        (list or np.array) : imagem rescalada
+    """
+    if isinstance(original_image, list):
+        rescales = []
+        for img in original_image:
+            rescales.append(rescale_image(img,scale))
+        return rescales
+    return rescale_image(original_image, scale)
+
+def read_random_image(paths: list,id_start:list = [0,1]) -> list:
+    """ Lê as imagens dos ids contidos em id_start
+
+    Args:
+        paths (list): Caminhos completos das imagens a serem lidas.
+        id_start (list, optional): ids das imagens a serem lidas. Defaults to [0,1].
+
+    Returns:
+        list: lista das imagens lidas.
+    """
+    images = []
+    for i in id_start:
+        images.append(read_images(paths[i]))
+    return images
+
+def read_sequencial_image(paths: list,id_start:int = 0,id_end:int = 1) -> list:
+    """Lê sequencialmente as imagens
+
+    Args:
+        paths (list): Caminhos completos das imagens a serem lidas.
+        id_start (int, optional): ID inicial da imagem a ser lida. Defaults to 0.
+        id_end (int, optional): ID final da imagem a ser lida. Defaults to 0.
+
+    Returns:
+        list: lista das imagens lidas
+    """
+    images = []
+    for i in range(id_start, id_end):
+        images.append(read_images(paths[i]))
+    return images
+
+def read_images(images_paths='./data/img.png', id_start=0, id_end=-1):
     """ Lê as imagens do listas de caminhos da imagem de start até end -1
 
     Args:
-        images_paths (str): Arrays contndo os caminhos das imagens. Defaults to './data/img.png'.
-        id_start (int,optional): ID de inicio das leituras das imagens. Defaults to 0.
-        id_end (int, optional): ID de termino das leituras das imagens, caso não seja passado todas as imagens a partir de id_start serão lidas. Defaults to -1.
+        images_paths (str or list): Arrays contndo os caminhos das imagens. Defaults to './data/img.png'.
+        id_start (int or list,optional): ID do inicio das imagens. Defaults to 0.
+        id_end (int, optional): ID do fim das imagens, caso não seja passado todas as imagens a depois de id_start serão lidas. Defaults to -1.
 
     Returns:
-        imagens: retorna uma lista np.array das imagens lidas
+        (np.array or list): retorna uma lista np.array das imagens lidas
     """
-    reads_images = []
-    if(end < start):
-        end = len(images_paths)
+    if isinstance(images_paths,list) :
+        if isinstance(id_start,int):
+            if id_end < id_start :
+                id_end = len(images_paths)
+            return read_sequencial_image(images_paths,id_start,id_end)
+        else:
+            return read_random_image(images_paths,id_start)
+    else:
+        return cv.imread(images_paths)
 
-    for i in range(id_start, id_end):
-        img = cv.imread(images_paths[i])
-        img = rescale_image(img, 127)
-        reads_images.append(img)
+def plot_images(images,cmap=None):
+    """Plotas as imagens passafas em images
 
-    return reads_images
+    Args:
+        images (list or np.array): imagens a serem plotadas
+    """    
+    if isinstance(images,list):
+        for img in images:
+            plot_images(img,cmap)
+    else:
+        if cmap == 'gray':
+            plt.imshow(images,'gray')
+        else:
+            plt.imshow(images)
+        plt.show()
 
 def model_classification(input_size=(224, 224, 3), n_class=3):
     """Modelo de classificação entre covid, normal e pneumonia
@@ -223,110 +339,66 @@ def model_classification(input_size=(224, 224, 3), n_class=3):
     output = Sequential([resnet, Dense(n_class, activation='softmax')])
     return output
 
-# %% [code]
-DIM = 1024
+def listdir_full_path(path='./data/Covid/0000.png'):
+    """ É um os.listdir só que retornando todo o caminho do arquivo.
+
+    Args:
+        path (str): caminho pai dos arquivos
+
+    Returns:
+        (list): lista de strings contendo o caminho todo das imagens.
+    """
+    urls = os.listdir(path)
+    full_path = [os.path.join(path,url) for url in urls]
+    return full_path
+
+# %% [code] Definindo as constantes do projeto
+DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 K_SPLIT = 100
-# %% [code]
-DATA = "../input/lung-segmentation-1024x1024/data"
-path_test = os.path.join(DATA, 'test')
-path_train = os.path.join(DATA, 'train')
-class_names = os.listdir(path_train)
-# %% [code]
-url_lung = '../input/lung-segmentation-1024x1024/data/test/Pneumonia/0833.png'
-image = cv.imread(url_lung)
-image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
-plt.imshow(image, cmap='gray')
-plt.axis('off')
+KAGGLE = False
+if KAGGLE :
+    DATA = "../input/lung-segmentation-1024x1024/data"
+else:
+    DATA = "./data"
+TRAIN_PATH = os.path.join(DATA,'train')
+TEST_PATH = os.path.join(DATA, 'test')
+# %% [markfdown] Verificando o funcionamento das funções
+# %% [code] Verificando o funcionamento da funcao read_images
+covid_example = os.path.join(TRAIN_PATH, "Covid/0000.png")
+# Testando para uma imagem
+print("Lendo apenas uma imagem")
+image_covid_example = read_images(covid_example)
+plt.imshow(image_covid_example)
 plt.show()
-# %% [code]
-x_start, y_start = find_start(image, DIM)
-x_end, y_end = find_end(image, DIM)
-image_without_black = image[x_start:x_end, y_start:y_end]
-plt.imshow(image_without_black, cmap='gray')
-plt.show()
-
-start = (x_start, y_start)
-end = (x_end, y_end)
-
-# %% [code]
-recort_images, x_split, y_split = split_images_without_black(
-    image, start, end, K_SPLIT, DIM_SPLIT)
-norm_recort = np.array(normalize_image(recort_images))
-
-# %% [code]
-print(norm_recort.shape)
-
-# %% [code]
-# for recort in norm_recort:
-#     plt.imshow(recort,cmap='gray')
-#     plt.show()
-
-# %% [code]
-zeros = np.zeros((DIM, DIM))
-ones = np.ones((DIM_SPLIT, DIM_SPLIT))
-
-for i in range(K_SPLIT):
-    zeros[x_split[i]:x_split[i]+DIM_SPLIT,
-          y_split[i]:y_split[i] + DIM_SPLIT] += ones
-
-passou = np.where(zeros != 0, 1, 0)
-passou_image = image*passou
-plt.imshow(passou, cmap='gray')
-plt.show()
-plt.imshow(image, cmap='gray')
-plt.show()
-plt.imshow(passou_image, cmap='gray')
-plt.show()
-# %% [code]
-recort_images, x_split, y_split = split_images_without_black(
-    image, start, end, K_SPLIT, DIM_SPLIT)
-
-# %% [code]
-DATA_TRAIN = os.path.join(DATA, 'train')
-
-# %% [code]
-classes = os.listdir(DATA_TRAIN)
-n_classes = len(classes)
-
-# %% [code]
-model = model_classification(n_class=3)
-model.compile(
-    optimizer=Adam(lr=1e-3),
-    loss='binary_crossentropy',
-    metrics=[BinaryAccuracy(name='accuracy')]
-)
-model.summary()
-
-# %% [code]
-covid_train_p = os.path.join(DATA_TRAIN, 'Covid')
-normal_train_p = os.path.join(DATA_TRAIN, 'Normal')
-pneum_train_p = os.path.join(DATA_TRAIN, 'Pneumonia')
-
-# %% [code]
-covid_url = os.listdir(covid_train_p)
-normal_url = os.listdir(normal_train_p)
-pneumonia_url = os.listdir(pneum_train_p)
-
-# %% [code]
-total = len(covid_url) + len(normal_url) + len(pneumonia_url)
-
-# %% [code]
-rel = [len(covid_images)/total, len(normal_images) /
-       total, len(pneumonia_images)/total]
-# %% [code]
-n_step = 10
-covid_id = 0
-normal_id = 0
-pneumonia_id = 0
-
-while(covid_id < len(covid_images)):
-
-    covid_id += np.floor(n_step*rel[0]).astype(np.int32)
-    normal_id += np.floor(n_step*rel[1]).astype(np.int32)
-    pneumonia_id += np.floor(n_step*rel[2]).astype(np.int32)
-
-    print("covid: {:4d}/{} normal: {:4d}/{} pneumonia: {:4d}/{}".format(
-        covid_id, len(covid_images),
-        normal_id, len(normal_images),
-        pneumonia_id, len(pneumonia_images)))
+# Testando para todas as imagens
+covid_path = os.path.join(TRAIN_PATH, "Covid")
+covid_urls = listdir_full_path(covid_path)
+len_covid_urls = len(covid_urls)
+print("Lendo de {} até {}".format(len_covid_urls - 2, len_covid_urls))
+covid_images = read_images(covid_urls, len_covid_urls - 2)
+plot_images(covid_images)
+print("Lendo de 0 até 1")
+covid_images = read_images(covid_urls, 0,2)
+plot_images(covid_images)
+print("Lendo as imagens 10 e 0")
+covid_images = read_images(covid_urls, [10,0])
+plot_images(covid_images)
+# read_images funcionando
+# %% Verificando o funcionamento da funçao bgr2gray
+print("Convertendo para cinza")
+gray_image = bgr2gray(covid_images)
+plot_images(gray_image, 'gray')
+gray_image = bgr2gray(image_covid_example)
+plot_images(gray_image, 'gray')
+print("Colorido para cinza funcionando")
+# %% Verificando o funcionamento da funçao rescale_image
+rescale_example = rescale_images(covid_images)
+print(np.max(rescale_example[1]),np.min(rescale_example[1]))
+print("Rescalonamento funcionando")
+# %% Verificando a função split_images_without_black
+print("Recortando a imagem")
+recorts, x, y = split_images_n_times(gray_image)
+plot_images(recorts,'gray')
+print("Recorte funcionando")
+# %%

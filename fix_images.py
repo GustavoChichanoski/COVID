@@ -22,9 +22,6 @@ from keras.metrics import TrueNegatives
 from keras.metrics import FalseNegatives
 from keras.metrics import FalsePositives
 from keras.metrics import BinaryAccuracy
-from keras.metrics import AUC
-from keras.metrics import Recall
-from keras.metrics import Precision
 from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import ReduceLROnPlateau
@@ -90,7 +87,6 @@ def image_resize(image, size=256):
         Redimensiona a imagem para o tamanho de size
     '''
     return cv.resize(image, (size, size))
-
 
 def normalize_image(image, dim):
     '''
@@ -235,8 +231,7 @@ def dice_coef_loss(y_true, y_pred):
 
 def numpy_to_keras(nparray, dim):
     keras = np.array(nparray)
-    keras = keras.reshape(1, dim, dim, 1)
-    return keras
+    return keras.reshape(1, dim, dim, 1)
 
 def numpy_to_cv(image):
     return image.astype(np.uint8)

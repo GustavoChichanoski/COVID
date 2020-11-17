@@ -14,7 +14,6 @@
 .vscode
 data
 old_data
-.model
 __pycache__
 .pytest_cache
 data.zip
