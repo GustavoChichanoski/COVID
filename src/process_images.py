@@ -69,22 +69,23 @@ def find_end(image_with_black, size=DIM_ORIG):
         return row_end, column_end
 
 
-def random_xy(start=(0, 0), end=(0, 0), dim_split=DIM_SPLIT):
-    """ Criam x e y randomicamente comecando de start até end menos a dimensão maxima do corte.
+def random_pixel(start=(0, 0), end=(0, 0), dim_split=DIM_SPLIT):
+    """ Seleciona um pixel randomicamente comecando de start e 
+    indo end menos a dimensão maxima do corte.
 
     Args:
-        start (tuple, optional): Valores iniciais de x e y. Defaults to (0,0).
-        end (tuple, optional): Valores finais de x e y. Defaults to (0,0).
-        dim_split (int, optional): Dimensão do recorte. Defaults to 224.
+        start (tuple, optional): Pixel superior. Defaults to (0,0).
+        end (tuple, optional): Pixel inferior. Defaults to (0,0).
+        dim_split (int, optional): Dimensão do corte. Defaults to 224.
 
     Returns:
-        (tuple): x e y gerados aleatoriamente
+        (tuple): pixel gerados aleatoriamente
     """
     x_i, y_i = start
     x_e, y_e = end
-    x = np.random.randint(x_i, x_e-dim_split)
-    y = np.random.randint(y_i, y_e-dim_split)
-    return x, y
+    px_x = np.random.randint(x_i, x_e-dim_split)
+    px_y = np.random.randint(y_i, y_e-dim_split)
+    return px_x, px_y
 
 
 def rescale_images(original_image, scale=SCALE):
@@ -226,10 +227,10 @@ def create_non_black_cut(image, start=(0, 0), end=(0, 0), dim=224):
     Returns:
         [type]: [description]
     """
-    pos = random_xy(start, end, dim)
+    pos = random_pixel(start, end, dim)
     recort = create_recort(image, pos, dim)
     while np.sum(recort) < 255:
-        pos = random_xy(start, end, dim)
+        pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
     return recort, pos
 
