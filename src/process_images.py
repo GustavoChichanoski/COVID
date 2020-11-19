@@ -101,11 +101,11 @@ def rescale_images(original_image, scale=SCALE):
     if isinstance(original_image, list):
         rescales = []
         for img in original_image:
-            rescales.append(rescale_images(img, scale))
+            scale_img = rescale_images(img, scale)
+            rescales.append(scale_img)
         return rescales
-    else :
-        half_scale = scale/2
-        return (original_image-half_scale)/half_scale
+    half_scale = scale/2
+    return (original_image-half_scale)/half_scale
 
 
 def normalize_image(images):
@@ -117,21 +117,19 @@ def normalize_image(images):
     Returns:
         (np.array): Imagens normalizadas
     """
-    if not isinstance(images,list):
+    if not isinstance(images, list):
         # Acha o maior valor da imagem
-        max_images = np.max(images)
-        # Divide a imagem pelo maior valor
-        rescale = images/max_images
-        # Rescala a imagem de -1 a 1
-        norm = 2*rescale - 1
+        scale = np.max(images)
+        # Rescala a imagem
+        norm = rescale_images(images, scale)
         return norm
-    else:
-        # Cria a lista de imagens normalizadas
-        normalizes = []
-        # Percorre a lista de imagens
-        for image in images:
-            normalizes.append(normalize_image(image))
-        return normalizes
+    # Cria a lista de imagens normalizadas
+    normalizes = []
+    # Percorre a lista de imagens
+    for image in images:
+        normalizes.append(normalize_image(image))
+    return normalizes
+
 
 def gray2rgb(gray_image):
     """Transforma imagens em escala de cinza em coloridas.
@@ -149,7 +147,7 @@ def gray2rgb(gray_image):
             coloreds.append(colored)
         return coloreds
     else:
-        return cv.cvtColor(gray, cv.COLOR_GRAY2RGB)
+        return cv.cvtColor(gray_image, cv.COLOR_GRAY2RGB)
 
 
 def bgr2gray(colored_images):
@@ -205,14 +203,16 @@ def split_images_n_times(image,
             cut_img.append(cut)  # Armazena o corte
             cut_pos.append(pos)  # Armaxena o pixel inicial
         return cut_img, cut_pos
-    else:
-        split_img, split_pos = [], []
-        for img in image:
-            splits, splits_pos = split_images_n_times(
-                img, n_split, dim_orig, dim_split)
-            split_img.append(splits)
-            split_pos.append(splits_pos)
-        return split_img, split_pos
+    split_img, split_pos = [], []
+    # Percorre a lista de imagens
+    for img in image:
+        # Recorta as imagens
+        splits, splits_px = split_images_n_times(
+            img, n_split, dim_orig, dim_split)
+        # Armazena as imagens e posicoes
+        split_img.append(splits)
+        split_pos.append(splits_px)
+    return split_img, split_pos
 
 
 def create_non_black_cut(image, start=(0, 0), end=(0, 0), dim=224):

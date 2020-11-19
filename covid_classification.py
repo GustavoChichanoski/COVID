@@ -6,6 +6,8 @@
 import os
 import sys
 sys.path.insert(0,'./src')
+
+import dataset as ds
 # %% [code] Definindo as constantes do projeto
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
@@ -23,3 +25,9 @@ TEST_PATH = os.path.join(DATA, 'test')
 COVID_PATH = os.path.join(TRAIN_PATH,'Covid')
 NORMAL_PATH = os.path.join(TRAIN_PATH, 'Normal')
 PNEUM_PATH = os.path.join(TRAIN_PATH, 'Pneumonia')
+
+# %%
+dataset = ds.Dataset(DATA)
+features = dataset.get_features_per_steps()
+print(features.shape)
+# %%

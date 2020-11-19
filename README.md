@@ -22,7 +22,3 @@
         - [x] Comparar as mascaras obtidas com as mascaras reais
 - [ ] **Classificação das Imagens**
     - [ ] Leitura do dataset
-        - [x] Ler as imagens
-        - [x] Recortar as imagens sem as partes negras
-        - [ ] Rescalar as imagens
-        - [ ] Gerar os datasets
