@@ -337,16 +337,14 @@ plot_model(model, "my_first_model.png",show_shapes=True)
 
 # %% [code]
 # Metrica de salvamento
-checkpoint = ModelCheckpoint(
-    weight_path,
+checkpoint = ModelCheckpoint(weight_path,
     monitor='val_loss',
     verbose=1,
     save_best_only=True,
     mode='min',
     save_weights_only=True)
 # Metrica para a redução do valor de LR
-reduceLROnPlat = ReduceLROnPlateau(
-    monitor='val_loss',
+reduceLROnPlat = ReduceLROnPlateau(monitor='val_loss',
     factor=0.5,
     patience=3,
     verbose=1,
@@ -355,8 +353,7 @@ reduceLROnPlat = ReduceLROnPlateau(
     cooldown=2,
     min_lr=1e-8)
 # Metrica para a parada do treino
-early = EarlyStopping(
-    monitor='val_loss',
+early = EarlyStopping(monitor='val_loss',
     mode='min',
     restore_best_weights=True,
     patience=40)
@@ -366,8 +363,7 @@ callbacks_list = [checkpoint, early, reduceLROnPlat]
 # %% [code]
 # Fixa a aleatoridade do numpy
 np.random.seed(42)
-lungs, masks, tests = get_data(
-    input_shape=(256,256),
+lungs, masks, tests = get_data(input_shape=(256,256),
     path_train_lung = train_lung_path, 
     path_train_mask = train_mask_path,
     path_test_lung = test_lung_path)
@@ -375,6 +371,7 @@ lungs, masks, tests = get_data(
 def numpy_to_keras(nparray,dim):
     keras = np.array(nparray).reshape(len(nparray),dim,dim,1)
     return keras
+
 lung_ds = numpy_to_keras(lungs,DIM)
 mask_ds = numpy_to_keras(masks,DIM)
 test_ds = numpy_to_keras(tests,DIM)

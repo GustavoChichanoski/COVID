@@ -10,6 +10,7 @@
 *.jpg
 *.png
 
+logs
 .idea
 .vscode
 data

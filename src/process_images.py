@@ -195,10 +195,9 @@ def split_images_n_times(image,
         # Cria os n_splits cortes
         for _ in tqdm(range(n_split)):
             # Recebe um corte da imagem não inteiramente preto
-            cut, pos = create_non_black_cut(
-                image,
-                pixel_start, pixel_end,
-                dim_split)
+            cut, pos = create_non_black_cut(image,
+                                            pixel_start, pixel_end,
+                                            dim_split)
             # Armazena ele na lista de imagens cortadas e de pixeis iniciais
             cut_img.append(cut)  # Armazena o corte
             cut_pos.append(pos)  # Armaxena o pixel inicial
@@ -207,10 +206,12 @@ def split_images_n_times(image,
     # Percorre a lista de imagens
     for img in image:
         # Recorta as imagens
-        splits, splits_px = split_images_n_times(
-            img, n_split, dim_orig, dim_split)
+        splits, splits_px = split_images_n_times(img,
+                                                 n_split,
+                                                 dim_orig,
+                                                 dim_split)
         # Armazena as imagens e posicoes
-        split_img.append(splits)
+        split_img = np.append(split_img, splits)
         split_pos.append(splits_px)
     return split_img, split_pos
 
@@ -246,4 +247,5 @@ def create_recort(image, pos_start=(0, 0), dim_split=DIM_SPLIT):
         (np.array): Recorte da imagem
     """
     pos_end = (pos_start[0]+dim_split, pos_start[1]+dim_split)
-    return image[pos_start[0]:pos_end[0], pos_start[1]:pos_end[1]]
+    cut = image[pos_start[0]:pos_end[0], pos_start[1]:pos_end[1]]
+    return cut
