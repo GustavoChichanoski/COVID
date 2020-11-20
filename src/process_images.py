@@ -170,20 +170,20 @@ def bgr2gray(colored_images):
 
 
 def split_images_n_times(image,
-                         n_split: int = K_SPLIT,
-                         dim_orig: int = DIM_ORIG,
-                         dim_split: int = DIM_SPLIT):
+                         n_split: int = 100,
+                         dim_orig: int = 1024,
+                         dim_split: int = 224):
     """ Recorta a imagem em n_split vezes de tamanhos dim_split ignorando
-    recortes totalmente pretos.
+        recortes totalmente pretos.
 
-    Args:
-        image (np.array): imagem a ser recortada
-        n_split (int, optional): Numero de cortes. Defaults to 100.
-        dim_orig (int, optional): Tamanho da imagem. Defaults to 1024.
-        dim_split (int, optional): Tamanho dos cortes. Defaults to 224.
+        Args:
+            image (np.array): imagem a ser recortada
+            n_split (int, optional): Numero de cortes. Defaults to 100.
+            dim_orig (int, optional): Tamanho da imagem. Defaults to 1024.
+            dim_split (int, optional): Tamanho dos cortes. Defaults to 224.
 
-    Returns:
-        (tuple): recortes das imagens e o pixel inicial.
+        Returns:
+            (tuple): recortes das imagens e o pixel inicial.
     """
     if not isinstance(image, list):
         # Criação das listas
@@ -198,9 +198,8 @@ def split_images_n_times(image,
             cut, pos = create_non_black_cut(image,
                                             pixel_start, pixel_end,
                                             dim_split)
-            # Armazena ele na lista de imagens cortadas e de pixeis iniciais
-            cut_img.append(cut)  # Armazena o corte
-            cut_pos.append(pos)  # Armaxena o pixel inicial
+            cut_img = np.append(cut_img, cut)  # Armazena o corte
+            cut_pos.append(pos)  # Armaxena o pixel inicial do corte
         return cut_img, cut_pos
     split_img, split_pos = [], []
     # Percorre a lista de imagens

@@ -33,6 +33,12 @@ PNEUM_PATH = os.path.join(TRAIN_PATH, 'Pneumonia')
 dataset = ds.Dataset(DATA)
 
 covid = ModelCovid('.model/weights.best.hfd5',
-                   n_class=len(dataset.folder_names))
+                   n_class=len(dataset.folder_names),
+                   epochs=1)
 covid.model_compile()
+# %% Apreendendo
 covid.model_fit(dataset)
+# %%
+print(covid.model_predict('./data/test/Covid/0281.png', 100))
+
+# %%
