@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 
 def plot_images(images, cmap=None):
     """Plotas as imagens passafas em images
-
-    Args:
-        images (list or np.array): imagens a serem plotadas
+        Args:
+            images (list or np.array): imagens a serem plotadas
     """
     if isinstance(images, list):
         for img in images:

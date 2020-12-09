@@ -1,5 +1,5 @@
 # Task List
-- [x] **Segmentação do pulmão**
+- [x] **Segmentação do pulmão** :smile
     - [x] Leitura do dataset
         - [x] Leitura dos pulmões
             - [x] Leitura da imagem com OpenCV
@@ -21,4 +21,10 @@
         - [x] Apresentar as predições com o dataset de treino
         - [x] Comparar as mascaras obtidas com as mascaras reais
 - [ ] **Classificação das Imagens**
-    - [ ] Leitura do dataset
+    - [x] Leitura do dataset
+        - [x] Leitura das imagens em partes para cada passo do dataset
+        - [x] Criação da classe Dataset
+    - [x] Criação do modelo de teste
+    - [ ] Classe do GradCam
+    - [ ] Criação do modelo de classificação
+    - [ ] Verificação dos resultados

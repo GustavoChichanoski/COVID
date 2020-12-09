@@ -1,19 +1,15 @@
 # %% Import libraries
 import os
-from tqdm import tqdm
 import cv2 as cv
 import numpy as np
-import matplotlib.pyplot as plt
 import h5py
 # %% Keras imports
 from keras import backend as K
 from keras.models import Input
 from keras.models import Model
-from keras.models import load_model
 from keras.layers import Conv2D
 from keras.layers import MaxPooling2D
 from keras.layers import UpSampling2D
-from keras.layers import BatchNormalization
 from keras.layers import Activation
 from keras.layers import Dropout
 from keras.layers import Concatenate
@@ -26,59 +22,21 @@ from keras.callbacks import EarlyStopping
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import ReduceLROnPlateau
 from keras.optimizers import Adam
+from src.images.read_image import read_images as ri
+from src.images.process_images import bgr2gray
+from src.images.process_images import rescale_images
+from src.images.process_images import equalize_histogram
 h5py.run_tests()
-
-# %% Preprocessing Image function
-def image_grayscale(image):
-    '''
-        Convete uma imagem de BGR para GRAY
-        Args:
-            image - Imagem a ser convertida (np.array)
-        return:
-            Imagem em preto e branco (np.array)
-    '''
-    cv_gray = cv.COLOR_BGR2GRAY
-    return cv.cvtColor(image, cv_gray)
-
-def image_rescale(image, scale=255.0):
-    '''
-        Args:
-            image - np.array
-            scale - np.float32
-        return:
-            image - np.array
-    '''
-    return image/scale
-
-def equalize_histogram(image):
-    '''
-        Equaliza o histograma da imagem
-        Args:
-            np.array
-        return:
-            np.array
-    '''
-    return cv.equalizeHist(image)
-
-def invert_image(image):
-    '''
-        Função para inverter a imagem
-        Args:
-            Recebe uma imagem de np.array e inverte os valores
-        return:
-            Retorna a imagem como sendo um vetor np.array
-    '''
-    return cv.bitwise_not(image)
 
 def read_image(path):
     '''
-        Função para realizar a leitura de uma imagem atráves do 
+        Função para realizar a leitura de uma imagem atráves do
         caminho do arquivo.
         Args:
             Recebe uma String contendo o caminho do arquivo
             da imagem.
         return :
-            Retorna a imagem como sendo um vetor np.array 
+            Retorna a imagem como sendo um vetor np.array
     '''
     return cv.imread(path)
 
@@ -88,18 +46,23 @@ def image_resize(image, size=256):
     '''
     return cv.resize(image, (size, size))
 
-def normalize_image(image, dim):
-    '''
+def normalize_image(image,
+                    dim: int = 256):
+    """
         Normaliza a imagem
+
         Args:
-            image - np.array
-        return:
-            image - np.array
-    '''
+            image (list): imagem a ser normalizada
+            dim (int, optional): Dimensão da imagem.
+                                 Defaults to 256.
+
+        Returns:
+            [type]: [description]
+    """
     image = image_resize(image, dim)
-    image = image_grayscale(image)
+    image = bgr2gray(image)
     image = equalize_histogram(image)
-    return image_rescale(image)
+    return rescale_images(image,255)
 
 def Up_plus_Concatenate(layer, connection, i):
     # Define names of layers
@@ -173,9 +136,8 @@ def model_unet(
         layer = Up_plus_Concatenate(first_layer, connection, i)
 
         for j in range(2, 4):
-            layer = conv_unet(
-                layer, filters, (3, 3),
-                activation, i, j)
+            layer = conv_unet(layer, filters, (3, 3),
+                              activation, i, j)
 
         first_layer = layer
 
@@ -230,8 +192,8 @@ def dice_coef_loss(y_true, y_pred):
     return accuracy
 
 def numpy_to_keras(nparray, dim):
-    keras = np.array(nparray)
-    return keras.reshape(1, dim, dim, 1)
+    keras_ = np.array(nparray)
+    return keras_.reshape((1, dim, dim, 1))
 
 def numpy_to_cv(image):
     return image.astype(np.uint8)
@@ -311,7 +273,7 @@ for _type in old_data:
             
             lung = read_image(_image_path)
             lung = image_resize(lung, DIM_NEW)
-            lung = image_grayscale(lung)
+            lung = bgr2gray(lung)
             mask = image_resize(mask, DIM_NEW)
             seg_lung = segmentation_lung(lung,mask)
 

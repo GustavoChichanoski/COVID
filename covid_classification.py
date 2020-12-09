@@ -2,15 +2,12 @@
     O Objetivo desse código é classificar raios-x dos pulmões entre pacientes
     normais, com pneumonia ou com covid-19
 """
-try:
-    import sys
-    sys.path.insert(0, './src')
-except:
-    pass
-import dataset as ds
-from model import ModelCovid
+# -*- coding: utf-8 -*-
 import os
-import numpy as np
+from src.dataset import dataset as ds
+from src.model.model import ModelCovid
+
+__version__ = '0.1'
 
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
@@ -33,12 +30,13 @@ PNEUM_PATH = os.path.join(TRAIN_PATH, 'Pneumonia')
 dataset = ds.Dataset(DATA)
 
 covid = ModelCovid('.model/weights.best.hfd5',
-                   n_class=len(dataset.folder_names),
+                   labels=os.listdir(TRAIN_PATH),
                    epochs=1)
 covid.model_compile()
 # %% Apreendendo
 covid.model_fit(dataset)
 # %%
-print(covid.model_predict('./data/test/Covid/0281.png', 100))
+print(covid.model_predict('./data/test/Covid/0281.png',
+                          500))
 
 # %%
