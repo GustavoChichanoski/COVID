@@ -13,7 +13,7 @@ from src.images.process_images import resize_image as resize
 from src.images.process_images import normalize_image as norma
 
 def grad_cam_overlay(cuts,
-                     pos,
+                     positions,
                      model,
                      dim_orig: int = 1024,
                      dim_split: int = 224):
@@ -22,7 +22,7 @@ def grad_cam_overlay(cuts,
         start = pos[0]
         end = pos[1]
         heatmap  = grad_cam(cut,
-                            self.model)
+                            model)
         pb_grad[start:start + 224,
                 end:end + 224] += heatmap
     return pb_grad
