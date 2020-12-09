@@ -6,7 +6,7 @@ A intenção de projeto é alterar o artigo cientifico [10.1109/TMI.2020.2993291
 
 ### Linguagens
 
-- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/768px-Python-logo-notext.svg.png" alt="python" style="width=20px" /> Python
+- <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/768px-Python-logo-notext.svg.png" alt="python" width=20px /> Python
 
 ## Datasets
 
