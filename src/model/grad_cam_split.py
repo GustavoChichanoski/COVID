@@ -50,11 +50,12 @@ def prob_grad_cam(pacotes_da_imagem,
         shape = (1, entrada_modelo[1], entrada_modelo[2], entrada_modelo[3])
         pacote_atual_reshape = pacote_atual.reshape(shape)
         # Define o ganhador do pacote
-        predicao = get_activations(modelo,
-                                   pacote_atual_reshape,
-                                   layer_names='classifier')
+        # predicao = get_activations(modelo,
+        #                            pacote_atual_reshape,
+        #                            layer_names='classifier')
         # Acha qual foi o canal preedito
-        predicao_pacote = predicao['classifier'][0, winner_pos]
+        predicao = modelo.predict(pacote_atual_reshape)
+        predicao_pacote = predicao[0,winner_pos]
         # Calcula o grad cam para o canal vencedor
         gradcam_pacote = grad_cam(image=pacote_atual,
                                   model=modelo,

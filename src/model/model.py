@@ -80,6 +80,7 @@ class ModelCovid:
                                   'output']
         self.last_conv_layer = self.model.layers[0] \
                                    .get_layer(index=-2).name
+        self.path_fig = './fig'
 
     def save(self, path: str = './',
              name: str = None,
@@ -103,8 +104,8 @@ class ModelCovid:
         file = 'model.hdf5'
         if history is not None:
             value = history.history[metric][-1] * 100
-            save_csv(value=history, labels=model,
-                     name='hisory_{}_{}'.format(model, value))
+            save_csv(value=history.history, labels=model,
+                     name='history_{}_{}'.format(model, value))
         file = '{}_{}_{:.02f}.hdf5'.format(model, metric, value)
         file_weights = '{}_{}_{:.02f}_weights.hdf5'.format(
             model, metric, value)
@@ -158,6 +159,7 @@ class ModelCovid:
 
     def predict(self, image: str,
                 n_splits: int = 100,
+                name: str = None,
                 grad: bool = True) -> str:
         """
             Realiza a predição do modelo
@@ -191,7 +193,7 @@ class ModelCovid:
                                     posicoes_iniciais_dos_pacotes=positions,
                                     modelo=self.model,
                                     winner_pos=self.labels.index(elect))
-            plt_gradcam(heatmap, imagem)
+            plt_gradcam(heatmap, imagem, name)
         return elect
 
     def confusion_matrix(self, x, n_splits: int = 1):
