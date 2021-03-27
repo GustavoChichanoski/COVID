@@ -6,7 +6,7 @@ import cv2 as cv
 
 
 def read_random_image(paths: list,
-                      id_start: list) -> list:
+                      id_start) -> list:
     """
         Lê as imagens dos ids contidos em id_start
 
@@ -18,10 +18,10 @@ def read_random_image(paths: list,
         Returns:
             list: lista das imagens lidas.
     """
-    if images is None:
-        images = []
+    images = []
     for i in id_start:
-        images.append(read_images(paths[i]))
+        image = read_images(iamges_paths=paths[i])
+        images.append(image)
     return images
 
 
@@ -37,19 +37,21 @@ def read_sequencial_image(paths: list,
                                     Defaults to 0.
             id_end (int, optional): ID final da imagem a ser lida.
                                     Defaults to 0.
-
+            normalize (bool, optional): Normaliza a imagem.
+                                        Defaults to False.
         Returns:
             list: lista das imagens lidas
     """
     images = []
     for i in range(id_start, id_end):
-        images.append(read_images(paths[i]))
+        image = read_images(paths[i])
+        images.append(image)
     return images
 
 
 def read_images(images_paths,
                 id_start=0,
-                id_end:int = -1):
+                id_end: int = -1):
     """
         Lê as imagens do listas de caminhos da imagem de start até end -1
 
@@ -60,7 +62,8 @@ def read_images(images_paths,
                                              Defaults to 0.
             id_end (int, optional): ID do fim das imagens.
                                     Defaults to -1.
-
+            normalize (bool, optional): A saída sera normalizada
+                                              Default to false.
         Returns:
             (np.array or list): retorna uma lista np.array das imagens lidas
     """
@@ -70,4 +73,5 @@ def read_images(images_paths,
                 id_end = len(images_paths)
             return read_sequencial_image(images_paths, id_start, id_end)
         return read_random_image(images_paths, id_start)
-    return cv.imread(images_paths)
+    image = cv.imread(images_paths)
+    return image

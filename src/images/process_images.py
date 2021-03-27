@@ -1,14 +1,17 @@
 """
     Biblioteca referente ao processamento das imagens
 """
+from src.images.read_image import read_images
 import numpy as np
 from tqdm import tqdm
 import cv2 as cv
+from src.plots.plots import plot_images
 
 DIM_SPLIT = 224
 DIM_ORIG = 1024
 K_SPLIT = 100
 SCALE = 255
+COMP = 1279488
 
 def invert_image(image):
     '''
@@ -19,6 +22,7 @@ def invert_image(image):
             Retorna a imagem como sendo um vetor np.array
     '''
     return cv.bitwise_not(image)
+
 
 def equalize_histogram(image):
     """
@@ -32,12 +36,13 @@ def equalize_histogram(image):
     """
     return cv.equalizeHist(image)
 
-def resize_image(image,dim):
-    image = cv.resize(image,(dim,dim))
+
+def resize_image(image, dim: int):
+    image = cv.resize(image, (dim, dim))
     return image
 
-def find_start(image_with_black,
-               size:int = 1024):
+
+def find_start(image_with_black) -> tuple:
     """
         Encontra o primeiro pixel não zero da esquerda para a direita.
         Args:
@@ -47,6 +52,7 @@ def find_start(image_with_black,
         Returns:
             (tuple): Primeira linha e coluna contendo um pixel não zero.
     """
+    size = image_with_black.shape[0]
     if isinstance(image_with_black, list):
         start = []
         for img in image_with_black:
@@ -100,8 +106,8 @@ def find_end(image_with_black,
     return row_end, column_end
 
 
-def random_pixel(start=(0,0),
-                 end=(0,0),
+def random_pixel(start: tuple = (0, 0),
+                 end: tuple = (0, 0),
                  dim_split: int = DIM_SPLIT):
     """
         Seleciona um pixel randomicamente comecando de start e
@@ -120,12 +126,16 @@ def random_pixel(start=(0,0),
     """
     x_i, y_i = start
     x_e, y_e = end
-    pixel_x = np.random.randint(x_i, x_e-dim_split)
-    pixel_y = np.random.randint(y_i, y_e-dim_split)
+    try:
+        pixel_x = np.random.randint(x_i, x_e-dim_split)
+        pixel_y = np.random.randint(y_i, y_e-dim_split)
+    except:
+        print(start)
+        print(end)
     return pixel_x, pixel_y
 
 
-def rescale_images(original_image, scale:int = 255):
+def rescale_images(original_image, scale: int = 255):
     """
         Rescala a imagem para ir de -1 a 1
 
@@ -158,11 +168,8 @@ def normalize_image(images):
             (np.array): Imagens normalizadas
     """
     if not isinstance(images, list):
-        # Acha o maior valor da imagem
-        scale = np.max(images)
-        # Rescala a imagem
-        norm = rescale_images(images, scale)
-        return norm
+        x_new = images / 255
+        return x_new
     # Cria a lista de imagens normalizadas
     normalizes = []
     # Percorre a lista de imagens
@@ -212,8 +219,8 @@ def bgr2gray(colored_images):
 
 def split_images_n_times(image,
                          n_split: int = 100,
-                         dim_orig: int = 1024,
-                         dim_split: int = 224):
+                         dim_split: int = 224,
+                         verbose: bool = True):
     """
         Recorta a imagem em n_split vezes de tamanhos dim_split ignorando
         recortes totalmente pretos.
@@ -227,39 +234,30 @@ def split_images_n_times(image,
         Returns:
             (tuple): recortes das imagens e o pixel inicial.
     """
-    if not isinstance(image, list):
-        # Criação das listas
-        cut_img = []  # lista de cortes
-        cut_pos = []  # lista de posicoes do corte
-        # Define os pixels em que a imgem começa
-        pixel_start = find_start(image, dim_orig)
-        pixel_end = find_end(image, dim_orig)
-        # Cria os n_splits cortes
-        for _ in tqdm(range(n_split)):
-            # Recebe um corte da imagem não inteiramente preto
-            cut, pos = create_non_black_cut(image,
-                                            pixel_start, pixel_end,
-                                            dim_split)
-            cut_img = np.append(cut_img, cut)  # Armazena o corte
-            cut_pos.append(pos)  # Armaxena o pixel inicial do corte
-        return cut_img, cut_pos
-    split_img, split_pos = [], []
-    # Percorre a lista de imagens
-    for img in image:
-        # Recorta as imagens
-        splits, splits_px = split_images_n_times(img,
-                                                 n_split,
-                                                 dim_orig,
-                                                 dim_split)
-        # Armazena as imagens e posicoes
-        split_img = np.append(split_img, splits)
-        split_pos.append(splits_px)
-    return split_img, split_pos
+    # Criação das listas
+    cut_img = []  # lista de cortes
+    cut_pos = []  # lista de posicoes do corte
+    # Define os pixels em que a imgem começa
+    pixel_start = find_start(image)
+    pixel_end = find_end(image)
+    # Cria os n_splits cortes
+    pbar = range(n_split)
+    if verbose:
+        pbar = tqdm(pbar)
+    for _ in pbar:
+        # Recebe um corte da imagem não inteiramente preto
+        cut, pos = create_non_black_cut(image,
+                                        pixel_start, pixel_end,
+                                        dim_split)
+        cut_norm = normalize_image(cut)
+        cut_img = np.append(cut_img, cut_norm)  # Armazena o corte
+        cut_pos.append(pos)  # Armaxena o pixel inicial do corte
+    return cut_img, cut_pos
 
 
 def create_non_black_cut(image,
-                         start=(0,0),
-                         end=(0,0),
+                         start: tuple = (0, 0),
+                         end: tuple = (0, 0),
                          dim: int = 224):
     """
         Cria um recorte que não é totalmente preto
@@ -275,17 +273,28 @@ def create_non_black_cut(image,
         Returns:
             [type]: [description]
     """
-    pos = random_pixel(start, end, dim)
-    recort = create_recort(image, pos, dim)
-    while np.sum(recort) < 255:
+    if start[1] > end[1] - dim:
+        end = (end[0], start[1] + dim + 10)
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
+        return recort, pos
+    if start[0] > end[0] - dim:
+        end = (start[0] + dim + 10, end[1])
+        pos = random_pixel(start, end, dim)
+        recort = create_recort(image, pos, dim)
+        return recort, pos
+    pos = random_pixel(start, end, dim)
+    recort = create_recort(image, pos, dim)
+    soma = np.sum(recort)
+    while soma < COMP:
+        pos = random_pixel(start, end, dim)
+        recort = create_recort(image, pos, dim)
+        soma = np.sum(recort)
     return recort, pos
 
-
 def create_recort(image,
-                  pos_start = (0,0),
-                  dim_split:int = 224):
+                  pos_start: tuple = (0, 0),
+                  dim_split: int = 224):
     """
         Cria um recorte da imagem indo da posicao inicial até a 
         dimensão do recorte
@@ -300,8 +309,47 @@ def create_recort(image,
         Return:
             (np.array): Recorte da imagem
     """
-    pos_end = (pos_start[0]+dim_split,
-               pos_start[1]+dim_split)
-    cut = image[pos_start[0]:pos_end[0],
-                pos_start[1]:pos_end[1]]
+    pos_end = (pos_start[0]+dim_split, pos_start[1]+dim_split)
+    cut = image[pos_start[0]:pos_end[0], pos_start[1]:pos_end[1]]
     return cut
+
+
+def relu(image):
+    """
+        Retifica a imagem
+        Args:
+        -----
+            image: imagem a ser retificada. (np.array)
+        Returns:
+        -------
+            (np.array): imagem retificada. (np.array)
+    """
+    for x in range(len(image)):
+        for y in range(len(image[x])):
+            pixel = image[x][y]
+            if pixel < 0:
+                image[x][y] = 0
+    return image
+
+
+def split_images(paths, dim):
+    if isinstance(paths, list):
+        cuts = []
+        for path in paths:
+            # Criação das listas
+            cuts = np.append(cuts, split_images(path))
+        return cuts
+    image = read_images(paths)
+    # Define os pixels em que a imgem começa
+    pixel_start = find_start(image)
+    pixel_end = find_end(image)
+    if pixel_start[1] > pixel_end[1] or pixel_start[0] > pixel_end[0]:
+        return print("Error")
+    # Recebe um corte da imagem não inteiramente preto
+    cut, _ = create_non_black_cut(image,
+                                  pixel_start,
+                                  pixel_end,
+                                  dim)
+    cut_norm = normalize_image(cut)
+    cut_norm = np.array(cut_norm)
+    return cut_norm

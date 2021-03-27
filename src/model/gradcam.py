@@ -6,20 +6,15 @@ import numpy as np
 import tensorflow as tf
 from keras.models import Model
 from keras import Input
-import keras.backend as K
+from keras import backend as K
 from src.images.process_images import resize_image as resize
-from src.images.process_images import relu as relu_img
-from src.images.process_images import normalize_image as norm
-from src.model.keract import get_activations
+from src.images.process_images import relu_image as relu_img
 
 
 def prob_grad_cam(pacotes_da_imagem,
-                  classifier: List[str],
-                  last_conv_layer: str,
                   posicoes_iniciais_dos_pacotes,
                   modelo: Model,
-                  dim_orig: int = 1024,
-                  winner_pos: int = 0):
+                  dim_orig: int = 1024):
     """ Gera o grad cam a partir de pedaços da imagem original
 
         Args:
@@ -37,43 +32,27 @@ def prob_grad_cam(pacotes_da_imagem,
         --------
             (np.array): Grad Cam dos recortes
     """
-
-    # Inicializa a imagem final do grad cam com zeros
     grad_cam_prob = np.zeros((dim_orig, dim_orig))
-    # Armazena o numero de pacotes que passaram por um pixel
     pacotes_por_pixel = np.zeros((dim_orig, dim_orig))
     for pacote_atual, posicao_pixel in zip(pacotes_da_imagem,
                                            posicoes_iniciais_dos_pacotes):
         entrada_modelo = modelo.input_shape
-        # Os pacotes chegam com dimensões (None,224,224,3) e
-        # precisam ser redimensionados para a (1,224,224,3)
-        shape = (1, entrada_modelo[1], entrada_modelo[2], entrada_modelo[3])
-        pacote_atual_reshape = pacote_atual.reshape(shape)
-        # Define o ganhador do pacote
-        predicao = get_activations(modelo,
-                                   pacote_atual_reshape,
-                                   layer_names='classifier')
-        # Acha qual foi o canal preedito
-        predicao_pacote = predicao['classifier'][0, winner_pos]
-        # Calcula o grad cam para o canal vencedor
-        gradcam_pacote = grad_cam(image=pacote_atual,
-                                  model=modelo,
-                                  classifier_layer_names=classifier,
-                                  last_conv_layer_name=last_conv_layer)
-        # Multiplica a possibilidade do canal pelo grad cam gerado
+        pacote_atual = pacote_atual.reshape((1,
+                                             entrada_modelo[1],
+                                             entrada_modelo[2],
+                                             entrada_modelo[3]))
+        predicao = modelo.predict(pacote_atual)
+        predicao_pacote = np.max(predicao)
+        gradcam_pacote = grad_cam(pacote_atual, modelo)
         grad_cam_predicao = predicao_pacote * gradcam_pacote
-        # Retifica o grad cam do pacote
-        # grad_cam_predicao = relu_img(grad_cam_predicao)
-        # Soma com a predicoes anteriores
         somar_resultado = somar_grads_cam(grad_cam_prob,
                                           grad_cam_predicao,
                                           pacotes_por_pixel,
                                           posicao_pixel)
-        grad_cam_prob, pacotes_por_pixel = somar_resultado
-    # Divide o gradcam total pelas vezes que passou por um pixel
+        pacotes_por_pixel, grad_cam_prob = somar_resultado
     grad_cam_prob = divisao_pacotes_por_pixel(pacotes_por_pixel,
                                               grad_cam_prob)
-    grad_cam_prob = normalize(grad_cam_prob)
+    grad_cam_prob = relu_img(grad_cam_prob)
     return grad_cam_prob
 
 
@@ -110,8 +89,7 @@ def somar_grads_cam(grad_cam_atual: List[int],
     final = [inicio[0] + dimensao, inicio[1] + dimensao]
     grad_cam_atual[inicio[0]:final[0],
                    inicio[1]:final[1]] += grad_cam_split
-    pixels_usados[inicio[0]:final[0],
-                  inicio[1]:final[1]] += valor_um
+    pixels_usados[inicio[0]:final[0], inicio[1]:final[1]] += valor_um
     return (grad_cam_atual, pixels_usados)
 
 
@@ -135,16 +113,18 @@ def divisao_pacotes_por_pixel(pacotes_por_pixel: List[int],
     """
     for pixel_y, _ in enumerate(grad_cam_prob):
         for pixel_x, _ in enumerate(grad_cam_prob[0]):
-            pacotes = pacotes_por_pixel[pixel_y][pixel_x]
+            pacotes = pacotes_por_pixel[pixel_x][pixel_y]
             if pacotes > 0:
                 grad_cam_prob[pixel_y][pixel_x] /= pacotes
     return grad_cam_prob
 
 
-def grad_cam(image,
-             model,
-             classifier_layer_names: List[str],
-             last_conv_layer_name: str = 'avg_pool'):
+def grad_cam(image, model,
+             classifier_layer_names: List[str] = ['Max_5',
+                                                  'Flatten',
+                                                  'Dense_1',
+                                                  'Drop',
+                                                  'Dense_2']):
     """ Gera o mapa de processamento da CNN.
 
         Args:
@@ -155,23 +135,25 @@ def grad_cam(image,
             (np.array): Grad Cam
     """
     # Recebe o tamanho da imagem a ser inserida no modelo
-    dimensao_imagem = model.input_shape[1]
-    resnet = model.layers[0]
+    dimensao_imagem: int = model.input_shape[1]
     # Altera o dimensão da imagem para atender a entrada do modelo
     dimensao_modelo = (1, dimensao_imagem, dimensao_imagem, 3)
-    image_reshape = image.reshape(dimensao_modelo)
+    image = image.reshape(dimensao_modelo)
+    # Recebe a modelo da Resnet50-v2
+    resnet_model = model.layers[0]
     # Nome da ultima camada de convolucao
-    last_conv_layer = resnet.get_layer(last_conv_layer_name)
+    last_conv_layer = resnet_model.get_layer('post_relu')
     # Cria um novo modelo com as camadas até a ultima convolução
-    model_until_last_conv = Model(resnet.input,
+    model_until_last_conv = Model(resnet_model.input,
                                   last_conv_layer.output)
     # Cria o modelo com as camadas após a ultima convolução
     model_after_last_conv = model_after(last_conv_layer,
-                                        resnet,
+                                        resnet_model,
                                         model,
                                         classifier_layer_names)
+
     last_conv_layer_output = generate_grads_image(model_until_last_conv,
-                                                  image_reshape,
+                                                  image,
                                                   model_after_last_conv)
     heatmap = create_heatmap(last_conv_layer_output, dimensao_imagem)
     return heatmap
@@ -211,30 +193,26 @@ def generate_grads_image(model_until_last_conv,
         # Recebe todas as predições da predicao ganhadora
         top_class_channel = preds[:, top_pred_index]
 
-    last_cnn_output = grads_calc(tape,
-                                 last_cnn_output,
-                                 top_class_channel)
+    last_cnn_output, pooled_grads = grads_calc(tape,
+                                               last_cnn_output,
+                                               top_class_channel)
+    for i in range(pooled_grads.shape[-1]):
+        last_cnn_output[:, :, i] *= pooled_grads[i]
     return last_cnn_output
 
 
 def grads_calc(tape: tf.GradientTape,
                last_cnn_output: Model,
                top_class_channel: List[List[int]]):
-    """
-
-    """
-    # Calcula o gradiente do modelo para saída máxima (pesos)
-    grads = tape.gradient(top_class_channel, last_cnn_output)
-    # Retira pela media dos pixel (global average pooling)
+    # Calcula o gradient do modelo para saída máxima
+    grads = tape.gradient(top_class_channel,
+                          last_cnn_output)
+    # Multiplica pesos pela importância deles no resultados
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
     # Convert array to numpy array
-    pesos = last_cnn_output.numpy()[0]
+    last_cnn_output = last_cnn_output.numpy()[0]
     pooled_grads = pooled_grads.numpy()
-    # Multiplica pesos pela importância deles no resultados
-    for i in range(pooled_grads.shape[-1]):
-        pesos[:, :, i] *= pooled_grads[i]
-    # pooled grads == ack
-    return pesos
+    return last_cnn_output, pooled_grads
 
 
 def model_after(last_conv_layer,
@@ -283,17 +261,25 @@ def create_heatmap(last_conv_layer_output,
             (np.array): imagem do heatmap gerado
     """
     heatmap = np.mean(last_conv_layer_output, axis=-1)
-    # Normalização do heatmap
-    heatmap = np.array(heatmap)
-    heatmap = relu_img(heatmap)
+    heat_max = np.max(heatmap)
+    heat_maximum = np.maximum(heatmap, 0)
+    if heat_max == 0:
+        heat_max = 1
+    heatmap = heat_maximum / heat_max
+    heatmap = np.array(255 * heatmap)
+    heatmap = np.uint8(heatmap)
     heatmap = resize(heatmap, dimensao_saida)
+    heatmap = relu_img(heatmap)
     return heatmap
 
 
-def normalize(x):
-    x_max = np.max(x)
-    x_min = np.min(x)
-    if x_max == 0 and x_min == 0:
-        return x
-    x_new = (x - x_min) / (x_max - x_min)
-    return x_new
+def target_category_loss(x, category_index, nb_classes: int):
+    return tf.multiply(x, K.one_hot([category_index], nb_classes))
+
+
+def target_category_loss_output_shape(input_shape):
+    return input_shape
+
+
+def normalize(x: float):
+    return x / (K.sqrt(K.mean(K.square(x))) + 1e-5)
