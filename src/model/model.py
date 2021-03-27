@@ -1,6 +1,7 @@
 """
     Biblioteca contendo as informações referente ao modelo.
 """
+<<<<<<< HEAD
 import os
 from tensorflow.python.keras.applications.densenet import DenseNet201
 from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
@@ -18,11 +19,21 @@ from keras import Sequential
 from keras.layers import Conv2D
 from keras.layers import Activation
 from keras.layers import BatchNormalization
+=======
+import cv2 as cv
+import numpy as np
+from keras.applications import ResNet50V2
+from keras import Model
+from keras.layers import Dense
+from keras import Sequential
+from keras.optimizers import Adam
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import EarlyStopping
 from keras.callbacks import TensorBoard
 from keras.callbacks import TerminateOnNaN
 from keras.callbacks import ReduceLROnPlateau
+<<<<<<< HEAD
 from keras.optimizers import Adamax
 from keras.applications import ResNet50V2
 from keras.applications import VGG19
@@ -37,6 +48,19 @@ from src.plots.plots import plot_gradcam as plt_gradcam
 from src.model.metrics.f1_score import F1score
 from src.csv import save_csv as save_csv
 
+=======
+from keras.preprocessing.image import array_to_img
+from keras.preprocessing.image import img_to_array
+from src.model.grad_cam_split import grad_cam
+from src.images.process_images import split_images_n_times as splits
+from src.dataset.dataset import zeros
+from src.images.read_image import read_images as ri
+from src.images.process_images import normalize_image as ni
+from src.images.process_images import resize_image as resize
+from src.images.process_images import normalize_image as norma
+import matplotlib.pyplot as plt
+import matplotlib.cm as cm
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
 
 class ModelCovid:
     """[summary]
@@ -44,11 +68,18 @@ class ModelCovid:
 
     def __init__(self,
                  weight_path: str,
+<<<<<<< HEAD
                  input_shape: tuple = (224, 224, 3),
                  batch_size: int = 32,
                  epochs: int = 10,
                  model: str = 'Resnet50V2',
                  labels: List[str] = ['Covid', 'Normal', 'Pneumonia']):
+=======
+                 input_shape=(224, 224, 3),
+                 batch_size: int = 32,
+                 epochs: int = 10,
+                 labels=['Covid', 'Normal', 'Pneumonia']):
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
         """
             Construtor da minha classe ModelCovid
 
@@ -68,6 +99,7 @@ class ModelCovid:
         self.epochs = epochs
         self.batch_size = batch_size
         self.labels = labels
+<<<<<<< HEAD
         self.depth = 5
         self.filters = 16
         self.model = classification(input_shape=self.input_shape,
@@ -86,11 +118,19 @@ class ModelCovid:
              model: str = '',
              history=None,
              metric: str = 'val_f1') -> str:
+=======
+        self.model = model_classification(self.input_shape,
+                                          len(self.labels))
+        self.weight_path = weight_path
+
+    def model_save(self, history):
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
         """
             Salva os pesos do modelo em um arquivo
             Args:
                 history (list): Historico das metricas de apreendizagem
         """
+<<<<<<< HEAD
         # val_acc = (1 - history['val_loss'][-1])*100
         if name is not None:
             file = os.path.join(path, name)
@@ -129,6 +169,17 @@ class ModelCovid:
         return history
 
     def fit(self, dataset: Dataset):
+=======
+        val_acc = (1 - history['val_loss'][-1])*100
+        self.model.save('model_acc_{:.02f}.h5'.format(val_acc),
+                        overwrite=True)
+        file_name_weight = 'weights_acc_{:.02f}.hdf5'.format(val_acc)
+        self.model.save_weights(file_name_weight,
+                                overwrite=False)
+        print("Pesos salvos em {}".format(file_name_weight))
+
+    def model_fit(self, dataset):
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
         """
             Realiza o treinamento do modelo
             Return:
@@ -144,6 +195,7 @@ class ModelCovid:
                                  validation_data=val)
         return history
 
+<<<<<<< HEAD
     def compile(self,
                 loss: str = 'sparse_categorical_crossentropy',
                 lr: float = 0.01) -> None:
@@ -159,10 +211,22 @@ class ModelCovid:
     def predict(self, image: str,
                 n_splits: int = 100,
                 grad: bool = True) -> str:
+=======
+    def model_compile(self):
+        """Compila o modelo
+        """
+        self.model.compile(Adam(lr=2e-3),
+                           loss='categorical_crossentropy',
+                           metrics=get_metrics())
+        self.model.summary()
+
+    def model_predict(self, image, n_splits: int = 100):
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
         """
             Realiza a predição do modelo
 
             Args:
+<<<<<<< HEAD
             -----
                 image (str): path da imagem a ser predita.
                 n_splits (int, optional):
@@ -177,6 +241,16 @@ class ModelCovid:
         """
         imagem = ri(image)
         cuts, positions = splits(imagem, n_splits, verbose=grad)
+=======
+                image ([type]): [description]
+                n_splits (int, optional): [description]. Defaults to 100.
+
+            Returns:
+                [type]: [description]
+        """
+        image = ri(image)
+        cuts, positions = splits(image, n_splits)
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
         cuts = np.array(cuts)
         cuts = cuts.reshape((n_splits,
                              self.input_shape[0],
@@ -184,6 +258,7 @@ class ModelCovid:
                              self.input_shape[2]))
         votes = self.model.predict(cuts)
         elect = winner(self.labels, votes)
+<<<<<<< HEAD
         if grad:
             heatmap = prob_grad_cam(pacotes_da_imagem=cuts,
                                     classifier=self.classifier_layers,
@@ -219,6 +294,38 @@ def classification(input_shape: tuple = (224, 224, 3),
                    n_class: int = 3,
                    model_net: str = 'Resnet50V2',
                    resnet_train: bool = True) -> Model:
+=======
+        heatmap = grad_cam(cuts[5, :, :, :],
+                           self.model)
+        pb_grad = np.zeros((1024,1024))
+        for cut, pos in zip(cuts,positions):
+            start = pos[0]
+            end = pos[1]
+            heatmap  = grad_cam(cut,
+                                self.model)
+            pb_grad[start:start + 224,
+                    end:end + 224] += heatmap
+        pb_grad = np.uint8(pb_grad)
+        jet = cm.get_cmap("jet")
+        jet_color = jet(np.arange(256))[:,:3]
+        jet_heatmap = jet_color[heatmap]
+
+        jet_heatmap = array_to_img(jet_heatmap)
+        jet_heatmap = jet_heatmap.resize((1024,1024))
+        jet_heatmap = img_to_array(jet_heatmap)
+        
+        superimposed_image = jet_heatmap * 0.4 + image
+        superimposed_image = array_to_img(superimposed_image)
+
+        plt.imshow(superimposed_image)
+        plt.show()
+
+        return elect
+
+
+def model_classification(input_shape,
+                         n_class) -> Model:
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
     """ 
         Modelo de classificação entre covid, normal e pneumonia
 
@@ -233,6 +340,7 @@ def classification(input_shape: tuple = (224, 224, 3),
         --------
             (keras.Model) : Modelo do keras
     """
+<<<<<<< HEAD
     params = {'include_top': False,
               'weights': "imagenet",
               'input_shape': input_shape,
@@ -257,19 +365,43 @@ def classification(input_shape: tuple = (224, 224, 3),
 
 def winner(labels: List[str] = ["Covid", "Normal", "Pneumonia"],
            votes: List[int] = [0, 0, 0]) -> str:
+=======
+    resnet = ResNet50V2(include_top=False,
+                        weights="imagenet",
+                        input_shape=input_shape,
+                        pooling="max")
+    resnet.trainable = False
+    output = Sequential([resnet,
+                         Dense(n_class,
+                               activation='softmax',
+                               name='classifier')])
+    return output
+
+
+def winner(labels, votes):
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
     """
         Retorna o label da doenca escolhido
 
         Args:
+<<<<<<< HEAD
         -----
+=======
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
             labels (list): nomes das classes
             votes (list): predicao das imagens
 
         Returns:
+<<<<<<< HEAD
         --------
             elect (str): label escolhido pelo modelo
     """
     n_class = votes.shape[1]
+=======
+            elect (str): label escolhido pelo modelo
+    """
+    n_class = len(labels)
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
     poll = zeros(n_class)
     for vote in votes:
         poll += vote
@@ -277,6 +409,7 @@ def winner(labels: List[str] = ["Covid", "Normal", "Pneumonia"],
     return elect
 
 
+<<<<<<< HEAD
 def get_metrics() -> List[str]:
     """
         Gera as metricas para o modelo
@@ -297,6 +430,22 @@ def get_callbacks(weight_path: str):
             weight_path: Caminho para salvar os checkpoints
         Returns:
         --------
+=======
+def get_metrics():
+    """
+        Gera as metricas para o modelo
+        Returns:
+            (list): metricas do modelo
+    """
+    metrics = ['accuracy']
+    return metrics
+
+
+def get_callbacks(weight_path):
+    """
+        Retorna a lista callbacks do modelo
+        Returns:
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
             (list of keras.callbacks): lista dos callbacks
     """
     # Salva os pesos dos modelo para serem carregados
@@ -313,11 +462,19 @@ def get_callbacks(weight_path: str):
                                   patience=3,
                                   verbose=1,
                                   mode='min',
+<<<<<<< HEAD
                                   epsilon=1e-3,
                                   cooldown=2,
                                   min_lr=1e-8)
     # Parada do treino caso o monitor nao diminua
     early_stop = EarlyStopping(monitor='val_f1',
+=======
+                                  epsilon=1e-2,
+                                  cooldown=2,
+                                  min_lr=1e-8)
+    # Parada do treino caso o monitor nao diminua
+    early_stop = EarlyStopping(monitor='val_loss',
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
                                mode='min',
                                restore_best_weights=True,
                                patience=40)
@@ -332,6 +489,7 @@ def get_callbacks(weight_path: str):
                  terminate,
                  tensorboard]
     return callbacks
+<<<<<<< HEAD
 
 
 def conv_class(layer,
@@ -355,3 +513,5 @@ def conv_class(layer,
     layer = Activation(activation=act,
                        name=act_name)(layer)
     return layer
+=======
+>>>>>>> 125fbd4688609bde936f5f4058ffc9bee3dbbf4d
