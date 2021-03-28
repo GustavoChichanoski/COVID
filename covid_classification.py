@@ -3,8 +3,9 @@
     O Objetivo desse programa é classificar raios-x dos pulmões entre pacientes
     normais, com pneumonia ou com covid-19
 """
+from src.output_result.folders import create_folders
 import sys
-from src.zip.zip_save import zipfolder
+from src.output_result.zip_save import zipfolder
 from src.plots.graph import plot_dataset
 from src.model.model import ModelCovid
 from src.dataset.dataset import Dataset
@@ -19,6 +20,11 @@ DIM_SPLIT = 224
 K_SPLIT = 100
 BATCH_SIZE = 32
 
+NETS = ['DenseNet201',
+        'InceptionResNetV2',
+        'ResNet50V2',
+        'VGG19']
+
 __version__ = '1.0'
 
 KAGGLE = False
@@ -32,21 +38,30 @@ else:
 DATA = join(__SYS, 'data')
 TRAIN_PATH = join(DATA, 'train')
 TEST_PATH = join(DATA, 'test')
-FIG_PATH = './fig'
-WEIGHT = join(__SYS, 'weights')
-NETS = os.listdir(WEIGHT)
+
+OUTPUT_PATH = 'outputs'
+
+paths = create_folders(name=OUTPUT_PATH,
+                       parent='./',
+                       nets=NETS)
+
+nets_path, net_weights, net_figures = paths
 
 TEST = join(DATA, 'test/Covid/0000.png')
 # %% [code] Criação do dataset
 np.random.seed(seed=42)
 
-nets_path = [join(WEIGHT, net) for net in NETS]
+trained = True
+
 pesos = []
-for rede in NETS:
-    parent_net = join(WEIGHT, rede)
+for net_weight in net_weights[0:1]:
     net = []
-    for pesos_path in listdir(parent_net):
-        net.append(join(parent_net, pesos_path))
+    list_train = listdir(net_weight)
+    if len(list_train) > 0:
+        for pesos_path in list_train:
+            net.append(join(net_weight, pesos_path))
+    else:
+        trained = False
     pesos.append(net)
 
 labels = listdir(TRAIN_PATH)
@@ -61,35 +76,38 @@ params = {'labels': labels, 'dim': DIM_SPLIT,
 train_generator = DataGenerator(data=train, **params)
 val_generator = DataGenerator(data=val, **params)
 
-for path_list, model, net_path in zip(pesos, NETS, nets_path):
+for path_list, model, net_path, net_figure in zip(pesos,
+                                      NETS,
+                                      nets_path,
+                                      net_figures):
     path = path_list[-1]
 
-    covid = ModelCovid('.model/weights.best.hfd5',
+    covid = ModelCovid('.model/weightss.best.hfd5',
                        labels=labels, epochs=100, model=model,
                        batch_size=BATCH_SIZE)
 
     covid.compile(loss='categorical_crossentropy', lr=1e-5)
 
-    # covid.load(path)
-
-    # history = covid.fit_generator(train_generator=train_generator,
-    #                               val_generator=val_generator)
-    path = covid.save(path, model=model, history=history)
+    if trained:
+        covid.load(path)
+    else:
+        history = covid.fit_generator(train_generator=train_generator,
+                                      val_generator=val_generator)
+        path = covid.save(path, model=model, history=history)
 
     covid.load(path)
-    n = 100
-    name = join(FIG_PATH,
-                join(model,'{}_{}'.format(model,n)))
-    covid.predict(image=TEST,n_splits=n,name=name)
+    n = 1
+    name = join(net_figure,
+                '{}_{}'.format(model, n))
+    # covid.predict(image=TEST, n_splits=n, name=name,grad=False)
 
-    test = Dataset(path_data=DATA, train=False)
-    test_values, _val_v = test.partition(1e-5)
-    test_generator = DataGenerator(test_values, **params)
+    # test = Dataset(path_data=DATA, train=False)
+    # test_values, _val_v = test.partition(1e-5)
+    # test_generator = DataGenerator(test_values, **params)
 
     # matrix = covid.confusion_matrix(test_generator.x, 1)
+    matrix = np.array([[[3,3,3],[3,3,3],[3,3,3]]])
+    plot_dataset(names=labels, absolut=matrix,
+                 n_images=1, path=net_figure)
 
-    # fig_path = join(net_path, 'fig')
-    # plot_dataset(names=labels, absolut=matrix,
-    #              n_images=1, path=fig_path)
-
-zipfolder('./', 'fig.zip')
+zipfolder('./outputs', 'output.zip')

@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib as mlp
 import matplotlib.pyplot as plt
 import seaborn as sns
+from  src.plots import save_as_png as save_png
 from seaborn.matrix import heatmap
 
 def sum_list(array):
@@ -84,8 +85,11 @@ def plot_dataset(absolut=None,
                  overwrite: bool = True):
     
     perc = normalize_confusion_matrix(absolut)
-    for i in range(len(n_images)):
-        dist_dataset(absolut[i], perc[i], names, n_images[i])
+    if isinstance(n_images, list):
+        for i in range(len(n_images)):
+            dist_dataset(absolut[i], perc[i], names, n_images[i])
+    else:
+        dist_dataset(absolut[0], perc[0], names, n_images)
     plt.show()
 
     fig, ax = plt.subplots()
@@ -118,15 +122,29 @@ def plot_dataset(absolut=None,
     ax.set_xlabel('Rótulo Verdadeiro')
     ax.set_ylabel('Rótulo Predição')
     fig.tight_layout()
-    if path is not None:
-        fig_path = os.path.join(path,'matriz_confusao.png')
+    # if path is not None:
+    #     fig_path = os.path.join(path,'matriz_confusao.png')
+    #     if overwrite:
+    #         i = 0
+    #         while os.path.exists(fig_path):
+    #             fig_path = os.path.join(path,'matriz_confusao_{}.png'.format(i))
+    #             i += 1
+    #     plt.savefig(fig_path,dpi=fig.dpi)
+    plt.show()
+    mc_path = os.path.join(path,'mc_{}_pacotes.png'.format(n_images))
+    if os.path.exists(mc_path):
         if overwrite:
             i = 0
-            while os.path.exist(fig_path):
-                fig_path = os.path.join(path,'matriz_confusao_{}.png'.format(i))
+            mc_path = mc_path[:-4]
+            fig_path = '{}_{}.png'.format(mc_path,i)
+            while os.path.exists(fig_path):
                 i += 1
-        plt.savefig(os.path.join(path,''),dpi=fig.dpi)
-    plt.show()
+                fig_path = '{}_{}.png'.format(mc_path,i)
+            plt.savefig(fig_path,dpi=fig.dpi)
+            return fig_path
+        print('[save_png] Arquivo já existe: {}'.format(path))
+        return mc_path
+    plt.savefig(mc_path,dpi=fig.dpi)
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):

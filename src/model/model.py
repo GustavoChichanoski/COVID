@@ -80,7 +80,7 @@ class ModelCovid:
                                   'output']
         self.last_conv_layer = self.model.layers[0] \
                                    .get_layer(index=-2).name
-        self.path_fig = './fig'
+        self.local_result = './result'
 
     def save(self, path: str = './',
              name: str = None,
@@ -105,7 +105,7 @@ class ModelCovid:
         if history is not None:
             value = history.history[metric][-1] * 100
             save_csv(value=history.history, labels=model,
-                     name='history_{}_{}'.format(model, value))
+                     name=os.path.join(self.local_result,'history_{}_{}'.format(model, value)))
         file = '{}_{}_{:.02f}.hdf5'.format(model, metric, value)
         file_weights = '{}_{}_{:.02f}_weights.hdf5'.format(
             model, metric, value)
@@ -186,14 +186,14 @@ class ModelCovid:
                              self.input_shape[2]))
         votes = self.model.predict(cuts)
         elect = winner(self.labels, votes)
-        if grad:
+        if grad or name is not None:
             heatmap = prob_grad_cam(pacotes_da_imagem=cuts,
                                     classifier=self.classifier_layers,
                                     last_conv_layer=self.last_conv_layer,
                                     posicoes_iniciais_dos_pacotes=positions,
                                     modelo=self.model,
                                     winner_pos=self.labels.index(elect))
-            plt_gradcam(heatmap, imagem, name)
+            plt_gradcam(heatmap, imagem, grad, name)
         return elect
 
     def confusion_matrix(self, x, n_splits: int = 1):

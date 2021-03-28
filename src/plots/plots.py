@@ -20,7 +20,7 @@ def plot_images(images, cmap:str ='gray'):
         plt.imshow(images,cmap)
         plt.show()
 
-def plot_gradcam(heatmap,image, name: str = None):
+def plot_gradcam(heatmap,image, grad: bool = True, name: str = None) -> str:
     """ Plota o gradCam probabilstico recebendo como parametro o
         mapa de calor e a imagem original. Ambos de mesmo tamanho.
 
@@ -44,7 +44,9 @@ def plot_gradcam(heatmap,image, name: str = None):
     fig = plt.figure()
     plt.imshow(superimposed_image)
     # Salvar imagem
+    path = ''
     if name is not None:
         path = '{}.png'.format(name)
         plt.savefig(path,dpi=fig.dpi)
-    plt.show()
+    if grad: plt.show()
+    return path

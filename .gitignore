@@ -4,6 +4,7 @@ build
 dist
 images
 old_data
+outputs
 weights
 *.h5df
 log

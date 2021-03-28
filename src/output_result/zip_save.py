@@ -10,6 +10,6 @@ def zipdir(path, ziph):
                                        os.path.join(path, '..')))
 
 def zipfolder(path:str,name:str):
-    zipf = zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED)
-    zipdir(path,zipf)
-    zip.close()
+    with zipfile.ZipFile(path,'w',zipfile.ZIP_DEFLATED) as zip_file:
+        zipdir(path,zip_file)
+        zip.close()
