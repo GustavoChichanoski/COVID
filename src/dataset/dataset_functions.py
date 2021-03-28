@@ -2,7 +2,7 @@ from typing import List
 import numpy as np
 from os.path import join
 from os import listdir
-
+from pathlib import Path
 
 def normalize_image(x):
     """
@@ -26,7 +26,7 @@ def listdir_full(path: str) -> list:
         (list): lista de strings contendo o caminho todo das imagens.
     """
     filenames = listdir(path)
-    paths = [join(path, filename) for filename in filenames]
+    paths = [path / filename for filename in filenames]
     return paths
 
 
@@ -68,7 +68,7 @@ def proportion_of_files_in_folder(folder_names: List[str],
         Returns:
             (list): proporções de 0 a 1
     """
-    prop = zeros(len(folder_names))
+    prop = np.zeros((1,len(folder_names)))
     total = 0
     files = files_in_folder
     for index, folder in enumerate(files):

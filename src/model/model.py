@@ -2,6 +2,7 @@
     Biblioteca contendo as informações referente ao modelo.
 """
 import os
+from src.model.generator import DataGenerator
 from tensorflow.python.keras.applications.densenet import DenseNet201
 from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
 from tensorflow.python.keras.applications.mobilenet_v2 import MobileNetV2
@@ -36,9 +37,9 @@ from src.images.read_image import read_images as ri
 from src.plots.plots import plot_gradcam as plt_gradcam
 from src.model.metrics.f1_score import F1score
 from src.csv import save_csv as save_csv
+from pathlib import Path
 
-
-class ModelCovid:
+class ModelCovid(Model):
     """[summary]
     """
 
@@ -78,15 +79,13 @@ class ModelCovid:
                                       .get_layer(index=-1).name,
                                   'classifier',
                                   'output']
-        self.last_conv_layer = self.model.layers[0] \
-                                   .get_layer(index=-2).name
-        self.local_result = './result'
+        self.last_conv_layer = self.model.layers[0].get_layer(index=-2).name
 
-    def save(self, path: str = './',
+    def save(self, path: Path,
              name: str = None,
              model: str = '',
              history=None,
-             metric: str = 'val_f1') -> str:
+             metric: str = 'val_f1'):
         """
             Salva os pesos do modelo em um arquivo
             Args:
@@ -94,33 +93,34 @@ class ModelCovid:
         """
         # val_acc = (1 - history['val_loss'][-1])*100
         if name is not None:
-            file = os.path.join(path, name)
-            file_weights = os.path.join(path, name)
+            file = path / name
             self.model.save(file + '.hdf5', overwrite=True)
-            self.model.save_weights(file + '_weights.hdf5', overwrite=True)
-            print("Pesos salvos em {}".format(file))
+            self.model.save_weights(f'{file}_weights.hdf5', overwrite=True)
+            print(f"Pesos salvos em {file}")
             return file + '_weights.hdf5'
+        
         value = 0.00
         file = 'model.hdf5'
+
         if history is not None:
             value = history.history[metric][-1] * 100
-            save_csv(value=history.history, labels=model,
-                     name=os.path.join(self.local_result,'history_{}_{}'.format(model, value)))
-        file = '{}_{}_{:.02f}.hdf5'.format(model, metric, value)
-        file_weights = '{}_{}_{:.02f}_weights.hdf5'.format(
-            model, metric, value)
+            history_path = path / f'history_{model}_{value}'
+            save_csv(value=history.history, labels=model, name=history_path)
+
+        file = path / f'{model}_{metric}_{value:.02f}.hdf5'
         self.model.save(file, overwrite=True)
+
+        file_weights = path / f'{model}_{metric}_{value:.02f}_weights.hdf5'
         self.model.save_weights(file_weights, overwrite=True)
-        print("Pesos salvos em {}".format(file))
-        return file_weights
+
+        print(f"Pesos salvos em {file}")
 
     def load(self, path: str) -> None:
         self.model.load_weights(path)
-        return None
 
     def fit_generator(self,
-                      train_generator,
-                      val_generator,
+                      train_generator: DataGenerator,
+                      val_generator: DataGenerator,
                       epochs: int = 100):
         history = self.model.fit(x=train_generator,
                                  validation_data=val_generator,
@@ -129,24 +129,8 @@ class ModelCovid:
                                  shuffle=True)
         return history
 
-    def fit(self, dataset: Dataset):
-        """
-            Realiza o treinamento do modelo
-            Return:
-                (list): metricas colocadas no compile
-        """
-        train, val, _ = dataset.step()
-        train_x, train_y = train
-        history = self.model.fit(x=train_x,
-                                 y=train_y,
-                                 batch_size=self.batch_size,
-                                 epochs=self.epochs,
-                                 callbacks=get_callbacks(self.weight_path),
-                                 validation_data=val)
-        return history
-
     def compile(self,
-                loss: str = 'sparse_categorical_crossentropy',
+                loss: str = 'categorical_crossentropy',
                 lr: float = 0.01) -> None:
         """Compila o modelo
         """
@@ -239,6 +223,7 @@ def classification(input_shape: tuple = (224, 224, 3),
               'weights': "imagenet",
               'input_shape': input_shape,
               'pooling': "avg"}
+
     resnet = ResNet50V2(**params)
     if model_net == 'VGG19':
         resnet = VGG19(**params)
@@ -272,14 +257,14 @@ def winner(labels: List[str] = ["Covid", "Normal", "Pneumonia"],
             elect (str): label escolhido pelo modelo
     """
     n_class = votes.shape[1]
-    poll = zeros(n_class)
+    poll = np.zeros((1, n_class))
     for vote in votes:
         poll += vote
     elect = labels[np.argmax(poll)]
     return elect
 
 
-def get_metrics() -> List[str]:
+def get_metrics():
     """
         Gera as metricas para o modelo
         Returns:
@@ -303,36 +288,35 @@ def get_callbacks(weight_path: str):
     """
     # Salva os pesos dos modelo para serem carregados
     # caso o monitor não diminua
-    checkpoint = ModelCheckpoint(weight_path,
-                                 monitor='val_loss',
-                                 verbose=1,
-                                 save_best_only=True,
-                                 mode='min',
-                                 save_weights_only=True)
+    check_params = {
+        'monitor': 'val_loss', 'verbose': 1, 'mode': 'min',
+        'save_best_only': True, 'save_weights_only': True
+    }
+    checkpoint = ModelCheckpoint(weight_path, **check_params)
+
     # Reduz o valor de LR caso o monitor nao diminuia
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss',
-                                  factor=0.5,
-                                  patience=3,
-                                  verbose=1,
-                                  mode='min',
-                                  epsilon=1e-3,
-                                  cooldown=2,
-                                  min_lr=1e-8)
+    reduce_params = {
+        'factor': 0.5, 'patience': 3, 'verbose': 1,
+        'mode': 'min', 'epsilon': 1e-3,
+        'cooldown': 2, 'min_lr': 1e-8
+    }
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', **reduce_params)
+    
     # Parada do treino caso o monitor nao diminua
     early_stop = EarlyStopping(monitor='val_f1',
                                mode='min',
                                restore_best_weights=True,
                                patience=40)
+    
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()
+    
     # Habilita a visualizacao no TersorBoard
     tensorboard = TensorBoard(log_dir="./logs")
+    
     # Vetor a ser passado na função fit
-    callbacks = [checkpoint,
-                 early_stop,
-                 reduce_lr,
-                 terminate,
-                 tensorboard]
+    callbacks = [checkpoint, early_stop,
+                 reduce_lr, terminate, tensorboard]
     return callbacks
 
 

@@ -2,6 +2,8 @@
     Biblioteca de funções de leitura de imagens pelos caminhos
 """
 
+from pathlib import Path
+from typing import List, Union
 import cv2 as cv
 
 
@@ -49,7 +51,7 @@ def read_sequencial_image(paths: list,
     return images
 
 
-def read_images(images_paths,
+def read_images(images_paths: Union[List[Path],Path],
                 id_start=0,
                 id_end: int = -1):
     """

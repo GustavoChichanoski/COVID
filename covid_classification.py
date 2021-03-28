@@ -14,6 +14,7 @@ from os.path import join
 from os import listdir
 import numpy as np
 import os
+from pathlib import Path
 
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
@@ -67,19 +68,23 @@ for net_weight in net_weights[0:1]:
 labels = listdir(TRAIN_PATH)
 
 dataset = Dataset(path_data=DATA)
+test = Dataset(path_data=DATA)
+
 train, val = dataset.partition()
+test_values, _val_v = test.partition(1e-5)
 
 params = {'labels': labels, 'dim': DIM_SPLIT,
           'batch_size': BATCH_SIZE,
-          'train': True, 'n_class': len(labels),
+          'n_class': len(labels),
           'shuffle': True, 'channels': 3}
 train_generator = DataGenerator(data=train, **params)
 val_generator = DataGenerator(data=val, **params)
+test_generator = DataGenerator(test_values, **params)
 
 for path_list, model, net_path, net_figure in zip(pesos,
-                                      NETS,
-                                      nets_path,
-                                      net_figures):
+                                                  NETS,
+                                                  nets_path,
+                                                  net_figures):
     path = path_list[-1]
 
     covid = ModelCovid('.model/weightss.best.hfd5',
@@ -101,12 +106,8 @@ for path_list, model, net_path, net_figure in zip(pesos,
                 '{}_{}'.format(model, n))
     # covid.predict(image=TEST, n_splits=n, name=name,grad=False)
 
-    # test = Dataset(path_data=DATA, train=False)
-    # test_values, _val_v = test.partition(1e-5)
-    # test_generator = DataGenerator(test_values, **params)
-
-    # matrix = covid.confusion_matrix(test_generator.x, 1)
-    matrix = np.array([[[3,3,3],[3,3,3],[3,3,3]]])
+    matrix = covid.confusion_matrix(test_generator.x, 1)
+    matrix = np.array([[[3, 3, 3], [3, 3, 3], [3, 3, 3]]])
     plot_dataset(names=labels, absolut=matrix,
                  n_images=1, path=net_figure)
 
