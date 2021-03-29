@@ -1,20 +1,23 @@
 from os.path import join, exists
 from os import mkdir
+from pathlib import Path
 import os
-from typing import List
+from typing import List, Tuple
 
 
 def create_folders(nets: List[str],
                    parent: str = './',
-                   name: str = 'output') -> List[str]:
-    folder = join(parent,name)
+                   name: str = 'output') -> Tuple[List[Path],
+                                                  List[Path],
+                                                  List[Path]]:
+    folder = Path(parent) / name
     if not exists(path=folder):
         mkdir(folder)
     nets_path, weights, figures = [], [], []
     for net in nets:
-        net_path = join(folder,net)
-        weight = join(net_path,'weights')
-        figure = join(net_path,'figures')
+        net_path = folder / net
+        weight = net_path / 'weights'
+        figure = net_path / 'figures'
         if not exists(net_path):
             mkdir(net_path)
         if not exists(weight):
@@ -25,4 +28,3 @@ def create_folders(nets: List[str],
         weights.append(weight)
         figures.append(figure)
     return nets_path, weights, figures
-

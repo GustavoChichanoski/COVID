@@ -32,12 +32,13 @@ from keras.applications import InceptionResNetV2
 from keras.applications import MobileNetV2
 from src.model.grad_cam_split import prob_grad_cam
 from src.images.process_images import split_images_n_times as splits
-from src.dataset.dataset import Dataset, zeros
+from src.dataset.dataset import Dataset
 from src.images.read_image import read_images as ri
 from src.plots.plots import plot_gradcam as plt_gradcam
 from src.model.metrics.f1_score import F1score
 from src.csv import save_csv as save_csv
 from pathlib import Path
+
 
 class ModelCovid(Model):
     """[summary]
@@ -45,7 +46,7 @@ class ModelCovid(Model):
 
     def __init__(self,
                  weight_path: str,
-                 input_shape: tuple = (224, 224, 3),
+                 model_input_shape: tuple = (224, 224, 3),
                  batch_size: int = 32,
                  epochs: int = 10,
                  model: str = 'Resnet50V2',
@@ -56,7 +57,7 @@ class ModelCovid(Model):
             Args:
             -----
                 weight_path (str): Caminho para salvar os pesos.
-                input_shape (tuple, optional): Dimensão das imagens recortadas.
+                input (tuple, optional): Dimensão das imagens recortadas.
                                                Defaults to (224, 224, 3).
                 batch_size (int, optional): pacotes por treinamento.
                                             Defaults to 32.
@@ -65,14 +66,18 @@ class ModelCovid(Model):
                 labels (list, optional): Rotulos de saída.
                                          Defaults to ['Covid','Normal','Pneumonia'].
         """
-        self.input_shape = input_shape
+        super(ModelCovid,self).__init__()
+        self.model_input_shape = model_input_shape
         self.epochs = epochs
         self.batch_size = batch_size
         self.labels = labels
         self.depth = 5
         self.filters = 16
-        self.model = classification(input_shape=self.input_shape,
-                                    n_class=len(self.labels), model_net=model)
+        self.model = classification(
+            shape=self.model_input_shape,
+            n_class=len(self.labels),
+            model_net=model
+        )
         self.weight_path = weight_path
         # Nomes das camadas até a ultima camada de convolução
         self.classifier_layers = [self.model.layers[0]
@@ -98,7 +103,7 @@ class ModelCovid(Model):
             self.model.save_weights(f'{file}_weights.hdf5', overwrite=True)
             print(f"Pesos salvos em {file}")
             return file + '_weights.hdf5'
-        
+
         value = 0.00
         file = 'model.hdf5'
 
@@ -165,9 +170,9 @@ class ModelCovid(Model):
         cuts, positions = splits(imagem, n_splits, verbose=grad)
         cuts = np.array(cuts)
         cuts = cuts.reshape((n_splits,
-                             self.input_shape[0],
-                             self.input_shape[1],
-                             self.input_shape[2]))
+                             self.model_input_shape[0],
+                             self.model_input_shape[1],
+                             self.model_input_shape[2]))
         votes = self.model.predict(cuts)
         elect = winner(self.labels, votes)
         if grad or name is not None:
@@ -186,7 +191,7 @@ class ModelCovid(Model):
         for path in tqdm(x):
             ytrue = None
             for label in self.labels:
-                if label in path:
+                if label in str(path):
                     ytrue = label
             if ytrue is None:
                 ytrue = 'Normal'
@@ -201,7 +206,7 @@ class ModelCovid(Model):
         return None
 
 
-def classification(input_shape: tuple = (224, 224, 3),
+def classification(shape: tuple = (224, 224, 3),
                    n_class: int = 3,
                    model_net: str = 'Resnet50V2',
                    resnet_train: bool = True) -> Model:
@@ -221,7 +226,7 @@ def classification(input_shape: tuple = (224, 224, 3),
     """
     params = {'include_top': False,
               'weights': "imagenet",
-              'input_shape': input_shape,
+              'input_shape': shape,
               'pooling': "avg"}
 
     resnet = ResNet50V2(**params)
@@ -301,19 +306,19 @@ def get_callbacks(weight_path: str):
         'cooldown': 2, 'min_lr': 1e-8
     }
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', **reduce_params)
-    
+
     # Parada do treino caso o monitor nao diminua
     early_stop = EarlyStopping(monitor='val_f1',
                                mode='min',
                                restore_best_weights=True,
                                patience=40)
-    
+
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()
-    
+
     # Habilita a visualizacao no TersorBoard
     tensorboard = TensorBoard(log_dir="./logs")
-    
+
     # Vetor a ser passado na função fit
     callbacks = [checkpoint, early_stop,
                  reduce_lr, terminate, tensorboard]

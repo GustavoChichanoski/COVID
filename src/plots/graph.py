@@ -4,53 +4,27 @@ import numpy as np
 import matplotlib as mlp
 import matplotlib.pyplot as plt
 import seaborn as sns
-from  src.plots import save_as_png as save_png
+from src.plots import save_as_png as save_png
 from seaborn.matrix import heatmap
-
-def sum_list(array):
-    value = 0
-    for i in array:
-        value += i
-    return value
-
-
-def matrix_porc(matrix):
-    porc_matrix = []
-    for row in matrix:
-        sum = sum_list(row)
-        for col in row:
-            porc_matrix.append(col/sum)
-    return np.reshape(porc_matrix, (3, 3))
 
 
 def normalize_confusion_matrix(matrix):
-    norm = []
-    rank = len(matrix)
-    for i in matrix:
-        norm.append(matrix_porc(i))
-    norm = np.reshape(norm,matrix.shape)
-    return norm
-
-
-def total_true(entrada):
-    sum = np.zeros(len(entrada))
-    i = 0
-    for y in entrada:
-        for x in y:
-            sum[i] += x
-        i += 1
-    return sum
+    norm = np.array([])
+    if len(matrix.shape) > 2:
+        for split in matrix:
+            norm = np.append(norm, [row / np.sum(row) for row in split])
+    else:
+        norm = np.append(norm, [row / np.sum(row) for row in matrix])
+    return np.reshape(norm, matrix.shape)
 
 
 def dist_dataset(matrix, porc, category_names, n_splits):
 
-    results = {category_names[i]: porc[i][:]
-               for i in range(len(category_names))}
+    results = {category_names[i]: porc[i][:] for i in range(len(category_names))}
     labels = list(results.keys())
     data = np.array(list(results.values()))
     data_cum = data.cumsum(axis=1)
-    category_colors = plt.get_cmap('RdYlGn')(
-        np.linspace(0.15, 0.85, data.shape[1]))
+    category_colors = plt.get_cmap('RdYlGn')(np.linspace(0.15, 0.85, data.shape[1]))
 
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.invert_yaxis()
@@ -79,11 +53,11 @@ def dist_dataset(matrix, porc, category_names, n_splits):
 
 
 def plot_dataset(absolut=None,
-                 n_images: List[int] = [1,2,3,4],
+                 n_images: List[int] = [1, 2, 3, 4],
                  names: List[int] = ['COVID-19', 'Normal', 'Pneumonia'],
                  path: str = None,
                  overwrite: bool = True):
-    
+
     perc = normalize_confusion_matrix(absolut)
     if isinstance(n_images, list):
         for i in range(len(n_images)):
@@ -113,7 +87,7 @@ def plot_dataset(absolut=None,
 
     fig, ax = plt.subplots()
     im, cbar = heatmap(np.array(absolut[0]), names, names, ax=ax,
-                    cmap='Blues', cbarlabel=None)
+                       cmap='Blues', cbarlabel=None)
 
     texts = annotate_heatmap(im, valfmt="{x}")
 
@@ -131,20 +105,21 @@ def plot_dataset(absolut=None,
     #             i += 1
     #     plt.savefig(fig_path,dpi=fig.dpi)
     plt.show()
-    mc_path = os.path.join(path,'mc_{}_pacotes.png'.format(n_images))
+    mc_path = os.path.join(path, 'mc_{}_pacotes.png'.format(n_images))
     if os.path.exists(mc_path):
         if overwrite:
             i = 0
             mc_path = mc_path[:-4]
-            fig_path = '{}_{}.png'.format(mc_path,i)
+            fig_path = '{}_{}.png'.format(mc_path, i)
             while os.path.exists(fig_path):
                 i += 1
-                fig_path = '{}_{}.png'.format(mc_path,i)
-            plt.savefig(fig_path,dpi=fig.dpi)
+                fig_path = '{}_{}.png'.format(mc_path, i)
+            plt.savefig(fig_path, dpi=fig.dpi)
             return fig_path
         print('[save_png] Arquivo já existe: {}'.format(path))
         return mc_path
-    plt.savefig(mc_path,dpi=fig.dpi)
+    plt.savefig(mc_path, dpi=fig.dpi)
+
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -276,8 +251,10 @@ def test():
     matrix50 = [[272, 1, 9], [1, 524, 25], [1, 18, 856]]
     ideal = [[282, 0, 0], [0, 550, 0], [0, 0, 875]]
 
-    matrix = np.array([matrix1, matrix2, matrix3, matrix4, matrix5, matrix10, matrix50])
-    plot_dataset(['Covid','Normal','Pneumonia'],matrix)
+    matrix = np.array([matrix1, matrix2, matrix3, matrix4,
+                       matrix5, matrix10, matrix50])
+    plot_dataset(['Covid', 'Normal', 'Pneumonia'], matrix)
+
 
 if __name__ == '__main__':
     test()

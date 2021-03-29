@@ -3,13 +3,11 @@
 """
 from os.path import join
 from os import listdir
-from src.dataset.dataset_functions import get_folders_names, listdir_full, proportion_of_files_in_folder, zeros
 from typing import Any, List, Optional, Tuple
-from src.images.process_images import split_images_n_times as splits
 import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 
 @dataclass
@@ -21,7 +19,6 @@ class Dataset:
     dimension_original: int = 1024
     dimension_cut: int = 224
     channels: int = 3
-
 
     _lazy_label_names: Optional[List[Path]] = None
     _lazy_files_in_folder: Optional[List[Path]] = None
@@ -43,7 +40,7 @@ class Dataset:
                 (list): nomes dos arquivos nas pastas
         """
         if self._lazy_files_in_folder is None:
-            self._lazy_files_in_folder = [(list(folder.iterdir()) for folder in self.label_names)]
+            self._lazy_files_in_folder = [list(folder.iterdir()) for folder in self.label_names]
         return self._lazy_files_in_folder
 
     @property
@@ -58,25 +55,29 @@ class Dataset:
         """Retorna 
 
         Returns:
-            numpy.array: 
+            numpy.array:
         """
         if self._lazy_y is None:
-            label_eye = np.eye(len(self.label_names))
+            labels = list(self.label_names)
+            len_labels = len(labels)
+            label_eyes = np.eye(len_labels)
+            files = list(self.files_in_folder)
             outputs = []
-            for i in range(len(self.label_names)):
-                out = [label_eye[i]] * len(self.files_in_folder[i])
+            for label_eye, file in zip(label_eyes, files):
+                out = [label_eye] * len(file)
                 outputs = np.append(outputs, out)
-            self._lazy_y = outputs.reshape(len(self.x), len(self.label_names))
+            outputs = np.array(outputs)
+            self._lazy_y = outputs.reshape(len(self.x), len_labels)
         return self._lazy_y
 
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
-            self._lazy_x = sum(self.files_in_folder,[])
+            self._lazy_x = sum(list(self.files_in_folder), [])
         return self._lazy_x
 
     def partition(self,
-                  val_size: float = 0.2) -> Tuple[Tuple[Any,Any],Tuple[Any,Any]]:
+                  val_size: float = 0.2) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
         """ Retorna a entrada e saidas dos keras.
 
             Args:

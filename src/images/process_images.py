@@ -250,10 +250,10 @@ def split_images_n_times(image,
 def split_images(image, dim: int = 224):
     # Define os pixels em que a imgem começa
     y_nonzero, x_nonzero, _ = np.nonzero(image)
-    pixel_start, pixel_end = (np.min(y_nonzero),np.max(y_nonzero)), (np.min(x_nonzero),np.max(x_nonzero))
+    pixel_start, pixel_end = (np.min(y_nonzero),np.min(x_nonzero)), (np.max(y_nonzero),np.max(x_nonzero))
 
     # Recebe um corte da imagem não inteiramente preto
-    cut, _ = create_non_black_cut(image,
+    cut, _pos = create_non_black_cut(image,
                                   pixel_start,
                                   pixel_end,
                                   dim)
@@ -279,6 +279,11 @@ def create_non_black_cut(image,
         Returns:
             numpy.array: recorte da imagem nao totalmente preta
     """
+    if start[1] > end[1] - dim and start[0] > end[0] - dim:
+        end = (start[0] + dim + 10, start[1] + dim + 10)
+        pos = random_pixel(start, end, dim)
+        recort = create_recort(image, pos, dim)
+        return recort, pos
     if start[1] > end[1] - dim:
         end = (end[0], start[1] + dim + 10)
         pos = random_pixel(start, end, dim)

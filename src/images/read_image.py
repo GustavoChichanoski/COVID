@@ -75,5 +75,5 @@ def read_images(images_paths: Union[List[Path],Path],
                 id_end = len(images_paths)
             return read_sequencial_image(images_paths, id_start, id_end)
         return read_random_image(images_paths, id_start)
-    image = cv.imread(images_paths)
+    image = cv.imread(str(images_paths))
     return image

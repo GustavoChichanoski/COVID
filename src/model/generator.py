@@ -1,4 +1,4 @@
-from fix_images import read_image
+from src.images.read_image import read_images
 from typing import List
 import numpy as np
 import math
@@ -36,7 +36,7 @@ class DataGenerator(Sequence):
         return batch_x, batch_y
 
     def split(self, paths_images_in_batch, batch_size):
-        images = (read_image(path) for path in paths_images_in_batch)
+        images = (read_images(path) for path in paths_images_in_batch)
         splited_images = [split_images(image,self.dim) for image in images]
         cuts = np.array(splited_images)
         cuts.shape = (batch_size, self.dim, self.dim, self.channels)
