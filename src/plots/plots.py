@@ -1,12 +1,20 @@
 """
     Bibliotecas referente aos plots do projeto
 """
+from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 import cv2 as cv
 from keras.preprocessing.image import array_to_img
 from keras.preprocessing.image import img_to_array
+from tensorflow.python import keras
+
+def plot_model(path: Path, model: keras.Model) -> str:
+    for layers in model.layers:
+        for layer in layers.layers:
+            config = layer.get_config()
+    return "None"
 
 def plot_images(images, cmap:str ='gray'):
     """Plotas as imagens passafas em images

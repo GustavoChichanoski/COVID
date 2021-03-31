@@ -11,7 +11,8 @@ DIM_SPLIT = 224
 DIM_ORIG = 1024
 K_SPLIT = 100
 SCALE = 255
-THRESHOLD = 1279488 # 224 * 224 * 255 * .1
+THRESHOLD = 1279488  # 224 * 224 * 255 * .1
+
 
 def invert_image(image):
     '''
@@ -247,16 +248,18 @@ def split_images_n_times(image,
         cut_pos.append(pos)  # Armaxena o pixel inicial do corte
     return cut_img, cut_pos
 
+
 def split_images(image, dim: int = 224):
     # Define os pixels em que a imgem começa
     y_nonzero, x_nonzero, _ = np.nonzero(image)
-    pixel_start, pixel_end = (np.min(y_nonzero),np.min(x_nonzero)), (np.max(y_nonzero),np.max(x_nonzero))
+    pixel_start, pixel_end = (np.min(y_nonzero), np.min(
+        x_nonzero)), (np.max(y_nonzero), np.max(x_nonzero))
 
     # Recebe um corte da imagem não inteiramente preto
     cut, _pos = create_non_black_cut(image,
-                                  pixel_start,
-                                  pixel_end,
-                                  dim)
+                                     pixel_start,
+                                     pixel_end,
+                                     dim)
     cut_norm = normalize_image(cut)
     return cut_norm
 
@@ -302,6 +305,7 @@ def create_non_black_cut(image,
         recort = create_recort(image, pos, dim)
         soma = np.sum(recort)
     return recort, pos
+
 
 def create_recort(image,
                   pos_start: tuple = (0, 0),

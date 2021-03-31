@@ -4,13 +4,10 @@
 from typing import List
 import numpy as np
 import tensorflow as tf
-from keras.models import Model
 from keras import Input
-import keras.backend as K
+from keras.models import Model
 from src.images.process_images import resize_image as resize
 from src.images.process_images import relu as relu_img
-from src.images.process_images import normalize_image as norm
-from src.model.keract import get_activations
 
 
 def prob_grad_cam(pacotes_da_imagem,

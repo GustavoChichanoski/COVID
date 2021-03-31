@@ -1,24 +1,22 @@
 """
     Biblioteca contendo as informações referente ao modelo.
 """
-import os
-from src.model.generator import DataGenerator
+from tensorflow.python.keras.callbacks import CSVLogger
 from tensorflow.python.keras.applications.densenet import DenseNet201
 from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
 from tensorflow.python.keras.applications.mobilenet_v2 import MobileNetV2
-from tensorflow.python.ops.gen_array_ops import unique
-from src.model.keract import n_
-from typing import Any, List
+from typing import Any, List, Tuple
 import numpy as np
 from tqdm import tqdm
 from keras import Model
 from keras import regularizers
-from keras.layers import Input
 from keras.layers import Dense
 from keras import Sequential
 from keras.layers import Conv2D
 from keras.layers import Activation
 from keras.layers import BatchNormalization
+from keras.metrics import Metric
+from keras.callbacks import Callback
 from keras.callbacks import ModelCheckpoint
 from keras.callbacks import EarlyStopping
 from keras.callbacks import TensorBoard
@@ -30,13 +28,13 @@ from keras.applications import VGG19
 from keras.applications import DenseNet201
 from keras.applications import InceptionResNetV2
 from keras.applications import MobileNetV2
+from src.model.generator import DataGenerator
 from src.model.grad_cam_split import prob_grad_cam
 from src.images.process_images import split_images_n_times as splits
-from src.dataset.dataset import Dataset
 from src.images.read_image import read_images as ri
 from src.plots.plots import plot_gradcam as plt_gradcam
 from src.model.metrics.f1_score import F1score
-from src.csv import save_csv as save_csv
+from src.csv.save_csv import save_as_csv as save_csv
 from pathlib import Path
 
 
@@ -48,7 +46,6 @@ class ModelCovid(Model):
                  weight_path: str,
                  model_input_shape: tuple = (224, 224, 3),
                  batch_size: int = 32,
-                 epochs: int = 10,
                  model: str = 'Resnet50V2',
                  labels: List[str] = ['Covid', 'Normal', 'Pneumonia']):
         """
@@ -68,11 +65,7 @@ class ModelCovid(Model):
         """
         super(ModelCovid,self).__init__()
         self.model_input_shape = model_input_shape
-        self.epochs = epochs
-        self.batch_size = batch_size
         self.labels = labels
-        self.depth = 5
-        self.filters = 16
         self.model = classification(
             shape=self.model_input_shape,
             n_class=len(self.labels),
@@ -104,34 +97,39 @@ class ModelCovid(Model):
             print(f"Pesos salvos em {file}")
             return file + '_weights.hdf5'
 
-        value = 0.00
+        value = 100.00
         file = 'model.hdf5'
 
         if history is not None:
-            value = history.history[metric][-1] * 100
-            history_path = path / f'history_{model}_{value}'
-            save_csv(value=history.history, labels=model, name=history_path)
+            value = history[metric][-1] * 100
+            history_path = path / 'history' / f'history_{model}_{value}'
+            save_csv(value=history, name=history_path)
 
         file = path / f'{model}_{metric}_{value:.02f}.hdf5'
         self.model.save(file, overwrite=True)
 
-        file_weights = path / f'{model}_{metric}_{value:.02f}_weights.hdf5'
+        file_weights = path / 'weights' / f'{model}_{metric}_{value:.02f}_weights.hdf5'
         self.model.save_weights(file_weights, overwrite=True)
 
         print(f"Pesos salvos em {file}")
+        return file_weights
 
-    def load(self, path: str) -> None:
-        self.model.load_weights(path)
+    def load(self, path: Path) -> None:
+        self.model.load_weights(str(path))
 
-    def fit_generator(self,
-                      train_generator: DataGenerator,
-                      val_generator: DataGenerator,
-                      epochs: int = 100):
+    def fit_generator(
+        self,
+        train_generator: DataGenerator, val_generator: DataGenerator,
+        epochs: int = 100, shuffle: bool = True, workers: int = 1,
+        batch_size: int = 32
+    ):
         history = self.model.fit(x=train_generator,
                                  validation_data=val_generator,
                                  callbacks=get_callbacks(self.weight_path),
                                  epochs=epochs,
-                                 shuffle=True)
+                                 batch_size=batch_size,
+                                 shuffle=shuffle,
+                                 workers=workers)
         return history
 
     def compile(self,
@@ -143,13 +141,11 @@ class ModelCovid(Model):
         self.model.compile(optimizer=opt,
                            loss=loss,
                            metrics=get_metrics())
-        self.model.summary()
         return None
 
-    def predict(self, image: str,
-                n_splits: int = 100,
-                name: str = None,
-                grad: bool = True) -> str:
+    def predict(
+        self, image: str, n_splits: int = 100,
+        name: str = None, grad: bool = True) -> str:
         """
             Realiza a predição do modelo
 
@@ -201,12 +197,12 @@ class ModelCovid(Model):
             matriz[true_index][index] += 1
         return matriz
 
-    def custom_model(self, model) -> None:
+    def custom_model(self, model: Model) -> None:
         self.model = model
         return None
 
 
-def classification(shape: tuple = (224, 224, 3),
+def classification(shape: Tuple[int,int,int] = (224, 224, 3),
                    n_class: int = 3,
                    model_net: str = 'Resnet50V2',
                    resnet_train: bool = True) -> Model:
@@ -229,7 +225,6 @@ def classification(shape: tuple = (224, 224, 3),
               'input_shape': shape,
               'pooling': "avg"}
 
-    resnet = ResNet50V2(**params)
     if model_net == 'VGG19':
         resnet = VGG19(**params)
     elif model_net == 'InceptionResNetV2':
@@ -237,7 +232,9 @@ def classification(shape: tuple = (224, 224, 3),
     elif model_net == 'MobileNetV2':
         resnet = MobileNetV2(**params)
     elif model_net == 'DenseNet201':
-        resnet == DenseNet201(**params)
+        resnet = DenseNet201(**params)
+    else:
+        resnet = ResNet50V2(**params)
     resnet.trainable = resnet_train
     output = Sequential([resnet,
                          Dense(n_class,
@@ -269,7 +266,7 @@ def winner(labels: List[str] = ["Covid", "Normal", "Pneumonia"],
     return elect
 
 
-def get_metrics():
+def get_metrics() -> List[Metric]:
     """
         Gera as metricas para o modelo
         Returns:
@@ -281,7 +278,7 @@ def get_metrics():
     return metrics
 
 
-def get_callbacks(weight_path: str):
+def get_callbacks(weight_path: str) -> List[Callback]:
     """
         Retorna a lista callbacks do modelo
         Args:
@@ -302,26 +299,27 @@ def get_callbacks(weight_path: str):
     # Reduz o valor de LR caso o monitor nao diminuia
     reduce_params = {
         'factor': 0.5, 'patience': 3, 'verbose': 1,
-        'mode': 'min', 'epsilon': 1e-3,
+        'mode': 'min', 'min_delta': 1e-3,
         'cooldown': 2, 'min_lr': 1e-8
     }
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', **reduce_params)
 
     # Parada do treino caso o monitor nao diminua
-    early_stop = EarlyStopping(monitor='val_f1',
-                               mode='min',
-                               restore_best_weights=True,
-                               patience=40)
+    stop_params = {'mode':'min', 'restore_best_weights':True, 'patience':40}
+    early_stop = EarlyStopping(monitor='val_f1', **stop_params)
 
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()
 
     # Habilita a visualizacao no TersorBoard
-    tensorboard = TensorBoard(log_dir="./logs")
+    # tensorboard = TensorBoard(log_dir="./logs")
+
+    # Armazena os dados gerados no treinamento em um CSV
+    # csv_logger = CSVLogger('./logs/trainig.log', append=True)
 
     # Vetor a ser passado na função fit
-    callbacks = [checkpoint, early_stop,
-                 reduce_lr, terminate, tensorboard]
+    # callbacks = [checkpoint, early_stop, reduce_lr, terminate, tensorboard, csv_logger]
+    callbacks = [checkpoint, early_stop, reduce_lr, terminate]
     return callbacks
 
 

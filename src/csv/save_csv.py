@@ -1,30 +1,25 @@
 import pandas as pd
 import os
-from typing import Any, List
-import numpy as np
-import numpy.random as rd
-
-
-def add_csv(file: str) -> str:
-    return '{}.csv'.format(file)
-
+from typing import Any
+from pathlib import Path
 
 def save_as_csv(value: Any,
-                labels: List[str],
-                path: str = './',
-                name: str = 'matrix',
+                path: Path = Path('./'),
+                name: Path = Path('matrix'),
                 verbose: bool = False,
-                overwrite: bool = True) -> str:
-    path_file = os.path.join(path, add_csv(name))
-    i = 0
+                overwrite: bool = True) -> Path:
+
+    path_file = path / f'{name}.csv'
     data = pd.DataFrame.from_dict(value)
-    compression_opts = dict(method='zip',
-                            archive_name='out.csv')
+
+    i = 0
     while os.path.exists(path_file) and not overwrite:
-        rename = '{}_{}'.format(name, i)
-        path_file = add_csv(rename)
-        i += i
+        path_file = path / f'{name}_{i}.csv'
+        i += 1
+
     data.to_csv(path_file, index=False)
+
     if verbose:
-        print('Valor salvo no arquivo: `{}'.format(path_file))
+        print(f'Valor salvo no arquivo: {path_file}')
+
     return path_file

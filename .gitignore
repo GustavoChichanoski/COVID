@@ -11,3 +11,5 @@ log
 .model
 .vscode
 __pycache__
+logs
+PlotNeuralNet
