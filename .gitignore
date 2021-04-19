@@ -13,3 +13,9 @@ log
 __pycache__
 logs
 PlotNeuralNet
+fig
+test
+*.code-workspace
+*.ini
+*.png
+.pytest_cach
