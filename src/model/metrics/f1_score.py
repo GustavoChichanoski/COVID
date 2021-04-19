@@ -1,17 +1,16 @@
 import tensorflow as tf
 import keras
-import keras.metrics as m
+from keras.metrics import Metric
 import keras.backend as K
 
-
-class F1score(m.Metric):
+class F1score(Metric):
 
     def __init__(self, name='f1', **kwargs) -> None:
         super(F1score, self).__init__(name=name, **kwargs)
-        self.f1score = self.add_weight(name='tp', initializer='zeros')
+        self.score = self.add_weight(name='tp', initializer='zeros')
 
     def result(self):
-        return self.f1score
+        return self.score
 
     def update_state(self, y_true, y_pred, sample_weight=None):
         y_true = tf.cast(K.round(K.clip(y_true, 0, 1)), tf.bool)
@@ -20,7 +19,9 @@ class F1score(m.Metric):
         tn = self.true_negative(y_true, y_pred, sample_weight)
         fp = self.false_positive(y_true, y_pred, sample_weight)
         fn = self.false_negative(y_true, y_pred, sample_weight)
-        self.f1score = self.f1_score(tp, tn, fp, fn)
+        self.score = self.score.assign_add(
+            tf.reduce_sum(self.f1_score(tp, tn, fp, fn))
+        )
 
 
     def false_negative(self, y_true, y_pred, sample_weight):
@@ -65,4 +66,4 @@ class F1score(m.Metric):
         return 2 * (precision * recall) / (precision + recall)
 
     def reset_state(self):
-        self.f1score.assign(0)
+        self.score.assign(0)

@@ -23,11 +23,11 @@ from keras.callbacks import TensorBoard
 from keras.callbacks import TerminateOnNaN
 from keras.callbacks import ReduceLROnPlateau
 from keras.optimizers import Adamax
-from keras.applications import ResNet50V2
-from keras.applications import VGG19
-from keras.applications import DenseNet201
-from keras.applications import InceptionResNetV2
-from keras.applications import MobileNetV2
+from keras.applications.resnet_v2 import ResNet50V2
+from keras.applications.vgg19 import VGG19
+from keras.applications.densenet import DenseNet201
+from keras.applications.inception_resnet_v2 import InceptionResNetV2
+from keras.applications.mobilenet_v3 import MobileNetV3
 from src.model.generator import DataGenerator
 from src.model.grad_cam_split import prob_grad_cam
 from src.images.process_images import split_images_n_times as splits
@@ -64,6 +64,7 @@ class ModelCovid(Model):
                                          Defaults to ['Covid','Normal','Pneumonia'].
         """
         super(ModelCovid,self).__init__()
+        self.batch_size = batch_size
         self.model_input_shape = model_input_shape
         self.labels = labels
         self.model = classification(
@@ -92,7 +93,7 @@ class ModelCovid(Model):
         # val_acc = (1 - history['val_loss'][-1])*100
         if name is not None:
             file = path / name
-            self.model.save(file + '.hdf5', overwrite=True)
+            self.model.save(f'{file}.hdf5', overwrite=True)
             self.model.save_weights(f'{file}_weights.hdf5', overwrite=True)
             print(f"Pesos salvos em {file}")
             return file + '_weights.hdf5'
@@ -134,18 +135,23 @@ class ModelCovid(Model):
 
     def compile(self,
                 loss: str = 'categorical_crossentropy',
-                lr: float = 0.01) -> None:
+                lr: float = 0.01, **params) -> None:
         """Compila o modelo
         """
         opt = Adamax(learning_rate=lr)
         self.model.compile(optimizer=opt,
                            loss=loss,
-                           metrics=get_metrics())
+                           metrics=get_metrics(),
+                           **params)
         return None
 
     def predict(
-        self, image: str, n_splits: int = 100,
-        name: str = None, grad: bool = True) -> str:
+        self,
+        image: str,
+        n_splits: int = 100,
+        name: str = None,
+        grad: bool = True
+    ) -> str:
         """
             Realiza a predição do modelo
 
@@ -189,6 +195,7 @@ class ModelCovid(Model):
             for label in self.labels:
                 if label in str(path):
                     ytrue = label
+                    break
             if ytrue is None:
                 ytrue = 'Normal'
             elect = self.predict(image=path, n_splits=n_splits, grad=False)
@@ -329,9 +336,7 @@ def conv_class(layer,
                act: str = "relu",
                i: int = 1) -> Any:
     # Define os nomes das layers
-    conv_name = "CV_{}".format(i)
-    bn_name = "BN_{}".format(i)
-    act_name = "Act_{}".format(i)
+    conv_name, bn_name, act_name = f"CV_{i}", f"BN_{i}", f"Act_{i}"
 
     layer = Conv2D(filters=filters,
                    kernel_size=kernel,

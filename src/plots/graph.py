@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 import os
 import numpy as np
@@ -12,19 +13,25 @@ def normalize_confusion_matrix(matrix):
     norm = np.array([])
     if len(matrix.shape) > 2:
         for split in matrix:
-            norm = np.append(norm, [row / np.sum(row) for row in split])
-    else:
-        norm = np.append(norm, [row / np.sum(row) for row in matrix])
+            norm = np.append(norm, normalize_confusion_matrix(split))
+            return np.reshape(norm, matrix.shape)
+    for row in matrix:
+            sum = np.sum(row)
+            if sum == 0:
+                sum = 1
+            norm = np.append(norm, row / sum)
     return np.reshape(norm, matrix.shape)
 
 
 def dist_dataset(matrix, porc, category_names, n_splits):
 
-    results = {category_names[i]: porc[i][:] for i in range(len(category_names))}
+    results = {category_names[i]: porc[i][:]
+               for i in range(len(category_names))}
     labels = list(results.keys())
     data = np.array(list(results.values()))
     data_cum = data.cumsum(axis=1)
-    category_colors = plt.get_cmap('RdYlGn')(np.linspace(0.15, 0.85, data.shape[1]))
+    category_colors = plt.get_cmap('RdYlGn')(
+        np.linspace(0.15, 0.85, data.shape[1]))
 
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.invert_yaxis()
@@ -34,8 +41,8 @@ def dist_dataset(matrix, porc, category_names, n_splits):
     for i, (colname, color) in enumerate(zip(category_names, category_colors)):
         widths = data[:, i]
         starts = data_cum[:, i] - widths
-        ax.barh(labels, widths, left=starts, height=0.5,
-                label=colname, color=color)
+        ax.barh(labels, widths, left=starts,
+                height=0.5, label=colname, color=color)
         xcenters = starts + widths / 2
         r, g, b, _ = color
         text_color = 'white' if r * g * b < 0.5 else 'black'
@@ -46,28 +53,28 @@ def dist_dataset(matrix, porc, category_names, n_splits):
     ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 1),
               loc='lower left', fontsize='small')
     if n_splits == 1:
-        ax.set_title('{} imagem'.format(n_splits))
+        ax.set_title(f'{n_splits} imagem')
     else:
-        ax.set_title('{} imagens'.format(n_splits))
+        ax.set_title(f'{n_splits} imagens')
     return fig, ax
 
 
 def plot_dataset(absolut=None,
                  n_images: List[int] = [1, 2, 3, 4],
                  names: List[int] = ['COVID-19', 'Normal', 'Pneumonia'],
-                 path: str = None,
+                 path: Path = None,
                  overwrite: bool = True):
 
     perc = normalize_confusion_matrix(absolut)
     if isinstance(n_images, list):
         for i in range(len(n_images)):
-            dist_dataset(absolut[i], perc[i], names, n_images[i])
+            dist_dataset(absolut[i], perc, names, n_images[i])
     else:
-        dist_dataset(absolut[0], perc[0], names, n_images)
+        dist_dataset(absolut, perc, names, n_images)
     plt.show()
 
     fig, ax = plt.subplots()
-    im = ax.imshow(absolut[0])
+    im = ax.imshow(absolut)
     ax.set_xticks(np.arange(len(names)))
     ax.set_yticks(np.arange(len(names)))
     ax.set_xticklabels(names)
@@ -78,7 +85,7 @@ def plot_dataset(absolut=None,
 
     for i in range(len(names)):
         for j in range(len(names)):
-            text = ax.text(j, i, absolut[0][i][j],
+            text = ax.text(j, i, absolut[i][j],
                            ha='center', va='center', color='w')
 
     ax.set_title('Matriz Confusao')
@@ -86,7 +93,7 @@ def plot_dataset(absolut=None,
     plt.show()
 
     fig, ax = plt.subplots()
-    im, cbar = heatmap(np.array(absolut[0]), names, names, ax=ax,
+    im, cbar = heatmap(np.array(absolut), names, names, ax=ax,
                        cmap='Blues', cbarlabel=None)
 
     texts = annotate_heatmap(im, valfmt="{x}")
@@ -105,18 +112,18 @@ def plot_dataset(absolut=None,
     #             i += 1
     #     plt.savefig(fig_path,dpi=fig.dpi)
     plt.show()
-    mc_path = os.path.join(path, 'mc_{}_pacotes.png'.format(n_images))
-    if os.path.exists(mc_path):
+    mc_path = path / f'mc_{n_images}_pacotes.png'
+    if mc_path.exists():
         if overwrite:
             i = 0
-            mc_path = mc_path[:-4]
-            fig_path = '{}_{}.png'.format(mc_path, i)
+            mc_path = str(mc_path.absolute())[:-4]
+            fig_path = f'{mc_path}_{i}.png'
             while os.path.exists(fig_path):
                 i += 1
-                fig_path = '{}_{}.png'.format(mc_path, i)
+                fig_path = f'{mc_path}_{i}.png'
             plt.savefig(fig_path, dpi=fig.dpi)
             return fig_path
-        print('[save_png] Arquivo já existe: {}'.format(path))
+        print(f'[PLOT] Arquivo já existe: {str(path)}')
         return mc_path
     plt.savefig(mc_path, dpi=fig.dpi)
 
@@ -217,7 +224,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
     if threshold is not None:
         threshold = im.norm(threshold)
     else:
-        threshold = im.norm(data.max())/2.
+        threshold = im.norm(data.max()) / 2.0
 
     # Set default alignment to center, but allow it to be
     # overwritten by textkw.

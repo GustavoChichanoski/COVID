@@ -76,8 +76,11 @@ class Dataset:
             self._lazy_x = sum(list(self.files_in_folder), [])
         return self._lazy_x
 
-    def partition(self,
-                  val_size: float = 0.2) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
+    def partition(
+        self,
+        val_size: float = 0.2,
+        test: bool = False
+    ) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
         """ Retorna a entrada e saidas dos keras.
 
             Args:
@@ -89,9 +92,15 @@ class Dataset:
                 (test), (val): Saida para o keras.
         """
         # t : train - v : validation
+        if test:
+            x = self.x[0:4]
+            y = self.y[0:4]
+        else:
+            x = self.x
+            y = self.y
         train_in, val_in, train_out, val_out = train_test_split(
-            self.x,
-            self.y,
+            x,
+            y,
             test_size=val_size,
             shuffle=True
         )
