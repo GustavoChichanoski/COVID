@@ -4,8 +4,9 @@
 from typing import List
 import numpy as np
 import tensorflow as tf
-from keras import Input
-from keras.models import Model
+from tensorflow.python.keras import Input
+from tensorflow.python.keras.models import Model
+from tensorflow.python.ops.gen_nn_ops import MaxPool
 from src.images.process_images import resize_image as resize
 from src.images.process_images import relu as relu_img
 
@@ -34,7 +35,6 @@ def prob_grad_cam(pacotes_da_imagem,
         --------
             (np.array): Grad Cam dos recortes
     """
-
     # Inicializa a imagem final do grad cam com zeros
     grad_cam_prob = np.zeros((dim_orig, dim_orig))
     # Armazena o numero de pacotes que passaram por um pixel
@@ -75,10 +75,12 @@ def prob_grad_cam(pacotes_da_imagem,
     return grad_cam_prob
 
 
-def somar_grads_cam(grad_cam_atual: List[int],
-                    grad_cam_split: List[int],
-                    pixels_usados: List[int],
-                    inicio: tuple = (0, 0)):
+def somar_grads_cam(
+    grad_cam_atual: List[int],
+    grad_cam_split: List[int],
+    pixels_usados: List[int],
+    inicio: tuple = (0, 0)
+):
     """
         Realiza a soma do GradCam gerado pelo GradCam do
         recorte, com a matriz que será o GradCam final.
@@ -113,8 +115,10 @@ def somar_grads_cam(grad_cam_atual: List[int],
     return (grad_cam_atual, pixels_usados)
 
 
-def divisao_pacotes_por_pixel(pacotes_por_pixel: List[int],
-                              grad_cam_prob: List[int]):
+def divisao_pacotes_por_pixel(
+    pacotes_por_pixel: List[int],
+    grad_cam_prob: List[int]
+):
     """ Divide os numeros de pacotes de pixeis pela
         grad cam do pacote gerado pela função para
         gerar o grad cam probabilistico.
@@ -139,10 +143,12 @@ def divisao_pacotes_por_pixel(pacotes_por_pixel: List[int],
     return grad_cam_prob
 
 
-def grad_cam(image,
-             model,
-             classifier_layer_names: List[str],
-             last_conv_layer_name: str = 'avg_pool'):
+def grad_cam(
+    image,
+    model,
+    classifier_layer_names: List[str],
+    last_conv_layer_name: str = 'avg_pool'
+):
     """ Gera o mapa de processamento da CNN.
 
         Args:
@@ -235,10 +241,12 @@ def grads_calc(tape: tf.GradientTape,
     return pesos
 
 
-def model_after(last_conv_layer,
-                resnet_model,
-                model,
-                classifier_layer_names: List[str]):
+def model_after(
+    last_conv_layer,
+    resnet_model: Model,
+    model: Model,
+    classifier_layer_names: List[str]
+) -> Model:
     """Cria apenas o modelo de classificação do modelo passado pelo usuario
 
         Args:
@@ -260,9 +268,7 @@ def model_after(last_conv_layer,
             layer = resnet_model.get_layer(layer_name)(layer)
         except ValueError:
             layer = model.get_layer(layer_name)(layer)
-    classifier_model = Model(classifier_input, layer)
-    return classifier_model
-
+    return Model(classifier_input, layer)
 
 def create_heatmap(last_conv_layer_output,
                    dimensao_saida: int = 224):
@@ -284,8 +290,7 @@ def create_heatmap(last_conv_layer_output,
     # Normalização do heatmap
     heatmap = np.array(heatmap)
     heatmap = relu_img(heatmap)
-    heatmap = resize(heatmap, dimensao_saida)
-    return heatmap
+    return resize(heatmap, dimensao_saida)
 
 
 def normalize(x):

@@ -1,8 +1,7 @@
 from src.images.read_image import read_images
 from typing import List
 import numpy as np
-import math
-from keras.utils.all_utils import Sequence
+from tensorflow.python.keras.utils.all_utils import Sequence
 from src.dataset.dataset import Dataset
 from src.images.process_images import split_images
 from src.images.read_image import read_images

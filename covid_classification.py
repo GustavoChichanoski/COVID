@@ -3,6 +3,7 @@
     O Objetivo desse programa é classificar raios-x dos pulmões entre pacientes
     normais, com pneumonia ou com covid-19
 """
+from src.plots.history import plot_history
 from src.output_result.folders import create_folders, remove_folder
 from src.plots.graph import plot_dataset
 from src.model.model import ModelCovid
@@ -49,7 +50,7 @@ TEST_PATH = DATA / 'test'
 TEST = TEST_PATH / 'Covid/0000.png'
 CWD = Path.cwd()
 OUTPUT_PATH = CWD / 'outputs'
-CLEAR = False
+CLEAR = True
 
 if CLEAR:
     remove_folder([OUTPUT_PATH, Path('./logs'), Path('./build')])
@@ -133,6 +134,8 @@ for model, net_path in zip(NETS, nets_path):
             history=history.history,
             metric='accuracy'
         )
+
+        plot_history(history)
     
     # name = path_figure / f'{model}_{K_SPLIT}'
     # covid.predict(

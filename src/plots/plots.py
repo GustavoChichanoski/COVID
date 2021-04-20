@@ -6,11 +6,11 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import numpy as np
 import cv2 as cv
-from keras.preprocessing.image import array_to_img
-from keras.preprocessing.image import img_to_array
-from tensorflow.python import keras
+from tensorflow.python.keras.preprocessing.image import array_to_img
+from tensorflow.python.keras.preprocessing.image import img_to_array
+from tensorflow.python.keras import Model
 
-def plot_model(path: Path, model: keras.Model) -> str:
+def plot_model(path: Path, model: Model) -> str:
     for layers in model.layers:
         for layer in layers.layers:
             config = layer.get_config()

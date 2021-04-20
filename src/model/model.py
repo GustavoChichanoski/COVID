@@ -1,33 +1,30 @@
 """
     Biblioteca contendo as informações referente ao modelo.
 """
-from tensorflow.python.keras.callbacks import CSVLogger
-from tensorflow.python.keras.applications.densenet import DenseNet201
-from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
-from tensorflow.python.keras.applications.mobilenet_v2 import MobileNetV2
 from typing import Any, List, Tuple
 import numpy as np
 from tqdm import tqdm
-from keras import Model
-from keras import regularizers
-from keras.layers import Dense
-from keras import Sequential
-from keras.layers import Conv2D
-from keras.layers import Activation
-from keras.layers import BatchNormalization
-from keras.metrics import Metric
-from keras.callbacks import Callback
-from keras.callbacks import ModelCheckpoint
-from keras.callbacks import EarlyStopping
-from keras.callbacks import TensorBoard
-from keras.callbacks import TerminateOnNaN
-from keras.callbacks import ReduceLROnPlateau
-from keras.optimizers import Adamax
-from keras.applications.resnet_v2 import ResNet50V2
-from keras.applications.vgg19 import VGG19
-from keras.applications.densenet import DenseNet201
-from keras.applications.inception_resnet_v2 import InceptionResNetV2
-from keras.applications.mobilenet_v3 import MobileNetV3
+from tensorflow.python.keras import Model
+from tensorflow.python.keras import regularizers
+from tensorflow.python.keras import Sequential
+from tensorflow.python.keras.layers import Dense
+from tensorflow.python.keras.layers import Conv2D
+from tensorflow.python.keras.layers import Activation
+from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.python.keras.metrics import Metric
+from tensorflow.python.keras.callbacks import Callback
+from tensorflow.python.keras.callbacks import CSVLogger
+from tensorflow.python.keras.callbacks import ModelCheckpoint
+from tensorflow.python.keras.callbacks import EarlyStopping
+from tensorflow.python.keras.callbacks import TensorBoard
+from tensorflow.python.keras.callbacks import TerminateOnNaN
+from tensorflow.python.keras.callbacks import ReduceLROnPlateau
+from tensorflow.python.keras.applications.vgg19 import VGG19
+from tensorflow.python.keras.applications.densenet import DenseNet201
+from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2
+from tensorflow.python.keras.applications.inception_v3 import InceptionV3
+from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3Small
+from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from src.model.generator import DataGenerator
 from src.model.grad_cam_split import prob_grad_cam
 from src.images.process_images import split_images_n_times as splits
@@ -63,7 +60,7 @@ class ModelCovid(Model):
                 labels (list, optional): Rotulos de saída.
                                          Defaults to ['Covid','Normal','Pneumonia'].
         """
-        super(ModelCovid,self).__init__()
+        super(ModelCovid, self).__init__()
         self.batch_size = batch_size
         self.model_input_shape = model_input_shape
         self.labels = labels
@@ -74,8 +71,8 @@ class ModelCovid(Model):
         )
         self.weight_path = weight_path
         # Nomes das camadas até a ultima camada de convolução
-        self.classifier_layers = [self.model.layers[0]
-                                      .get_layer(index=-1).name,
+        last_non_conv_layer = self.model.layers[0]
+        self.classifier_layers = [last_non_conv_layer.get_layer(index=-1).name,
                                   'classifier',
                                   'output']
         self.last_conv_layer = self.model.layers[0].get_layer(index=-2).name
@@ -109,7 +106,8 @@ class ModelCovid(Model):
         file = path / f'{model}_{metric}_{value:.02f}.hdf5'
         self.model.save(file, overwrite=True)
 
-        file_weights = path / 'weights' / f'{model}_{metric}_{value:.02f}_weights.hdf5'
+        file_weights = path / 'weights' / \
+            f'{model}_{metric}_{value:.02f}_weights.hdf5'
         self.model.save_weights(file_weights, overwrite=True)
 
         print(f"Pesos salvos em {file}")
@@ -209,7 +207,7 @@ class ModelCovid(Model):
         return None
 
 
-def classification(shape: Tuple[int,int,int] = (224, 224, 3),
+def classification(shape: Tuple[int, int, int] = (224, 224, 3),
                    n_class: int = 3,
                    model_net: str = 'Resnet50V2',
                    resnet_train: bool = True) -> Model:
@@ -231,23 +229,21 @@ def classification(shape: Tuple[int,int,int] = (224, 224, 3),
               'weights': "imagenet",
               'input_shape': shape,
               'pooling': "avg"}
-
     if model_net == 'VGG19':
         resnet = VGG19(**params)
     elif model_net == 'InceptionResNetV2':
-        resnet = InceptionResNetV2(**params)
+        resnet = InceptionV3(**params)
     elif model_net == 'MobileNetV2':
-        resnet = MobileNetV2(**params)
+        resnet = MobileNetV3Small(**params)
     elif model_net == 'DenseNet201':
         resnet = DenseNet201(**params)
     else:
         resnet = ResNet50V2(**params)
     resnet.trainable = resnet_train
-    output = Sequential([resnet,
-                         Dense(n_class,
-                               activation=None,
-                               name='classifier'),
-                         Activation('softmax', name='output')])
+    output = Sequential()
+    output.add(resnet)
+    output.add(Dense(n_class,activation=None,name='classifier'))
+    output.add(Activation('softmax', name='output'))
     return output
 
 
@@ -312,7 +308,7 @@ def get_callbacks(weight_path: str) -> List[Callback]:
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', **reduce_params)
 
     # Parada do treino caso o monitor nao diminua
-    stop_params = {'mode':'min', 'restore_best_weights':True, 'patience':40}
+    stop_params = {'mode': 'min', 'restore_best_weights': True, 'patience': 40}
     early_stop = EarlyStopping(monitor='val_f1', **stop_params)
 
     # Termina se um peso for NaN (not a number)

@@ -3,4 +3,3 @@ pandas
 tensorflow
 keras
 opencv-python
-pandas
