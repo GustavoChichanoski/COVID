@@ -70,7 +70,7 @@ class F1score(Metric):
             sample_weight=sample_weight,
         )
 
-    def reset_state(self):
+    def reset_states(self):
         num_thresholds = len(to_list(self.thresholds))
         K.batch_set_value(
             [

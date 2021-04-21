@@ -73,24 +73,24 @@ def plot_dataset(absolut=None,
         dist_dataset(absolut, perc, names, n_images)
     plt.show()
 
-    fig, ax = plt.subplots()
-    im = ax.imshow(absolut)
-    ax.set_xticks(np.arange(len(names)))
-    ax.set_yticks(np.arange(len(names)))
-    ax.set_xticklabels(names)
-    ax.set_yticklabels(names)
+    # fig, ax = plt.subplots()
+    # im = ax.imshow(absolut)
+    # ax.set_xticks(np.arange(len(names)))
+    # ax.set_yticks(np.arange(len(names)))
+    # ax.set_xticklabels(names)
+    # ax.set_yticklabels(names)
 
-    plt.setp(ax.get_xticklabels(), rotation=45,
-             ha='right', rotation_mode='anchor')
+    # plt.setp(ax.get_xticklabels(), rotation=45,
+    #          ha='right', rotation_mode='anchor')
 
-    for i in range(len(names)):
-        for j in range(len(names)):
-            text = ax.text(j, i, absolut[i][j],
-                           ha='center', va='center', color='w')
+    # for i in range(len(names)):
+    #     for j in range(len(names)):
+    #         text = ax.text(j, i, absolut[i][j],
+    #                        ha='center', va='center', color='w')
 
-    ax.set_title('Matriz Confusao')
-    fig.tight_layout()
-    plt.show()
+    # ax.set_title('Matriz Confusao')
+    # fig.tight_layout()
+    # plt.show()
 
     fig, ax = plt.subplots()
     im, cbar = heatmap(np.array(absolut), names, names, ax=ax,
