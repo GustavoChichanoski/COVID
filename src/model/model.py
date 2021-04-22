@@ -101,7 +101,7 @@ class ModelCovid(Model):
         if history is not None:
             value = history[metric][-1] * 100
             history_path = path / 'history' / f'history_{model}_{value}'
-            save_csv(value=history, name=history_path)
+            np.save(f'history_{int(value)}.npy',history.history)
 
         file = path / f'{model}_{metric}_{value:.02f}.hdf5'
         self.model.save(file, overwrite=True)
@@ -118,13 +118,19 @@ class ModelCovid(Model):
 
     def fit_generator(
         self,
-        train_generator: DataGenerator, val_generator: DataGenerator,
-        epochs: int = 100, shuffle: bool = True, workers: int = 1,
+        train_generator: DataGenerator,
+        val_generator: DataGenerator,
+        history_path: str = None,
+        epochs: int = 100,
+        shuffle: bool = True,
+        workers: int = 1,
         batch_size: int = 32
     ):
         history = self.model.fit(x=train_generator,
                                  validation_data=val_generator,
-                                 callbacks=get_callbacks(self.weight_path),
+                                 callbacks=get_callbacks(
+                                     self.weight_path,
+                                     history_path),
                                  epochs=epochs,
                                  batch_size=batch_size,
                                  shuffle=shuffle,
@@ -310,7 +316,7 @@ def get_callbacks(weight_path: str) -> List[Callback]:
     # Parada do treino caso o monitor nao diminua
     stop_params = {'mode': 'min', 'restore_best_weights': True, 'patience': 40}
     early_stop = EarlyStopping(monitor='val_f1', **stop_params)
-
+    csv_log = CSVLogger()
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()
 
@@ -318,11 +324,18 @@ def get_callbacks(weight_path: str) -> List[Callback]:
     # tensorboard = TensorBoard(log_dir="./logs")
 
     # Armazena os dados gerados no treinamento em um CSV
-    # csv_logger = CSVLogger('./logs/trainig.log', append=True)
+    
+    csv_logger = CSVLogger(history_path, append=True)
 
     # Vetor a ser passado na função fit
-    # callbacks = [checkpoint, early_stop, reduce_lr, terminate, tensorboard, csv_logger]
-    callbacks = [checkpoint, early_stop, reduce_lr, terminate]
+    callbacks = [
+        checkpoint,
+        early_stop,
+        reduce_lr,
+        terminate,
+        csv_logger
+    ]
+    # callbacks = [checkpoint, early_stop, reduce_lr, terminate]
     return callbacks
 
 

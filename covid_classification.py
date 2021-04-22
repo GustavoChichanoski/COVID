@@ -147,3 +147,5 @@ for model, net_path in zip(NETS, nets_path):
 
     matrix = covid.confusion_matrix(test_generator.x, 1)
     plot_dataset(absolut=matrix,names=labels, n_images=1, path=path_figure)
+
+# %%
