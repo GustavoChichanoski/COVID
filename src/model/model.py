@@ -287,7 +287,7 @@ def get_metrics() -> List[Metric]:
     return metrics
 
 
-def get_callbacks(weight_path: str) -> List[Callback]:
+def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
     """
         Retorna a lista callbacks do modelo
         Args:
@@ -324,17 +324,24 @@ def get_callbacks(weight_path: str) -> List[Callback]:
     # tensorboard = TensorBoard(log_dir="./logs")
 
     # Armazena os dados gerados no treinamento em um CSV
-    
-    csv_logger = CSVLogger(history_path, append=True)
-
-    # Vetor a ser passado na função fit
-    callbacks = [
-        checkpoint,
-        early_stop,
-        reduce_lr,
-        terminate,
-        csv_logger
-    ]
+    if history_path is not None:
+        csv_logger = CSVLogger(history_path, append=True)
+        # Vetor a ser passado na função fit
+        callbacks = [
+            checkpoint,
+            early_stop,
+            reduce_lr,
+            terminate,
+            csv_logger
+        ]
+    else:
+        # Vetor a ser passado na função fit
+        callbacks = [
+            checkpoint,
+            early_stop,
+            reduce_lr,
+            terminate
+        ]
     # callbacks = [checkpoint, early_stop, reduce_lr, terminate]
     return callbacks
 
