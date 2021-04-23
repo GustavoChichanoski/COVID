@@ -75,7 +75,7 @@ class ModelCovid(Model):
         self.classifier_layers = [last_non_conv_layer.get_layer(index=-1).name,
                                   'classifier',
                                   'output']
-        self.last_conv_layer = self.model.layers[0].get_layer(index=-2).name
+        self.last_conv_layer = last_non_conv_layer.get_layer(index=-2).name
 
     def save(self, path: Path,
              name: str = None,
@@ -101,7 +101,7 @@ class ModelCovid(Model):
         if history is not None:
             value = history[metric][-1] * 100
             history_path = path / 'history' / f'history_{model}_{value}'
-            np.save(f'history_{int(value)}.npy',history.history)
+            np.save(f'history_{int(value)}.npy',history)
 
         file = path / f'{model}_{metric}_{value:.02f}.hdf5'
         self.model.save(file, overwrite=True)
