@@ -99,11 +99,24 @@ for model, net_path in zip(NETS, nets_path):
     }
     if tpu is not None:
         with tpu_strategy.scope():
-            covid = ModelCovid(weight_path='.model/weightss.best.hfd5', **model_params)
-            covid.compile(loss='categorical_crossentropy', lr=1e-5,steps_per_execution=32)
+            covid = ModelCovid(
+                weight_path='.model/weightss.best.hfd5',
+                **model_params
+            )
+            covid.compile(
+                loss='categorical_crossentropy',
+                lr=1e-5,
+                steps_per_execution=32
+            )
     else:
-        covid = ModelCovid(weight_path='.model/weightss.best.hfd5', **model_params)
-        covid.compile(loss='categorical_crossentropy', lr=1e-5)
+        covid = ModelCovid(
+            weight_path='.model/weightss.best.hfd5',
+            **model_params
+        )
+        covid.compile(
+            loss='categorical_crossentropy',
+            lr=1e-5
+        )
 
     path_weight = net_path / 'weights'
     path_figure = net_path / 'figures'
@@ -121,7 +134,8 @@ for model, net_path in zip(NETS, nets_path):
             'epochs': EPOCHS,
             'shuffle': True,
             'workers': 1,
-            'batch_size': BATCH_SIZE
+            'batch_size': BATCH_SIZE,
+            'verbose': False
         }
         history = covid.fit_generator(
             train_generator=train_generator,
@@ -137,13 +151,13 @@ for model, net_path in zip(NETS, nets_path):
 
         plot_history(history)
     
-    # name = path_figure / f'{model}_{K_SPLIT}'
-    # covid.predict(
-    #     image=TEST,
-    #     n_splits=K_SPLIT,
-    #     name=name,
-    #     grad=False
-    # )
+    name = path_figure / f'{model}_{K_SPLIT}'
+    covid.predict(
+        image=TEST,
+        n_splits=K_SPLIT,
+        name=name,
+        grad=False
+    )
 
     matrix = covid.confusion_matrix(test_generator.x, 1)
     plot_dataset(absolut=matrix,names=labels, n_images=1, path=path_figure)

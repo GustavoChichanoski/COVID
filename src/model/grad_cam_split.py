@@ -35,10 +35,11 @@ def prob_grad_cam(pacotes_da_imagem,
         --------
             (np.array): Grad Cam dos recortes
     """
+    orig_shape = (dim_orig, dim_orig)
     # Inicializa a imagem final do grad cam com zeros
-    grad_cam_prob = np.zeros((dim_orig, dim_orig))
+    grad_cam_prob = np.zeros(orig_shape)
     # Armazena o numero de pacotes que passaram por um pixel
-    pacotes_por_pixel = np.zeros((dim_orig, dim_orig))
+    pacotes_por_pixel = np.zeros(orig_shape)
     for pacote_atual, posicao_pixel in zip(pacotes_da_imagem,
                                            posicoes_iniciais_dos_pacotes):
         entrada_modelo = modelo.input_shape
@@ -52,7 +53,7 @@ def prob_grad_cam(pacotes_da_imagem,
         #                            layer_names='classifier')
         # Acha qual foi o canal preedito
         predicao = modelo.predict(pacote_atual_reshape)
-        predicao_pacote = predicao[0,winner_pos]
+        predicao_pacote = predicao[0, winner_pos]
         # Calcula o grad cam para o canal vencedor
         gradcam_pacote = grad_cam(image=pacote_atual,
                                   model=modelo,
@@ -106,7 +107,8 @@ def somar_grads_cam(
                      pacotes por Pixel
     """
     dimensao = grad_cam_split.shape[0]
-    valor_um = np.ones((dimensao, dimensao))
+    one_shape = (dimensao, dimensao)
+    valor_um = np.ones(one_shape)
     final = [inicio[0] + dimensao, inicio[1] + dimensao]
     grad_cam_atual[inicio[0]:final[0],
                    inicio[1]:final[1]] += grad_cam_split

@@ -39,12 +39,14 @@ class ModelCovid(Model):
     """[summary]
     """
 
-    def __init__(self,
-                 weight_path: str,
-                 model_input_shape: tuple = (224, 224, 3),
-                 batch_size: int = 32,
-                 model: str = 'Resnet50V2',
-                 labels: List[str] = ['Covid', 'Normal', 'Pneumonia']):
+    def __init__(
+        self,
+        weight_path: str,
+        model_input_shape: Tuple[int,int,int] = (224, 224, 3),
+        batch_size: int = 32,
+        model_name: str = 'Resnet50V2',
+        labels: List[str] = ['Covid', 'Normal', 'Pneumonia']
+    ) -> None:
         """
             Construtor da minha classe ModelCovid
 
@@ -63,6 +65,7 @@ class ModelCovid(Model):
         super(ModelCovid, self).__init__()
         self.batch_size = batch_size
         self.model_input_shape = model_input_shape
+        self.model_name = model_name
         self.labels = labels
         self.model = classification(
             shape=self.model_input_shape,
@@ -124,7 +127,8 @@ class ModelCovid(Model):
         epochs: int = 100,
         shuffle: bool = True,
         workers: int = 1,
-        batch_size: int = 32
+        batch_size: int = 32,
+        **params
     ):
         history = self.model.fit(x=train_generator,
                                  validation_data=val_generator,
@@ -134,7 +138,9 @@ class ModelCovid(Model):
                                  epochs=epochs,
                                  batch_size=batch_size,
                                  shuffle=shuffle,
-                                 workers=workers)
+                                 workers=workers,
+                                 verbose=False,
+                                 **params)
         return history
 
     def compile(self,
@@ -175,10 +181,11 @@ class ModelCovid(Model):
         imagem = ri(image)
         cuts, positions = splits(imagem, n_splits, verbose=grad)
         cuts = np.array(cuts)
-        cuts = cuts.reshape((n_splits,
-                             self.model_input_shape[0],
-                             self.model_input_shape[1],
-                             self.model_input_shape[2]))
+        shape = (n_splits,
+                 self.model_input_shape[0],
+                 self.model_input_shape[1],
+                 self.model_input_shape[2])
+        cuts = cuts.reshape(shape)
         votes = self.model.predict(cuts)
         elect = winner(self.labels, votes)
         if grad or name is not None:
@@ -282,8 +289,8 @@ def get_metrics() -> List[Metric]:
         --------
             (list): metricas do modelo
     """
-    m = F1score()
-    metrics = ['accuracy', m]
+    # m = F1score()
+    metrics = ['accuracy']
     return metrics
 
 
@@ -315,7 +322,7 @@ def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
 
     # Parada do treino caso o monitor nao diminua
     stop_params = {'mode': 'min', 'restore_best_weights': True, 'patience': 40}
-    early_stop = EarlyStopping(monitor='val_f1', **stop_params)
+    early_stop = EarlyStopping(monitor='val_loss', **stop_params)
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()
 
