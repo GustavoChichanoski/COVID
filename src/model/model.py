@@ -289,8 +289,8 @@ def get_metrics() -> List[Metric]:
         --------
             (list): metricas do modelo
     """
-    # m = F1score()
-    metrics = ['accuracy']
+    m = F1score()
+    metrics = ['accuracy', m]
     return metrics
 
 
@@ -322,7 +322,7 @@ def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
 
     # Parada do treino caso o monitor nao diminua
     stop_params = {'mode': 'min', 'restore_best_weights': True, 'patience': 40}
-    early_stop = EarlyStopping(monitor='val_loss', **stop_params)
+    early_stop = EarlyStopping(monitor='val_f1', **stop_params)
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()
 
