@@ -94,7 +94,7 @@ for model, net_path in zip(NETS, nets_path):
 
     model_params = {
         'labels': labels,
-        'model': model,
+        'model_name': model,
         'model_input_shape': (DIM_SPLIT, DIM_SPLIT, 3)
     }
     if tpu is not None:

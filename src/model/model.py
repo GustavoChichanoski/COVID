@@ -70,7 +70,7 @@ class ModelCovid(Model):
         self.model = classification(
             shape=self.model_input_shape,
             n_class=len(self.labels),
-            model_net=model
+            model_net=model_name
         )
         self.weight_path = weight_path
         # Nomes das camadas até a ultima camada de convolução
