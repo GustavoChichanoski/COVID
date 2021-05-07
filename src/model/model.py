@@ -139,7 +139,6 @@ class ModelCovid(Model):
                                  batch_size=batch_size,
                                  shuffle=shuffle,
                                  workers=workers,
-                                 verbose=False,
                                  **params)
         return history
 
@@ -308,7 +307,7 @@ def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
     # caso o monitor não diminua
     check_params = {
         'monitor': 'val_loss', 'verbose': 1, 'mode': 'min',
-        'save_best_only': True, 'save_weights_only': True
+        'save_best_only': True, 'save_weights_only': False
     }
     checkpoint = ModelCheckpoint(weight_path, **check_params)
 
