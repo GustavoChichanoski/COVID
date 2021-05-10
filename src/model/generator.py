@@ -16,8 +16,7 @@ class DataGenerator(Sequence):
         dim: int = 224,
         shuffle: bool = True,
         n_class: int = 3,
-        channels: int = 3,
-        train: bool = True,
+        channels: int = 3
     ) -> None:
         self.x, self.y = data
         self.batch_size = batch_size
@@ -27,7 +26,6 @@ class DataGenerator(Sequence):
         self.channels = channels
         self.train = train
         self._lazy_id_inicial = None
-        self.labels = labels
 
     @property
     def id_inicial(self):
