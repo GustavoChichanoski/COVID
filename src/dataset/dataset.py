@@ -19,11 +19,13 @@ class Dataset:
     dimension_original: int = 1024
     dimension_cut: int = 224
     channels: int = 3
+    train: bool = True
 
     _lazy_label_names: Optional[List[Path]] = None
     _lazy_files_in_folder: Optional[List[Path]] = None
     _lazy_x: Optional[List[Path]] = None
     _lazy_y: Optional[Any] = None
+    _lazy_number_files_in_folders: Optional[List[str]] = None
     """
         Args:
             path_data (str): Caminho onde se encontra os dados dos raios-x
@@ -44,6 +46,13 @@ class Dataset:
         return self._lazy_files_in_folder
 
     @property
+    def number_files_in_folders(self):
+        if self._lazy_number_files_in_folders is None:
+            return np.array([len(folder) for folder in self.files_in_folder])
+        else:
+            return self._lazy_number_files_in_folders
+
+    @property
     def label_names(self) -> List[Path]:
         if self._lazy_label_names is None:
             folder_names = self.path_data.iterdir()
@@ -62,24 +71,42 @@ class Dataset:
             len_labels = len(labels)
             label_eyes = np.eye(len_labels)
             files = list(self.files_in_folder)
-            outputs = []
-            for label_eye, file in zip(label_eyes, files):
-                out = [label_eye] * len(file)
-                outputs = np.append(outputs, out)
-            outputs = np.array(outputs)
+            outputs = np.array([])
+            for x in self.x:
+                x_label = x.parts[-2]
+                i = 0
+                for label in labels:
+                    if x_label == label.name:
+                        x_arg = i
+                        break
+                    i += 1
+                x_arg = i
+                out = label_eyes[x_arg]
+                outputs = np.append(outputs,out)
             self._lazy_y = outputs.reshape(len(self.x), len_labels)
         return self._lazy_y
 
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
-            self._lazy_x = sum(list(self.files_in_folder), [])
+            if self.train:
+                files = list(self.files_in_folder)
+                x = np.array([])
+                number_files = self.number_files_in_folders
+                max_number_files = np.max(number_files)
+                for index in range(max_number_files):
+                    for index_label, label in enumerate(self.label_names):
+                        x = np.append(x, files[index_label][index % number_files[index_label]])
+            else:
+                self._lazy_x = sum(list(self.files_in_folder))
+            self._lazy_x = x
         return self._lazy_x
 
     def partition(
         self,
         val_size: float = 0.2,
-        test: bool = False
+        test: bool = False,
+        shuffle: bool = False
     ) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
         """ Retorna a entrada e saidas dos keras.
 
@@ -93,16 +120,13 @@ class Dataset:
         """
         # t : train - v : validation
         if test:
-            x = self.x[0:4]
-            y = self.y[0:4]
+            x, y = self.x[0:4], self.y[0:4]
         else:
-            x = self.x
-            y = self.y
+            x, y = self.x, self.y
         train_in, val_in, train_out, val_out = train_test_split(
-            x,
-            y,
+            x, y,
             test_size=val_size,
-            shuffle=True
+            shuffle=shuffle
         )
         train, val = (train_in, train_out), (val_in, val_out)
         return train, val

@@ -21,12 +21,14 @@ DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 K_SPLIT = 100
 BATCH_SIZE = 1
-EPOCHS = 2
+EPOCHS = 100
 
-NETS = ['DenseNet201',
-        'InceptionResNetV2',
-        'ResNet50V2',
-        'VGG19']
+# NETS = ['DenseNet201',
+#         'InceptionResNetV2',
+#         'ResNet50V2',
+#         'VGG19']
+
+NETS = ['VGG19']
 
 __version__ = '1.0'
 
@@ -73,7 +75,7 @@ labels = listdir(TRAIN_PATH)
 dataset = Dataset(path_data=TRAIN_PATH)
 test = Dataset(path_data=TEST_PATH)
 
-part_param = {'val_size':0.2,'test':True}
+part_param = {'val_size':0.2,'test':False}
 train, validation = dataset.partition(**part_param)
 test_values, _test_val_v = test.partition(**part_param)
 
@@ -84,9 +86,9 @@ params = {
     'shuffle': True,
     'channels': 3
 }
-train_generator = DataGenerator(data=train, **params)
-val_generator = DataGenerator(data=validation, **params)
-test_generator = DataGenerator(data=test_values, **params)
+train_generator = DataGenerator(data=train, labels=['Covid','Normal','Pneumonia'], **params)
+val_generator = DataGenerator(data=validation, labels=['Covid','Normal','Pneumonia'], **params)
+test_generator = DataGenerator(data=test_values, labels=['Covid','Normal','Pneumonia'], **params)
 
 # Detect and init TPU
 # %% [code]
@@ -135,7 +137,7 @@ for model, net_path in zip(NETS, nets_path):
             'shuffle': True,
             'workers': 1,
             'batch_size': BATCH_SIZE,
-            'verbose': False
+            'verbose': True
         }
         history = covid.fit_generator(
             train_generator=train_generator,
