@@ -89,16 +89,16 @@ class Dataset:
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
+            x = np.array([])
             if self.train:
                 files = list(self.files_in_folder)
-                x = np.array([])
                 number_files = self.number_files_in_folders
                 max_number_files = np.max(number_files)
                 for index in range(max_number_files):
                     for index_label, label in enumerate(self.label_names):
                         x = np.append(x, files[index_label][index % number_files[index_label]])
             else:
-                self._lazy_x = sum(list(self.files_in_folder))
+                x = sum(list(self.files_in_folder), [])
             self._lazy_x = x
         return self._lazy_x
 

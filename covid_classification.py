@@ -72,8 +72,8 @@ np.random.seed(seed=42)
 
 labels = listdir(TRAIN_PATH)
 
-dataset = Dataset(path_data=TRAIN_PATH)
-test = Dataset(path_data=TEST_PATH)
+dataset = Dataset(path_data=TRAIN_PATH,train=True)
+test = Dataset(path_data=TEST_PATH,train=False)
 
 part_param = {'val_size':0.2,'test':False}
 train, validation = dataset.partition(**part_param)
