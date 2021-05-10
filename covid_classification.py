@@ -75,7 +75,7 @@ labels = listdir(TRAIN_PATH)
 dataset = Dataset(path_data=TRAIN_PATH,train=True)
 test = Dataset(path_data=TEST_PATH,train=False)
 
-part_param = {'val_size':0.2,'test':False}
+part_param = {'val_size':0.2,'test':True}
 train, validation = dataset.partition(**part_param)
 test_values, _test_val_v = test.partition(**part_param)
 
@@ -86,9 +86,9 @@ params = {
     'shuffle': True,
     'channels': 3
 }
-train_generator = DataGenerator(data=train, labels=['Covid','Normal','Pneumonia'], **params)
-val_generator = DataGenerator(data=validation, labels=['Covid','Normal','Pneumonia'], **params)
-test_generator = DataGenerator(data=test_values, labels=['Covid','Normal','Pneumonia'], **params)
+train_generator = DataGenerator(data=train, **params)
+val_generator = DataGenerator(data=validation, **params)
+test_generator = DataGenerator(data=test_values, **params)
 
 # Detect and init TPU
 # %% [code]

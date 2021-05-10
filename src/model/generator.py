@@ -11,7 +11,6 @@ class DataGenerator(Sequence):
     def __init__(
         self,
         data,
-        labels: List[str],
         batch_size: int = 64,
         dim: int = 224,
         shuffle: bool = True,
@@ -24,7 +23,6 @@ class DataGenerator(Sequence):
         self.shuffle = shuffle
         self.n_class = n_class
         self.channels = channels
-        self.train = train
         self._lazy_id_inicial = None
 
     @property
