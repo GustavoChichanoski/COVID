@@ -322,7 +322,7 @@ def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
         'mode': 'min', 'min_delta': 1e-3,
         'cooldown': 2, 'min_lr': 1e-8
     }
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', **reduce_params)
+    reduce_lr = ReduceLROnPlateau(monitor='val_f1', **reduce_params)
 
     # Parada do treino caso o monitor nao diminua
     stop_params = {'mode': 'min', 'restore_best_weights': True, 'patience': 40}
