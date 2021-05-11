@@ -106,7 +106,7 @@ class Dataset:
         self,
         val_size: float = 0.2,
         test: bool = False,
-        shuffle: bool = False
+        shuffle: bool = True
     ) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
         """ Retorna a entrada e saidas dos keras.
 

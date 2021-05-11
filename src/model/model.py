@@ -3,6 +3,7 @@
 """
 from typing import Any, List, Tuple
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 from tensorflow.python.keras import Model
 from tensorflow.python.keras import regularizers
@@ -103,18 +104,22 @@ class ModelCovid(Model):
 
         if history is not None:
             value = history[metric][-1] * 100
-            history_path = path / 'history' / f'history_{model}_{value}'
-            np.save(f'history_{int(value)}.npy',history)
+            history_path = path / 'history' / f'history_{self.model_name}_{value:.02f}'
+            file_history = f'{history_path}.csv'
+            hist_df = pd.DataFrame(history)
+            with open(file_history, mode='w') as f:
+                hist_df.to_csv(f)
 
-        file = path / f'{model}_{metric}_{value:.02f}.hdf5'
+        file_name = f'{self.model_name}_{metric}_{value:.02f}'
+        file_model = path / f'{file_name}.hdf5'
         self.model.save(file, overwrite=True)
+        print(f"[INFO] Modelo salvos em: {file}")
 
-        file_weights = path / 'weights' / \
-            f'{model}_{metric}_{value:.02f}_weights.hdf5'
+        file_weights = path / 'weights' / f'{file_name}_weights.hdf5'
         self.model.save_weights(file_weights, overwrite=True)
+        print(f"[INFO] Pesos salvos em: {file_weights}")
 
-        print(f"Pesos salvos em {file}")
-        return file_weights
+        return file_model, file_weights, file_history
 
     def load(self, path: Path) -> None:
         self.model.load_weights(str(path))

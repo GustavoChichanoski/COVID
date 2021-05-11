@@ -14,6 +14,7 @@ from os import listdir
 import tensorflow as tf
 import sys
 import numpy as np
+import os
 
 # %% [code]
 
@@ -28,7 +29,7 @@ EPOCHS = 100
 #         'ResNet50V2',
 #         'VGG19']
 
-NETS = ['VGG19']
+NETS = ['InceptionResNetV2']
 
 __version__ = '1.0'
 
@@ -52,7 +53,7 @@ TEST_PATH = DATA / 'test'
 TEST = TEST_PATH / 'Covid/0000.png'
 CWD = Path.cwd()
 OUTPUT_PATH = CWD / 'outputs'
-CLEAR = True
+CLEAR = False
 
 if CLEAR:
     remove_folder([OUTPUT_PATH, Path('./logs'), Path('./build')])
@@ -77,6 +78,7 @@ test = Dataset(path_data=TEST_PATH,train=False)
 
 part_param = {'val_size':0.2,'test':True}
 train, validation = dataset.partition(**part_param)
+part_param = {'val_size':1e-5,'test':False}
 test_values, _test_val_v = test.partition(**part_param)
 
 params = {
@@ -122,12 +124,20 @@ for model, net_path in zip(NETS, nets_path):
 
     path_weight = net_path / 'weights'
     path_figure = net_path / 'figures'
+    path_history = net_path / 'history'
 
     weight = None
+    max_weight = None
     for weight in path_weight.iterdir():
         suffix = weight.suffix
         if suffix == 'hdf5':
-            break
+            if max_weight is None:
+                max_weight = weight
+            else:
+                time_max = os.path.getctime(max_weight)
+                time_weight = os.path.getctime(weight)
+                if time_max < time_weight:
+                    max_weight = weight
     if weight is not None:
         print('[INFO] Carregando o modelo')
         covid.load(weight)
@@ -144,13 +154,12 @@ for model, net_path in zip(NETS, nets_path):
             val_generator=val_generator,
             **fit_params
         )
-        weight = covid.save(
+        file_model, file_weights, file_history = covid.save(
             path=net_path,
             model=model,
             history=history.history,
             metric='accuracy'
         )
-
         plot_history(history)
     
     name = path_figure / f'{model}_{K_SPLIT}'
@@ -161,7 +170,7 @@ for model, net_path in zip(NETS, nets_path):
         grad=False
     )
 
-    matrix = covid.confusion_matrix(test_generator.x, 1)
+    matrix = covid.confusion_matrix(test_generator.x, 100)
     plot_dataset(absolut=matrix,names=labels, n_images=1, path=path_figure)
 
 # %%
