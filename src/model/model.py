@@ -4,6 +4,7 @@
 from typing import Any, List, Tuple
 import numpy as np
 import pandas as pd
+from tensorflow.python.keras.layers.core import Dropout
 from tqdm import tqdm
 from tensorflow.python.keras import Model
 from tensorflow.python.keras import regularizers
@@ -186,7 +187,6 @@ class ModelCovid:
         """
         imagem = ri(image)
         cuts, positions = splits(imagem, n_splits, verbose=grad)
-        cuts = np.array(cuts)
         shape = (n_splits,
                  self.model_input_shape[0],
                  self.model_input_shape[1],
@@ -262,6 +262,7 @@ def classification(shape: Tuple[int, int, int] = (224, 224, 3),
     output = Sequential()
     output.add(resnet)
     output.add(Dense(n_class,activation=None,name='classifier'))
+    output.add(Dropout(1/3))
     output.add(Activation('softmax', name='output'))
     return output
 
