@@ -67,21 +67,23 @@ class Dataset:
             numpy.array:
         """
         if self._lazy_y is None:
+            # Recebe os nomes dos rotulos
             labels = list(self.label_names)
+            # Acha o tamanho dos rotulos
             len_labels = len(labels)
+            # Cria a matriz de saída
             label_eyes = np.eye(len_labels)
-            files = list(self.files_in_folder)
+            # Criao vetor de saída
             outputs = np.array([])
+            # For para preencher o vetor de saída
             for x in self.x:
                 x_label = x.parts[-2]
                 i = 0
                 for label in labels:
                     if x_label == label.name:
-                        x_arg = i
                         break
                     i += 1
-                x_arg = i
-                out = label_eyes[x_arg]
+                out = label_eyes[i]
                 outputs = np.append(outputs,out)
             self._lazy_y = outputs.reshape(len(self.x), len_labels)
         return self._lazy_y
@@ -93,8 +95,7 @@ class Dataset:
             if self.train:
                 files = list(self.files_in_folder)
                 number_files = self.number_files_in_folders
-                max_number_files = np.max(number_files)
-                for index in range(max_number_files):
+                for index in range(np.max(number_files)):
                     for index_label, label in enumerate(self.label_names):
                         x = np.append(x, files[index_label][index % number_files[index_label]])
             else:

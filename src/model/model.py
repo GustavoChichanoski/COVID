@@ -36,7 +36,7 @@ from src.csv.save_csv import save_as_csv as save_csv
 from pathlib import Path
 
 
-class ModelCovid(Model):
+class ModelCovid:
     """[summary]
     """
 
@@ -63,7 +63,6 @@ class ModelCovid(Model):
                 labels (list, optional): Rotulos de saída.
                                          Defaults to ['Covid','Normal','Pneumonia'].
         """
-        super(ModelCovid, self).__init__()
         self.batch_size = batch_size
         self.model_input_shape = model_input_shape
         self.model_name = model_name
@@ -147,9 +146,12 @@ class ModelCovid(Model):
                                  **params)
         return history
 
-    def compile(self,
-                loss: str = 'categorical_crossentropy',
-                lr: float = 0.01, **params) -> None:
+    def compile(
+        self,
+        loss: str = 'categorical_crossentropy',
+        lr: float = 1e-2,
+        **params
+    ) -> None:
         """Compila o modelo
         """
         opt = Adamax(learning_rate=lr)
@@ -264,8 +266,10 @@ def classification(shape: Tuple[int, int, int] = (224, 224, 3),
     return output
 
 
-def winner(labels: List[str] = ["Covid", "Normal", "Pneumonia"],
-           votes: List[int] = [0, 0, 0]) -> str:
+def winner(
+    labels: List[str] = ["Covid", "Normal", "Pneumonia"],
+    votes: List[int] = [0, 0, 0]
+) -> str:
     """
         Retorna o label da doenca escolhido
 
@@ -278,10 +282,7 @@ def winner(labels: List[str] = ["Covid", "Normal", "Pneumonia"],
         --------
             elect (str): label escolhido pelo modelo
     """
-    n_class = votes.shape[1]
-    poll = np.zeros((1, n_class))
-    for vote in votes:
-        poll += vote
+    poll = np.sum(votes,axis=0)
     elect = labels[np.argmax(poll)]
     return elect
 

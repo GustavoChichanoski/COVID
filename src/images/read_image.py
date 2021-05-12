@@ -51,8 +51,8 @@ def read_sequencial_image(paths: list,
     return images
 
 
-def read_images(images_paths: Union[List[Path],Path],
-                id_start=0,
+def read_images(images_paths: Union[List[Path], Path],
+                id_start: Union[List[int], int] = 0,
                 id_end: int = -1):
     """
         Lê as imagens do listas de caminhos da imagem de start até end -1

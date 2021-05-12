@@ -22,14 +22,14 @@ DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 K_SPLIT = 100
 BATCH_SIZE = 1
-EPOCHS = 100
+EPOCHS = 3
 
-# NETS = ['DenseNet201',
-#         'InceptionResNetV2',
-#         'ResNet50V2',
-#         'VGG19']
+NETS = ['DenseNet201',
+        'InceptionResNetV2',
+        'ResNet50V2',
+        'VGG19']
 
-NETS = ['InceptionResNetV2']
+# NETS = ['DenseNet201']
 
 __version__ = '1.0'
 
@@ -73,12 +73,12 @@ np.random.seed(seed=42)
 
 labels = listdir(TRAIN_PATH)
 
-dataset = Dataset(path_data=TRAIN_PATH,train=True)
-test = Dataset(path_data=TEST_PATH,train=False)
+dataset = Dataset(path_data=TRAIN_PATH, train=True)
+test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {'val_size':0.2,'test':True}
+part_param = {'val_size': 0.2,'test': False}
 train, validation = dataset.partition(**part_param)
-part_param = {'val_size':1e-5,'test':False}
+part_param = {'val_size': 1e-5,'test': False}
 test_values, _test_val_v = test.partition(**part_param)
 
 params = {
@@ -170,7 +170,7 @@ for model, net_path in zip(NETS, nets_path):
         grad=False
     )
 
-    matrix = covid.confusion_matrix(test_generator.x, 100)
+    matrix = covid.confusion_matrix(test_generator.x, 10)
     plot_dataset(absolut=matrix,names=labels, n_images=1, path=path_figure)
 
 # %%
