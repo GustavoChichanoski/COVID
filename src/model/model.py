@@ -81,11 +81,13 @@ class ModelCovid:
                                   'output']
         self.last_conv_layer = last_non_conv_layer.get_layer(index=-2).name
 
-    def save(self, path: Path,
-             name: str = None,
-             model: str = '',
-             history=None,
-             metric: str = 'val_f1'):
+    def save(
+        self,
+        path: Path,
+        name: str = None,
+        history=None,
+        metric: str = 'val_f1'
+    ) -> Tuple[str,str,str]:
         """
             Salva os pesos do modelo em um arquivo
             Args:
@@ -226,10 +228,12 @@ class ModelCovid:
         return None
 
 
-def classification(shape: Tuple[int, int, int] = (224, 224, 3),
-                   n_class: int = 3,
-                   model_net: str = 'Resnet50V2',
-                   resnet_train: bool = True) -> Model:
+def classification(
+    shape: Tuple[int, int, int] = (224, 224, 3),
+    n_class: int = 3,
+    model_net: str = 'Resnet50V2',
+    resnet_train: bool = True
+) -> Model:
     """ 
         Modelo de classificação entre covid, normal e pneumonia
 
@@ -245,9 +249,9 @@ def classification(shape: Tuple[int, int, int] = (224, 224, 3),
             (keras.Model) : Modelo do keras
     """
     params = {'include_top': False,
-              'weights': "imagenet",
+              'weights': 'imagenet',
               'input_shape': shape,
-              'pooling': "avg"}
+              'pooling': 'max'}
     if model_net == 'VGG19':
         resnet = VGG19(**params)
     elif model_net == 'InceptionResNetV2':
@@ -269,7 +273,7 @@ def classification(shape: Tuple[int, int, int] = (224, 224, 3),
 
 
 def winner(
-    labels: List[str] = ["Covid", "Normal", "Pneumonia"],
+    labels: List[str] = ['Covid', 'Normal', 'Pneumonia'],
     votes: List[int] = [0, 0, 0]
 ) -> str:
     """
@@ -301,7 +305,10 @@ def get_metrics() -> List[Metric]:
     return metrics
 
 
-def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
+def get_callbacks(
+    weight_path: str,
+    history_path: str
+) -> List[Callback]:
     """
         Retorna a lista callbacks do modelo
         Args:
@@ -328,7 +335,11 @@ def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
     reduce_lr = ReduceLROnPlateau(monitor='val_f1', **reduce_params)
 
     # Parada do treino caso o monitor nao diminua
-    stop_params = {'mode': 'min', 'restore_best_weights': True, 'patience': 40}
+    stop_params = {
+        'mode': 'min',
+        'restore_best_weights': True,
+        'patience': 40
+    }
     early_stop = EarlyStopping(monitor='val_f1', **stop_params)
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()

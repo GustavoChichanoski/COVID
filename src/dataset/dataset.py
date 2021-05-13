@@ -123,7 +123,7 @@ class Dataset:
         if test:
             x, y = self.x[0:4], self.y[0:4]
         else:
-            x, y = self.x, self.y
+            x, y = self.x[0:999], self.y[0:999]
         train_in, val_in, train_out, val_out = train_test_split(
             x, y,
             test_size=val_size,

@@ -1,3 +1,4 @@
+from pathlib import Path
 from src.images.read_image import read_images
 from typing import List
 import numpy as np
@@ -25,18 +26,10 @@ class DataGenerator(Sequence):
         self.channels = channels
         self._lazy_id_inicial = None
 
-    @property
-    def id_inicial(self):
-        if self._lazy_id_inicial is None:
-            identity = np.eye(self.n_class)
-            id_inicial = [0, 571, 1907]
-            self._lazy_id_inicial = id_inicial
-        return self._lazy_id_inicial
-
-    def __len__(self):
+    def __len__(self) -> int:
         return int(np.floor(len(self.x) / self.batch_size))
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx: int):
         batch_x = self.x[idx * self.batch_size : (idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size : (idx + 1) * self.batch_size]
         shape = (self.batch_size, self.n_class)
@@ -44,7 +37,7 @@ class DataGenerator(Sequence):
         batch_x = self.split(batch_x, self.batch_size)
         return batch_x, batch_y
 
-    def split(self, paths_images_in_batch, batch_size):
+    def split(self, paths_images_in_batch: List[Path], batch_size: int = 32):
         images = (read_images(path) for path in paths_images_in_batch)
         splited_images = [split_images(image, self.dim) for image in images]
         cuts = np.array(splited_images)

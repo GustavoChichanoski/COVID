@@ -1,6 +1,7 @@
 """
     Biblioteca referente ao processamento das imagens
 """
+from typing import Tuple
 from src.images.read_image import read_images
 import numpy as np
 from tqdm import tqdm
@@ -11,39 +12,14 @@ DIM_SPLIT = 224
 DIM_ORIG = 1024
 K_SPLIT = 100
 SCALE = 255
-THRESHOLD = 1279488  # 224 * 224 * 255 * .1
-
-
-def invert_image(image):
-    '''
-        Função para inverter a imagem
-        Args:
-            Recebe uma imagem de np.array e inverte os valores
-        return:
-            Retorna a imagem como sendo um vetor np.array
-    '''
-    return cv.bitwise_not(image)
-
-
-def equalize_histogram(image):
-    """
-        Equaliza o histograma da imagem
-
-        Args:
-            image (list): array com as valores da imagem
-
-        Returns:
-            list: retorna a imagem com o histograma equalizado
-    """
-    return cv.equalizeHist(image)
+THRESHOLD = 1279488 # 224 * 224 * 255 * .1
 
 
 def resize_image(image, dim: int):
-    image = cv.resize(image, (dim, dim))
-    return image
+    return cv.resize(image, (dim, dim))
 
 
-def find_start(image_with_black) -> tuple:
+def find_start(image_with_black) -> Tuple[int,int]:
     """
         Encontra o primeiro pixel não zero da esquerda para a direita.
         Args:
@@ -75,7 +51,7 @@ def find_start(image_with_black) -> tuple:
 
 
 def find_end(image_with_black,
-             size: int = 1024):
+             size: int = 1024) -> Tuple[int,int]:
     """
         Encontra o primeiro pixel não zero da direita para a esquerda0
 
@@ -107,9 +83,11 @@ def find_end(image_with_black,
     return row_end, column_end
 
 
-def random_pixel(start: tuple = (0, 0),
-                 end: tuple = (0, 0),
-                 dim_split: int = DIM_SPLIT):
+def random_pixel(
+    start: tuple = (0, 0),
+    end: tuple = (0, 0),
+    dim_split: int = DIM_SPLIT
+) -> Tuple[Tuple[int,int],Tuple[int,int]]:
     """
         Seleciona um pixel randomicamente comecando de start e
         indo end menos a dimensão maxima do corte.
@@ -128,8 +106,8 @@ def random_pixel(start: tuple = (0, 0),
     x_i, y_i = start
     x_e, y_e = end
     try:
-        pixel_x = np.random.randint(x_i, x_e-dim_split)
-        pixel_y = np.random.randint(y_i, y_e-dim_split)
+        pixel_x = np.random.randint(x_i, x_e - dim_split)
+        pixel_y = np.random.randint(y_i, y_e - dim_split)
     except:
         print(start)
         print(end)
@@ -155,7 +133,7 @@ def rescale_images(original_image, scale: int = 255):
             rescales.append(scale_img)
         return rescales
     half_scale = scale/2
-    return (original_image-half_scale)/half_scale
+    return (original_image - half_scale)/half_scale
 
 
 def normalize_image(images):
@@ -168,8 +146,7 @@ def normalize_image(images):
         Returns:
             (np.array): Imagens normalizadas
     """
-    x_new = images / 255
-    return x_new
+    return images / 256
 
 
 def gray2rgb(gray_image):
