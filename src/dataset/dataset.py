@@ -42,13 +42,18 @@ class Dataset:
                 (list): nomes dos arquivos nas pastas
         """
         if self._lazy_files_in_folder is None:
-            self._lazy_files_in_folder = [list(folder.iterdir()) for folder in self.label_names]
+            self._lazy_files_in_folder = [
+                list(folder.iterdir()) for folder in self.label_names
+            ]
         return self._lazy_files_in_folder
 
     @property
     def number_files_in_folders(self):
         if self._lazy_number_files_in_folders is None:
-            return np.array([len(folder) for folder in self.files_in_folder])
+            files = np.array([
+                len(folder) for folder in self.files_in_folder
+            ])
+            self._lazy_number_files_in_folders = files
         else:
             return self._lazy_number_files_in_folders
 
@@ -106,7 +111,7 @@ class Dataset:
     def partition(
         self,
         val_size: float = 0.2,
-        test: bool = False,
+        tamanho: int = None,
         shuffle: bool = True
     ) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
         """ Retorna a entrada e saidas dos keras.
@@ -120,10 +125,10 @@ class Dataset:
                 (test), (val): Saida para o keras.
         """
         # t : train - v : validation
-        if test:
-            x, y = self.x[0:4], self.y[0:4]
-        else:
-            x, y = self.x, self.y
+        if tamanho is None or tamanho > len(self.x) or tamanho < 1:
+            tamanho = len(self.x)
+        x = self.x[:tamanho]
+        y = self.y[:tamanho]
         train_in, val_in, train_out, val_out = train_test_split(
             x, y,
             test_size=val_size,

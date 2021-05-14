@@ -188,7 +188,12 @@ class ModelCovid:
                str: label ganhadora
         """
         imagem = ri(image)
-        cuts, positions = splits(imagem, n_splits, verbose=grad)
+        cuts, positions = splits(
+            image=imagem,
+            n_split=n_splits,
+            dim_split=self.model_input_shape[0],
+            verbose=grad
+        )
         shape = (n_splits,
                  self.model_input_shape[0],
                  self.model_input_shape[1],
@@ -212,7 +217,7 @@ class ModelCovid:
         for path in tqdm(x):
             ytrue = None
             for label in self.labels:
-                if label in str(path):
+                if label == path.parts[-2]:
                     ytrue = label
                     break
             if ytrue is None:
@@ -328,17 +333,14 @@ def get_callbacks(
 
     # Reduz o valor de LR caso o monitor nao diminuia
     reduce_params = {
-        'factor': 0.5, 'patience': 3, 'verbose': 1,
-        'mode': 'min', 'min_delta': 1e-3,
-        'cooldown': 2, 'min_lr': 1e-8
+        'factor': 0.5, 'patience': 3, 'verbose': 1, 'mode': 'min',
+        'min_delta': 1e-3, 'cooldown': 2, 'min_lr': 1e-8
     }
     reduce_lr = ReduceLROnPlateau(monitor='val_f1', **reduce_params)
 
     # Parada do treino caso o monitor nao diminua
     stop_params = {
-        'mode': 'min',
-        'restore_best_weights': True,
-        'patience': 40
+        'mode': 'min', 'restore_best_weights': True, 'patience': 40
     }
     early_stop = EarlyStopping(monitor='val_f1', **stop_params)
     # Termina se um peso for NaN (not a number)
@@ -368,24 +370,3 @@ def get_callbacks(
         ]
     # callbacks = [checkpoint, early_stop, reduce_lr, terminate]
     return callbacks
-
-
-def conv_class(layer,
-               filters: int = 32,
-               kernel: tuple = (3, 3),
-               act: str = "relu",
-               i: int = 1) -> Any:
-    # Define os nomes das layers
-    conv_name, bn_name, act_name = f"CV_{i}", f"BN_{i}", f"Act_{i}"
-
-    layer = Conv2D(filters=filters,
-                   kernel_size=kernel,
-                   padding='same',
-                   kernel_regularizer=regularizers.l1_l2(),
-                   bias_regularizer=regularizers.l1(),
-                   activity_regularizer=regularizers.l1(),
-                   name=conv_name)(layer)
-    layer = BatchNormalization(name=bn_name)(layer)
-    layer = Activation(activation=act,
-                       name=act_name)(layer)
-    return layer
