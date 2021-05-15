@@ -271,7 +271,7 @@ def classification(
     output = Sequential()
     output.add(resnet)
     output.add(Dropout(.5,name='drop_0'))
-    output.add(Dense(units=100,activation='softmax',name='classifier_1'))
+    output.add(Dense(units=100,activation='relu',name='classifier_1'))
     output.add(Dropout(.25,name='drop_1'))
     output.add(Dense(units=n_class,activation=None,name='classifier'))
     output.add(Activation('softmax', name='output'))
