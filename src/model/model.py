@@ -256,7 +256,7 @@ def classification(
     params = {'include_top': False,
               'weights': 'imagenet',
               'input_shape': shape,
-              'pooling': 'max'}
+              'pooling': 'avg'}
     if model_net == 'VGG19':
         resnet = VGG19(**params)
     elif model_net == 'InceptionResNetV2':
