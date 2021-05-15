@@ -3,7 +3,7 @@
 """
 from os.path import join
 from os import listdir
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
@@ -54,8 +54,7 @@ class Dataset:
                 len(folder) for folder in self.files_in_folder
             ])
             self._lazy_number_files_in_folders = files
-        else:
-            return self._lazy_number_files_in_folders
+        return self._lazy_number_files_in_folders
 
     @property
     def label_names(self) -> List[Path]:
@@ -111,7 +110,7 @@ class Dataset:
     def partition(
         self,
         val_size: float = 0.2,
-        tamanho: int = None,
+        tamanho: Union[int,None] = None,
         shuffle: bool = True
     ) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
         """ Retorna a entrada e saidas dos keras.

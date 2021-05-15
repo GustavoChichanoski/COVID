@@ -270,9 +270,8 @@ def classification(
     resnet.trainable = resnet_train
     output = Sequential()
     output.add(resnet)
-    output.add(Dropout(.5,name='drop_0'))
+    output.add(Dropout(.25,name='drop_0'))
     output.add(Dense(n_class,activation=None,name='classifier'))
-    output.add(Dropout(.5,name='drop_1'))
     output.add(Activation('softmax', name='output'))
     return output
 
