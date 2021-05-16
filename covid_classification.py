@@ -54,7 +54,7 @@ TEST = TEST_PATH / 'Covid/0000.png'
 CWD = Path.cwd()
 OUTPUT_PATH = CWD / 'outputs'
 CLEAR = False
-
+LABELS = ['Covid','Normal','Pneumonia']
 if CLEAR:
     remove_folder([OUTPUT_PATH, Path('./logs'), Path('./build')])
 

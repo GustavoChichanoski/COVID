@@ -256,7 +256,7 @@ def classification(
     params = {'include_top': False,
               'weights': 'imagenet',
               'input_shape': shape,
-              'pooling': 'avg'}
+              'pooling': 'max'}
     if model_net == 'VGG19':
         resnet = VGG19(**params)
     elif model_net == 'InceptionResNetV2':
@@ -271,10 +271,9 @@ def classification(
     output = Sequential()
     output.add(resnet)
     output.add(Dropout(.5,name='drop_0'))
-    output.add(Dense(units=100,activation='relu',name='classifier_1'))
-    output.add(Dropout(.25,name='drop_1'))
     output.add(Dense(units=n_class,activation=None,name='classifier'))
-    output.add(Activation('softmax', name='output'))
+    output.add(Dropout(.25,name='drop_1'))
+    output.add(Activation(activation='softmax', name='output'))
     return output
 
 
