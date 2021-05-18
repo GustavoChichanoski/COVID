@@ -38,8 +38,8 @@ class Dataset:
     def files_in_folder(self):
         """
             Retorna o nomes dos arquivos contidos nas pastas.
-            Returns:
-                (list): nomes dos arquivos nas pastas
+                Returns:
+                    (list): nomes dos arquivos nas pastas
         """
         if self._lazy_files_in_folder is None:
             self._lazy_files_in_folder = [
@@ -72,21 +72,21 @@ class Dataset:
         """
         if self._lazy_y is None:
             # Recebe os nomes dos rotulos
-            labels = list(self.label_names)
+            labels = np.array(list(self.label_names))
             # Acha o tamanho dos rotulos
             len_labels = len(labels)
             # Cria a matriz de saída
             label_eyes = np.eye(len_labels)
-            # Criao vetor de saída
+            # Cricao vetor de saída
             outputs = np.array([])
             # For para preencher o vetor de saída
             for x in self.x:
+                # label verdadeiro
                 x_label = x.parts[-2]
-                i = 0
-                for label in labels:
-                    if x_label == label.name:
+                # Acha o index da label
+                for i in range(len_labels):
+                    if x_label == labels[i].name:
                         break
-                    i += 1
                 out = label_eyes[i]
                 outputs = np.append(outputs,out)
             self._lazy_y = outputs.reshape(len(self.x), len_labels)
@@ -99,9 +99,12 @@ class Dataset:
             if self.train:
                 files = list(self.files_in_folder)
                 number_files = self.number_files_in_folders
-                for index in range(np.max(number_files)):
-                    for index_label, label in enumerate(self.label_names):
-                        x = np.append(x, files[index_label][index % number_files[index_label]])
+                for index_label, label in enumerate(self.label_names):
+                    for index in range(len(files[index_label])):
+                        x = np.append(
+                            x,
+                            files[index_label][index % number_files[index_label]]
+                        )
             else:
                 x = sum(list(self.files_in_folder), [])
             self._lazy_x = x

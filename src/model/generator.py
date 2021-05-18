@@ -1,6 +1,6 @@
 from pathlib import Path
 from src.images.read_image import read_images
-from typing import List
+from typing import Any, List
 import numpy as np
 from tensorflow.python.keras.utils.all_utils import Sequence
 from src.dataset.dataset import Dataset
@@ -37,7 +37,11 @@ class DataGenerator(Sequence):
         batch_x = self.split(batch_x, self.batch_size)
         return batch_x, batch_y
 
-    def split(self, paths_images_in_batch: List[Path], batch_size: int = 32):
+    def split(
+        self,
+        paths_images_in_batch: List[Path],
+        batch_size: int = 32
+    ) -> Any:
         images = (read_images(path) for path in paths_images_in_batch)
         splited_images = [split_images(image, self.dim) for image in images]
         cuts = np.array(splited_images)

@@ -25,7 +25,7 @@ class CustomFit(Model):
         batch_size = tf.shape(data)[0]
         
 
-    def split(self,path, batch_size):
+    def split(self,paths, batch_size):
         dim_split = self.input_shape[1]
         channels = self.input_shape[-1]
         cuts = []

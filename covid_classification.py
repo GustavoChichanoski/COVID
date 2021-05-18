@@ -22,14 +22,14 @@ DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 K_SPLIT = 100
 BATCH_SIZE = 1
-EPOCHS = 100
+EPOCHS = 1
 
-NETS = ['DenseNet201',
-        'InceptionResNetV2',
-        'ResNet50V2',
-        'VGG19']
+# NETS = ['DenseNet201',
+#         'InceptionResNetV2',
+#         'ResNet50V2',
+#         'VGG19']
 
-# NETS = ['DenseNet201']
+NETS = ['DenseNet201']
 
 __version__ = '1.0'
 
@@ -73,19 +73,19 @@ np.random.seed(seed=42)
 
 labels = listdir(TRAIN_PATH)
 
-dataset = Dataset(path_data=TRAIN_PATH, train=True)
+dataset = Dataset(path_data=TRAIN_PATH, train=False)
 test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {'val_size': 0.2,'tamanho': 100}
+part_param = {'val_size': 0.2,'tamanho': 10}
 train, validation = dataset.partition(**part_param)
-part_param = {'val_size': 1e-5,'tamanho': 100}
+part_param = {'val_size': 1e-5,'tamanho': 1000}
 test_values, _test_val_v = test.partition(**part_param)
 
 params = {
     'dim': DIM_SPLIT,
     'batch_size': BATCH_SIZE,
     'n_class': len(labels),
-    'shuffle': True,
+    'shuffle': False,
     'channels': 3
 }
 train_generator = DataGenerator(data=train, **params)

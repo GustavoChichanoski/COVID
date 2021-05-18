@@ -215,16 +215,9 @@ class ModelCovid:
         n_labels = len(self.labels)
         matriz = np.zeros((n_labels, n_labels))
         for path in tqdm(x):
-            ytrue = None
-            for label in self.labels:
-                if label == path.parts[-2]:
-                    ytrue = label
-                    break
-            if ytrue is None:
-                ytrue = 'Normal'
-            elect = self.predict(image=path, n_splits=n_splits, grad=False)
+            elect = self.predict(image=path, n_splits=n_splits,grad=False)
+            true_index = self.labels.index(path.parts[-2])
             index = self.labels.index(elect)
-            true_index = self.labels.index(ytrue)
             matriz[true_index][index] += 1
         return matriz
 
