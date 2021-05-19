@@ -256,22 +256,21 @@ def classification(
               'input_shape': shape,
               'pooling': 'max'}
     if model_net == 'VGG19':
-        resnet = VGG19(**params)
+        base_model = VGG19(**params)
     elif model_net == 'InceptionResNetV2':
-        resnet = InceptionV3(**params)
+        base_model = InceptionV3(**params)
     elif model_net == 'MobileNetV2':
-        resnet = MobileNetV3Small(**params)
+        base_model = MobileNetV3Small(**params)
     elif model_net == 'DenseNet201':
-        resnet = DenseNet201(**params)
+        base_model = DenseNet201(**params)
     else:
-        resnet = ResNet50V2(**params)
-    resnet.trainable = resnet_train
-    output = Sequential()
-    output.add(resnet)
-    output.add(Dropout(.5,name='drop_0'))
-    output.add(Dense(units=n_class,activation=None,name='classifier'))
-    output.add(Activation(activation='softmax', name='output'))
-    return output
+        base_model = ResNet50V2(**params)
+    base_model.trainable = resnet_train
+    model = base_model.output
+    model = Dropout(.5,name='drop_0')(model)
+    model = Dense(units=n_class,name='classifier')(model)
+    predictions = Activation(activation='softmax', name='output')(model)
+    return Model(inputs=base_model.inputs, outputs=predictions)
 
 
 def winner(
