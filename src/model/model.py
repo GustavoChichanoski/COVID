@@ -76,10 +76,10 @@ class ModelCovid:
         self.weight_path = weight_path
         # Nomes das camadas até a ultima camada de convolução
         last_non_conv_layer = self.model.layers[0]
-        self.classifier_layers = [last_non_conv_layer.get_layer(index=-1).name,
+        self.classifier_layers = [self.model.get_layer(index=-4).name,
                                   'classifier',
                                   'output']
-        self.last_conv_layer = last_non_conv_layer.get_layer(index=-2).name
+        self.last_conv_layer = self.model.get_layer(index=-5).name
 
     def save(
         self,
