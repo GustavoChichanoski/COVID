@@ -30,20 +30,21 @@ class DataGenerator(Sequence):
         return int(np.floor(len(self.x) / self.batch_size))
 
     def __getitem__(self, idx: int):
+        if len(self.x) < self.batch_size:
+            self.batch_size = len(self.x)
         batch_x = self.x[idx * self.batch_size : (idx + 1) * self.batch_size]
         batch_y = self.y[idx * self.batch_size : (idx + 1) * self.batch_size]
         shape = (self.batch_size, self.n_class)
         batch_y = batch_y.reshape(shape)
-        batch_x = self.split(batch_x, self.batch_size)
+        batch_x = self.split(batch_x)
         return batch_x, batch_y
 
     def split(
         self,
         paths_images_in_batch: List[Path],
-        batch_size: int = 32
     ) -> Any:
         images = (read_images(path) for path in paths_images_in_batch)
         splited_images = [split_images(image, self.dim) for image in images]
         cuts = np.array(splited_images)
-        shape = (batch_size, self.dim, self.dim, self.channels)
+        shape = (self.batch_size, self.dim, self.dim, self.channels)
         return cuts.reshape(shape)

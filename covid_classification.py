@@ -73,7 +73,7 @@ np.random.seed(seed=42)
 
 labels = listdir(TRAIN_PATH)
 
-dataset = Dataset(path_data=TRAIN_PATH, train=False)
+dataset = Dataset(path_data=TRAIN_PATH, train=True)
 test = Dataset(path_data=TEST_PATH, train=False)
 
 part_param = {'val_size': 0.2,'tamanho': 10}
@@ -157,7 +157,8 @@ for model, net_path in zip(NETS, nets_path):
         file_model, file_weights, file_history = covid.save(
             path=net_path,
             history=history.history,
-            metric='accuracy'
+            metric='accuracy',
+            kaggle=KAGGLE
         )
         plot_history(history)
     

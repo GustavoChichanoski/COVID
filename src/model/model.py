@@ -86,6 +86,7 @@ class ModelCovid:
         path: Path,
         name: str = None,
         history=None,
+        kaggle:bool = False,
         metric: str = 'val_f1'
     ) -> Tuple[str,str,str]:
         """
@@ -107,17 +108,21 @@ class ModelCovid:
         if history is not None:
             value = history[metric][-1] * 100
             history_path = path / 'history' / f'history_{self.model_name}_{value:.02f}'
+            if kaggle:
+                history_path = f'history_{self.model_name}_{value:.02f}'
             file_history = f'{history_path}.csv'
             hist_df = pd.DataFrame(history)
             with open(file_history, mode='w') as f:
                 hist_df.to_csv(f)
 
         file_name = f'{self.model_name}_{metric}_{value:.02f}'
-        file_model = path / f'{file_name}.hdf5'
+        if not kaggle:
+            file_model = path / f'{file_name}.hdf5'
         self.model.save(file, overwrite=True)
         print(f"[INFO] Modelo salvos em: {file}")
-
-        file_weights = path / 'weights' / f'{file_name}_weights.hdf5'
+        file_weights = f'{file_name}_weights.hdf5'
+        if not kaggle:
+            file_weights = path / 'weights' / file_weights 
         self.model.save_weights(file_weights, overwrite=True)
         print(f"[INFO] Pesos salvos em: {file_weights}")
 
@@ -265,7 +270,6 @@ def classification(
     output.add(resnet)
     output.add(Dropout(.75,name='drop_0'))
     output.add(Dense(units=n_class,activation=None,name='classifier'))
-    output.add(Dropout(.25,name='drop_1'))
     output.add(Activation(activation='softmax', name='output'))
     return output
 
