@@ -268,7 +268,7 @@ def classification(
     resnet.trainable = resnet_train
     output = Sequential()
     output.add(resnet)
-    output.add(Dropout(.75,name='drop_0'))
+    output.add(Dropout(.5,name='drop_0'))
     output.add(Dense(units=n_class,activation=None,name='classifier'))
     output.add(Activation(activation='softmax', name='output'))
     return output
@@ -323,7 +323,7 @@ def get_callbacks(
     # Salva os pesos dos modelo para serem carregados
     # caso o monitor não diminua
     check_params = {
-        'monitor': 'val_loss', 'verbose': 1, 'mode': 'min',
+        'monitor': 'val_f1', 'verbose': 1, 'mode': 'min',
         'save_best_only': True, 'save_weights_only': False
     }
     checkpoint = ModelCheckpoint(weight_path, **check_params)
