@@ -22,7 +22,7 @@ DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 K_SPLIT = 100
 BATCH_SIZE = 1
-EPOCHS = 1
+EPOCHS = 2
 
 # NETS = ['DenseNet201',
 #         'InceptionResNetV2',
@@ -76,7 +76,7 @@ labels = listdir(TRAIN_PATH)
 dataset = Dataset(path_data=TRAIN_PATH, train=False)
 test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {'val_size': 0.2,'tamanho': 10}
+part_param = {'val_size': 0.2,'tamanho': 50}
 train, validation = dataset.partition(**part_param)
 part_param = {'val_size': 1e-5,'tamanho': 1000}
 test_values, _test_val_v = test.partition(**part_param)
