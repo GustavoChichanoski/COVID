@@ -7,6 +7,7 @@ import pandas as pd
 from tensorflow.python.keras.layers.core import Dropout
 from tqdm import tqdm
 from tensorflow.python.keras import Model
+from tensorflow.python.keras import Input
 from tensorflow.python.keras import regularizers
 from tensorflow.python.keras import Sequential
 from tensorflow.python.keras.layers import Dense
@@ -251,9 +252,11 @@ def classification(
         --------
             (keras.Model) : Modelo do keras
     """
+    inputs = Input(shape)
+    model = Conv2D(filters=3,kernel_size=(1,1),padding='same',name='input')(inputs)
     params = {'include_top': False,
               'weights': 'imagenet',
-              'input_shape': shape,
+              'input_shape': (224,224,3),
               'pooling': 'avg'}
     if model_net == 'VGG19':
         base_model = VGG19(**params)
@@ -266,11 +269,11 @@ def classification(
     else:
         base_model = ResNet50V2(**params)
     base_model.trainable = resnet_train
-    model = base_model.output
+    model = base_model(model)
     model = Dropout(.5,name='drop_0')(model)
     model = Dense(units=n_class,name='classifier')(model)
     predictions = Activation(activation='softmax', name='output')(model)
-    return Model(inputs=base_model.inputs, outputs=predictions)
+    return Model(inputs=inputs, outputs=predictions)
 
 
 def winner(

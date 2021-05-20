@@ -1,6 +1,22 @@
 from os import mkdir
+from os.path import getctime
 from pathlib import Path
 from typing import List, Tuple, Union
+
+def last_file(path: Path,suffix_file: str = 'hdf5'):
+    weight = None
+    max_weight = None
+    for weight in path.iterdir():
+        suffix = weight.suffix
+        if suffix == suffix_file:
+            if max_weight is None:
+                max_weight = weight
+            else:
+                time_max = getctime(max_weight)
+                time_weight = getctime(weight)
+                if time_max < time_weight:
+                    max_weight = weight
+    return max_weight
 
 def remove_folder(path: Union[Path,List[Path]]) -> None:
     if isinstance(path,list):

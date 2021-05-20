@@ -86,7 +86,7 @@ class UNet(Model):
             first_layer = layer
 
         layer = Dropout(0.33, name='Drop_1')(layer)
-        outputs = Conv2D(self.n_class, (1, 1), padding='same',
+        outputs = Conv2D(filters=self.n_class, kernel_size=(1, 1), padding='same',
                          activation=self.final_activation, name='output')(layer)
 
         return Model(inputs, outputs, name="UNet")
