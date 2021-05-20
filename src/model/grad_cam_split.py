@@ -167,9 +167,9 @@ def grad_cam(
     dimensao_modelo = (1, dimensao_imagem, dimensao_imagem, 3)
     image_reshape = image.reshape(dimensao_modelo)
     # Nome da ultima camada de convolucao
-    last_conv_layer = resnet.get_layer(last_conv_layer_name)
+    last_conv_layer = model.get_layer(last_conv_layer_name)
     # Cria um novo modelo com as camadas até a ultima convolução
-    model_until_last_conv = Model(resnet.input,
+    model_until_last_conv = Model(model.input,
                                   last_conv_layer.output)
     # Cria o modelo com as camadas após a ultima convolução
     model_after_last_conv = model_after(last_conv_layer,
@@ -266,10 +266,7 @@ def model_after(
     classifier_input = Input(shape=last_conv_layer.output.shape[1:])
     layer = classifier_input
     for layer_name in classifier_layer_names:
-        try:
-            layer = resnet_model.get_layer(layer_name)(layer)
-        except ValueError:
-            layer = model.get_layer(layer_name)(layer)
+        layer = model.get_layer(layer_name)(layer)
     return Model(classifier_input, layer)
 
 def create_heatmap(last_conv_layer_output,
