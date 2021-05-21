@@ -194,6 +194,7 @@ class ModelCovid:
                str: label ganhadora
         """
         imagem = ri(image)
+        imagemColor = ri(image,color=True)
         cuts, positions = splits(
             image=imagem,
             n_split=n_splits,
@@ -214,7 +215,7 @@ class ModelCovid:
                                     posicoes_iniciais_dos_pacotes=positions,
                                     modelo=self.model,
                                     winner_pos=self.labels.index(elect))
-            plt_gradcam(heatmap, imagem, grad, name)
+            plt_gradcam(heatmap, imagemColor, grad, name)
         return elect
 
     def confusion_matrix(self, x, n_splits: int = 1):

@@ -27,6 +27,7 @@ class DataGenerator(Sequence):
         self._lazy_id_inicial = None
 
     def __len__(self) -> int:
+        'Denotes the number of batches per epoch'
         return int(np.floor(len(self.x) / self.batch_size))
 
     def __getitem__(self, idx: int):
@@ -37,7 +38,7 @@ class DataGenerator(Sequence):
         shape = (self.batch_size, self.n_class)
         batch_y = batch_y.reshape(shape)
         batch_x = self.split(batch_x)
-        return batch_x, batch_y
+        return np.array([batch_x, batch_y])
 
     def split(
         self,

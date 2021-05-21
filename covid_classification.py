@@ -29,7 +29,7 @@ EPOCHS = 2
 #         'ResNet50V2',
 #         'VGG19']
 
-NETS = ['DenseNet201']
+NETS = ['ResNet50V2']
 
 __version__ = '1.0'
 
@@ -60,7 +60,6 @@ if CLEAR:
 
 nets_path = create_folders(name=OUTPUT_PATH, nets=NETS)
 # %% [code]
-
 np.random.seed(seed=42)
 
 labels = listdir(TRAIN_PATH)
@@ -68,7 +67,7 @@ labels = listdir(TRAIN_PATH)
 dataset = Dataset(path_data=TRAIN_PATH, train=True)
 test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {'tamanho': 1000}
+part_param = {'tamanho': 0}
 train, validation = dataset.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = test.partition(val_size=1e-5, **part_param)
 
@@ -82,10 +81,7 @@ params = {
 train_generator = DataGenerator(data=train, **params)
 val_generator = DataGenerator(data=validation, **params)
 test_generator = DataGenerator(data=test_values, **params)
-
-# Detect and init TPU
 # %% [code]
-
 model = NETS[0]
 net_path = nets_path[0]
 
@@ -133,15 +129,13 @@ else:
     )
     plot_history(history)
 
-name = path_figure / f'{model}_{K_SPLIT}'
-covid.predict(
-    image=TEST,
-    n_splits=K_SPLIT,
-    name=name,
-    grad=False
-)
+covid.model.summary()
 
-matrix = covid.confusion_matrix(test_generator.x, 1)
+name = path_figure / f'{model}_{K_SPLIT}'
+print('[INFO] Predição de uma imagem')
+print(covid.predict(image=TEST,n_splits=K_SPLIT,name=name,grad=False))
+
+matrix = covid.confusion_matrix(train_generator.x, 4)
 plot_dataset(absolut=matrix,names=labels, n_images=1, path=path_figure)
 
 # %%

@@ -12,8 +12,7 @@ DIM_SPLIT = 224
 DIM_ORIG = 1024
 K_SPLIT = 100
 SCALE = 255
-THRESHOLD = 1279488  # 224 * 224 * 255 * .1
-
+THRESHOLD = 224 * 224 * 255 * 0.1
 
 def resize_image(image, dim: int):
     return cv.resize(image, (dim, dim))

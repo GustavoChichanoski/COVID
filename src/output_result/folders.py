@@ -3,7 +3,7 @@ from os.path import getctime
 from pathlib import Path
 from typing import List, Tuple, Union
 
-def last_file(path: Path,suffix_file: str = 'hdf5'):
+def last_file(path: Path,suffix_file: str = '.hdf5'):
     weight = None
     max_weight = None
     for weight in path.iterdir():

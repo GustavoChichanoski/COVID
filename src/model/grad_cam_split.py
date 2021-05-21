@@ -162,9 +162,10 @@ def grad_cam(
     """
     # Recebe o tamanho da imagem a ser inserida no modelo
     dimensao_imagem = model.input_shape[1]
+    channel = model.input_shape[3]
     resnet = model.layers[0]
     # Altera o dimensão da imagem para atender a entrada do modelo
-    dimensao_modelo = (1, dimensao_imagem, dimensao_imagem, 3)
+    dimensao_modelo = (1, dimensao_imagem, dimensao_imagem, channel)
     image_reshape = image.reshape(dimensao_modelo)
     # Nome da ultima camada de convolucao
     last_conv_layer = model.get_layer(last_conv_layer_name)
