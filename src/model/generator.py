@@ -38,7 +38,7 @@ class DataGenerator(Sequence):
         shape = (self.batch_size, self.n_class)
         batch_y = batch_y.reshape(shape)
         batch_x = self.split(batch_x)
-        return np.array([batch_x, batch_y])
+        return batch_x, batch_y
 
     def split(
         self,
