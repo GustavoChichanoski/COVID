@@ -11,17 +11,16 @@ from src.images.read_image import read_images
 class DataGenerator(Sequence):
     def __init__(
         self,
-        data,
+        x_set,
+        y_set,
         batch_size: int = 64,
         dim: int = 224,
-        shuffle: bool = True,
         n_class: int = 3,
         channels: int = 3
     ) -> None:
-        self.x, self.y = data
+        self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.dim = dim
-        self.shuffle = shuffle
         self.n_class = n_class
         self.channels = channels
         self._lazy_id_inicial = None

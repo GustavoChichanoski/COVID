@@ -64,23 +64,28 @@ np.random.seed(seed=42)
 
 labels = listdir(TRAIN_PATH)
 
-dataset = Dataset(path_data=TRAIN_PATH, train=True)
-test = Dataset(path_data=TEST_PATH, train=False)
+ds_train = Dataset(path_data=TRAIN_PATH, train=True)
+ds_test = Dataset(path_data=TEST_PATH, train=False)
 
+<<<<<<< HEAD
 part_param = {'tamanho': 20}
 train, validation = dataset.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = test.partition(val_size=1e-5, **part_param)
+=======
+part_param = {'tamanho': 0}
+train, validation = ds_train.partition(val_size=0.2, **part_param)
+test, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
+>>>>>>> 28cf04f97894856bd446ddef57c7c111ebf06952
 
 params = {
     'dim': DIM_SPLIT,
     'batch_size': BATCH_SIZE,
     'n_class': len(labels),
-    'shuffle': False,
     'channels': CHANNELS
 }
-train_generator = DataGenerator(data=train, **params)
-val_generator = DataGenerator(data=validation, **params)
-test_generator = DataGenerator(data=test_values, **params)
+train_generator = DataGenerator(x_set=train[0], y_set=train[1], **params)
+val_generator = DataGenerator(x_set=validation[0], y_set=validation[1], **params)
+test_generator = DataGenerator(x_set=test[0], y_set=test[1], **params)
 # %% [code]
 model = NETS[0]
 net_path = nets_path[0]
