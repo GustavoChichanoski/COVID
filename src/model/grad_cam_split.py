@@ -4,11 +4,12 @@
 from typing import List
 import numpy as np
 import tensorflow as tf
-from tensorflow.python.keras import Input
 from tensorflow.python.keras.models import Model
-from tensorflow.python.ops.gen_nn_ops import MaxPool
+from tensorflow.python.keras import Input
+from tensorflow.python.keras import backend as K
 from src.images.process_images import resize_image as resize
 from src.images.process_images import relu as relu_img
+from src.images.process_images import normalize_image as norm
 
 
 def prob_grad_cam(pacotes_da_imagem,
@@ -19,7 +20,6 @@ def prob_grad_cam(pacotes_da_imagem,
                   dim_orig: int = 1024,
                   winner_pos: int = 0):
     """ Gera o grad cam a partir de pedaços da imagem original
-
         Args:
         -----
             pacotes_da_imagem (array):
@@ -30,16 +30,15 @@ def prob_grad_cam(pacotes_da_imagem,
                 Modelo desenvolvido
             dim_orig_da_imagem (int, optional):
                 Dimensão original da imagem. Defaults to 1024.
-
         Returns:
         --------
             (np.array): Grad Cam dos recortes
     """
-    orig_shape = (dim_orig, dim_orig)
+
     # Inicializa a imagem final do grad cam com zeros
-    grad_cam_prob = np.zeros(orig_shape)
+    grad_cam_prob = np.zeros((dim_orig, dim_orig))
     # Armazena o numero de pacotes que passaram por um pixel
-    pacotes_por_pixel = np.zeros(orig_shape)
+    pacotes_por_pixel = np.zeros((dim_orig, dim_orig))
     for pacote_atual, posicao_pixel in zip(pacotes_da_imagem,
                                            posicoes_iniciais_dos_pacotes):
         entrada_modelo = modelo.input_shape
@@ -53,7 +52,7 @@ def prob_grad_cam(pacotes_da_imagem,
         #                            layer_names='classifier')
         # Acha qual foi o canal preedito
         predicao = modelo.predict(pacote_atual_reshape)
-        predicao_pacote = predicao[0, winner_pos]
+        predicao_pacote = predicao[0,winner_pos]
         # Calcula o grad cam para o canal vencedor
         gradcam_pacote = grad_cam(image=pacote_atual,
                                   model=modelo,
@@ -76,19 +75,16 @@ def prob_grad_cam(pacotes_da_imagem,
     return grad_cam_prob
 
 
-def somar_grads_cam(
-    grad_cam_atual: List[int],
-    grad_cam_split: List[int],
-    pixels_usados: List[int],
-    inicio: tuple = (0, 0)
-):
+def somar_grads_cam(grad_cam_atual: List[int],
+                    grad_cam_split: List[int],
+                    pixels_usados: List[int],
+                    inicio: tuple = (0, 0)):
     """
         Realiza a soma do GradCam gerado pelo GradCam do
         recorte, com a matriz que será o GradCam final.
         Para isso é necessário conhecer os valores atuais
         da GradCam, a GradCam gerada pelo recorte da
         imagem e as posicões inicial do recorte.
-
         Args:
         -----
             grad_cam_atual (np.array):
@@ -100,15 +96,13 @@ def somar_grads_cam(
             inicio (tuple, optional):
                 Posições iniciais dos recortes.
                 Defaults to (0, 0).
-
         Returns:
         --------
             (tuple): GradCam calculada até o momento,
                      pacotes por Pixel
     """
     dimensao = grad_cam_split.shape[0]
-    one_shape = (dimensao, dimensao)
-    valor_um = np.ones(one_shape)
+    valor_um = np.ones((dimensao, dimensao))
     final = [inicio[0] + dimensao, inicio[1] + dimensao]
     grad_cam_atual[inicio[0]:final[0],
                    inicio[1]:final[1]] += grad_cam_split
@@ -117,22 +111,17 @@ def somar_grads_cam(
     return (grad_cam_atual, pixels_usados)
 
 
-def divisao_pacotes_por_pixel(
-    pacotes_por_pixel: List[int],
-    grad_cam_prob: List[int]
-):
+def divisao_pacotes_por_pixel(pacotes_por_pixel: List[int],
+                              grad_cam_prob: List[int]):
     """ Divide os numeros de pacotes de pixeis pela
         grad cam do pacote gerado pela função para
         gerar o grad cam probabilistico.
-
         Args:
         -----
             pacotes_por_pixel (np.array):
                 Numero dos pacotes passados em cada pixel.
             grad_cam_prob (np.array):
                 GradCam do recorte da imagem.
-
-
         Returns:
         --------
             (np.array): GradCam Probabilistico
@@ -145,39 +134,44 @@ def divisao_pacotes_por_pixel(
     return grad_cam_prob
 
 
-def grad_cam(
-    image,
-    model,
-    classifier_layer_names: List[str],
-    last_conv_layer_name: str = 'avg_pool'
-):
-    """ Gera o mapa de processamento da CNN.
+def find_base_model(model):
+    for layer in model.layers:
+        if type(model) == type(layer):
+            return layer
 
+
+def grad_cam(image,
+             model,
+             classifier_layer_names: List[str],
+             last_conv_layer_name: str = 'avg_pool'):
+    """ Gera o mapa de processamento da CNN.
         Args:
             image (np.array): Recorte da imagem
             model (keras.Model): Modelo da CNN
-
         Returns:
             (np.array): Grad Cam
     """
     # Recebe o tamanho da imagem a ser inserida no modelo
+    resnet = find_base_model(model)
     dimensao_imagem = model.input_shape[1]
-    channel = model.input_shape[3]
-    resnet = model.layers[0]
     # Altera o dimensão da imagem para atender a entrada do modelo
-    dimensao_modelo = (1, dimensao_imagem, dimensao_imagem, channel)
+    dimensao_modelo = (1, dimensao_imagem, dimensao_imagem, model.input_shape[3])
     image_reshape = image.reshape(dimensao_modelo)
     # Nome da ultima camada de convolucao
-    last_conv_layer = model.get_layer(last_conv_layer_name)
+    last_conv_layer = resnet.get_layer(last_conv_layer_name)
     # Cria um novo modelo com as camadas até a ultima convolução
-    model_until_last_conv = Model(model.input,
+    model_until_last_conv = Model(resnet.input,
                                   last_conv_layer.output)
+    inputs = Input(shape=(dimensao_imagem, dimensao_imagem, model.input_shape[3]))
+    new_model = model.layers[1](inputs)
+    new_model = model_until_last_conv(new_model)
+    new_model = Model(inputs,new_model)
     # Cria o modelo com as camadas após a ultima convolução
-    model_after_last_conv = model_after(last_conv_layer,
+    model_after_last_conv = model_after(new_model,
                                         resnet,
                                         model,
                                         classifier_layer_names)
-    last_conv_layer_output = generate_grads_image(model_until_last_conv,
+    last_conv_layer_output = generate_grads_image(new_model,
                                                   image_reshape,
                                                   model_after_last_conv)
     heatmap = create_heatmap(last_conv_layer_output, dimensao_imagem)
@@ -190,7 +184,6 @@ def generate_grads_image(model_until_last_conv,
     """ Compute the gradient of the top predicted
         class for our input image with respect
         to the activations of the last conv layer
-
         Args:
         -----
             last_conv_layer_model (keras.layers):
@@ -199,7 +192,6 @@ def generate_grads_image(model_until_last_conv,
                 Imagem original
             classifier_model (keras.Model):
                 Modelo de classificação sem convolução
-
         Returns:
         --------
             np.array: GradCam gerado
@@ -228,7 +220,6 @@ def grads_calc(tape: tf.GradientTape,
                last_cnn_output: Model,
                top_class_channel: List[List[int]]):
     """
-
     """
     # Calcula o gradiente do modelo para saída máxima (pesos)
     grads = tape.gradient(top_class_channel, last_cnn_output)
@@ -244,36 +235,35 @@ def grads_calc(tape: tf.GradientTape,
     return pesos
 
 
-def model_after(
-    last_conv_layer,
-    resnet_model: Model,
-    model: Model,
-    classifier_layer_names: List[str]
-) -> Model:
+def model_after(last_conv_layer,
+                resnet_model,
+                model,
+                classifier_layer_names: List[str]):
     """Cria apenas o modelo de classificação do modelo passado pelo usuario
-
         Args:
             last_conv_layer (Keras.model.layers): ultima camada de convolução (ativação)
             resnet_model (Keras.model): modelo da cnn do usuario
             model (Keras.model): modelo passado pelo usuario
             classifier_layer_names (list.Strings): Nome das camadas de classificação
-
         Returns:
             Keras.model: modelo de classificação do usuario
-
         Exemplo:
         --------
     """
     classifier_input = Input(shape=last_conv_layer.output.shape[1:])
     layer = classifier_input
     for layer_name in classifier_layer_names:
-        layer = model.get_layer(layer_name)(layer)
-    return Model(classifier_input, layer)
+        try:
+            layer = resnet_model.get_layer(layer_name)(layer)
+        except ValueError:
+            layer = model.get_layer(layer_name)(layer)
+    classifier_model = Model(classifier_input, layer)
+    return classifier_model
+
 
 def create_heatmap(last_conv_layer_output,
                    dimensao_saida: int = 224):
     """ Cria o heatmap do recorte da imagem gerada
-
         Args:
         -----
             last_conv_layer_output (keras.layers):
@@ -281,7 +271,6 @@ def create_heatmap(last_conv_layer_output,
             dimensao_saida (int, optional):
                 Dimensão da imagem de saída.
                 Defaults to 224.
-
         Returns:
         --------
             (np.array): imagem do heatmap gerado
@@ -290,7 +279,8 @@ def create_heatmap(last_conv_layer_output,
     # Normalização do heatmap
     heatmap = np.array(heatmap)
     heatmap = relu_img(heatmap)
-    return resize(heatmap, dimensao_saida)
+    heatmap = resize(heatmap, dimensao_saida)
+    return heatmap
 
 
 def normalize(x):

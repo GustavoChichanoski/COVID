@@ -76,11 +76,13 @@ class ModelCovid:
         )
         self.weight_path = weight_path
         # Nomes das camadas até a ultima camada de convolução
-        last_non_conv_layer = self.model.layers[0]
-        self.classifier_layers = [self.model.get_layer(index=-4).name,
-                                  'classifier',
-                                  'output']
-        self.last_conv_layer = self.model.get_layer(index=-5).name
+        self.classifier_layers = []
+        for layer in reversed(self.model.layers):
+            if type(self.model) == type(layer):
+                self.classifier_layers.insert(0,layer.layers[-1].name)
+                self.last_conv_layer = layer.layers[-2].name
+                break
+            self.classifier_layers.insert(0,layer.name)
 
     def save(
         self,
@@ -253,11 +255,17 @@ def classification(
         --------
             (keras.Model) : Modelo do keras
     """
-    inputs = Input(shape)
-    model = Conv2D(filters=3,kernel_size=(1,1),padding='same',name='input')(inputs)
+    inputs = Input(shape, name='entrada_modelo')
+    model = Conv2D(
+        filters=3,
+        kernel_size=(3,3),
+        padding='same',
+        activation='relu',
+        name='conv_gray_rgb'
+    )(inputs)
     params = {'include_top': False,
               'weights': 'imagenet',
-              'input_shape': (224,224,3),
+              'input_shape': (shape[0],shape[1],3),
               'pooling': 'avg'}
     if model_net == 'VGG19':
         base_model = VGG19(**params)
@@ -271,8 +279,10 @@ def classification(
         base_model = ResNet50V2(**params)
     base_model.trainable = resnet_train
     model = base_model(model)
-    model = Dropout(.5,name='drop_0')(model)
-    model = Dense(units=n_class,name='classifier')(model)
+    model = Dropout(.5, name='drop_0')(model)
+    model = Dense(units=256, name='dense_0')(model)
+    model = Dropout(.5, name='drop_1')(model)
+    model = Dense(units=n_class, name='classifier')(model)
     predictions = Activation(activation='softmax', name='output')(model)
     return Model(inputs=inputs, outputs=predictions)
 

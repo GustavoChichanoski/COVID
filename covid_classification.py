@@ -67,7 +67,7 @@ labels = listdir(TRAIN_PATH)
 dataset = Dataset(path_data=TRAIN_PATH, train=True)
 test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {'tamanho': 0}
+part_param = {'tamanho': 20}
 train, validation = dataset.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = test.partition(val_size=1e-5, **part_param)
 

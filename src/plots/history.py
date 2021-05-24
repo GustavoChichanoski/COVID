@@ -1,5 +1,12 @@
 import matplotlib.pyplot as plt
 
+def plot_history_key(history):
+    keys = history.history.keys()
+    for key in keys:
+        plt.figure()
+        plt.plot(history.history[key])
+    return None
+
 def plot_history(history):
     keys = history.history.keys()
     plt.plot(history.history['accuracy'])
