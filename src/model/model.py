@@ -336,7 +336,7 @@ def get_callbacks(
     # Salva os pesos dos modelo para serem carregados
     # caso o monitor não diminua
     check_params = {
-        'monitor': 'val_f1', 'verbose': 1, 'mode': 'max',
+        'monitor': 'val_loss', 'verbose': 1, 'mode': 'min',
         'save_best_only': True, 'save_weights_only': True
     }
     checkpoint = ModelCheckpoint(weight_path, **check_params)
@@ -350,7 +350,9 @@ def get_callbacks(
 
     # Parada do treino caso o monitor nao diminua
     stop_params = {
-        'mode': 'max', 'restore_best_weights': True, 'patience': 40
+        'mode': 'max',
+        'restore_best_weights': True,
+        'patience': 10
     }
     early_stop = EarlyStopping(monitor='val_f1', **stop_params)
     # Termina se um peso for NaN (not a number)
