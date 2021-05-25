@@ -343,7 +343,7 @@ def get_callbacks(
 
     # Reduz o valor de LR caso o monitor nao diminuia
     reduce_params = {
-        'factor': 0.1, 'patience': 3, 'verbose': 1, 'mode': 'max',
+        'factor': 0.5, 'patience': 3, 'verbose': 1, 'mode': 'max',
         'min_delta': 1e-3, 'cooldown': 2, 'min_lr': 1e-8
     }
     reduce_lr = ReduceLROnPlateau(monitor='val_f1', **reduce_params)
