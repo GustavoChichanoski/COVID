@@ -336,21 +336,21 @@ def get_callbacks(
     # Salva os pesos dos modelo para serem carregados
     # caso o monitor não diminua
     check_params = {
-        'monitor': 'val_f1', 'verbose': 1, 'mode': 'min',
+        'monitor': 'val_f1', 'verbose': 1, 'mode': 'max',
         'save_best_only': True, 'save_weights_only': True
     }
     checkpoint = ModelCheckpoint(weight_path, **check_params)
 
     # Reduz o valor de LR caso o monitor nao diminuia
     reduce_params = {
-        'factor': 0.1, 'patience': 3, 'verbose': 1, 'mode': 'min',
+        'factor': 0.1, 'patience': 3, 'verbose': 1, 'mode': 'max',
         'min_delta': 1e-3, 'cooldown': 2, 'min_lr': 1e-8
     }
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', **reduce_params)
+    reduce_lr = ReduceLROnPlateau(monitor='val_f1', **reduce_params)
 
     # Parada do treino caso o monitor nao diminua
     stop_params = {
-        'mode': 'min', 'restore_best_weights': True, 'patience': 40
+        'mode': 'max', 'restore_best_weights': True, 'patience': 40
     }
     early_stop = EarlyStopping(monitor='val_f1', **stop_params)
     # Termina se um peso for NaN (not a number)
