@@ -336,14 +336,14 @@ def get_callbacks(
     # Salva os pesos dos modelo para serem carregados
     # caso o monitor não diminua
     check_params = {
-        'monitor': 'val_loss', 'verbose': 1, 'mode': 'min',
-        'save_best_only': True, 'save_weights_only': False
+        'monitor': 'val_f1', 'verbose': 1, 'mode': 'min',
+        'save_best_only': True, 'save_weights_only': True
     }
     checkpoint = ModelCheckpoint(weight_path, **check_params)
 
     # Reduz o valor de LR caso o monitor nao diminuia
     reduce_params = {
-        'factor': 0.5, 'patience': 3, 'verbose': 1, 'mode': 'min',
+        'factor': 0.1, 'patience': 3, 'verbose': 1, 'mode': 'min',
         'min_delta': 1e-3, 'cooldown': 2, 'min_lr': 1e-8
     }
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', **reduce_params)
