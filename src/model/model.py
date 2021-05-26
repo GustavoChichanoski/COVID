@@ -374,9 +374,14 @@ def get_callbacks(
         ]
     else:
         # Vetor a ser passado na função fit
+        # callbacks = [
+        #     checkpoint,
+        #     early_stop,
+        #     reduce_lr,
+        #     terminate
+        # ]
         callbacks = [
             checkpoint,
-            early_stop,
             reduce_lr,
             terminate
         ]
