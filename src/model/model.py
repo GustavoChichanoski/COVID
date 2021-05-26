@@ -352,7 +352,7 @@ def get_callbacks(
     stop_params = {
         'mode': 'max',
         'restore_best_weights': True,
-        'patience': 10
+        'patience': 40
     }
     early_stop = EarlyStopping(monitor='val_f1', **stop_params)
     # Termina se um peso for NaN (not a number)

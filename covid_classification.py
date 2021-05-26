@@ -20,7 +20,7 @@ DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 CHANNELS = 1
 SHAPE = (DIM_SPLIT,DIM_SPLIT,CHANNELS)
-K_SPLIT = 100
+K_SPLIT = 200
 BATCH_SIZE = 1
 EPOCHS = 2
 
@@ -64,10 +64,10 @@ np.random.seed(seed=42)
 
 labels = listdir(TRAIN_PATH)
 
-ds_train = Dataset(path_data=TRAIN_PATH, train=True)
+ds_train = Dataset(path_data=TRAIN_PATH, train=False)
 ds_test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {'tamanho': 20}
+part_param = {'tamanho': 0}
 train, validation = ds_train.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
 
@@ -105,7 +105,7 @@ path_history = net_path / 'history'
 weight = last_file(path_weight)
 
 if weight is not None:
-    print('[INFO] Carregando o modelo')
+    print(f'[INFO] Carregando o modelo: {weight}')
     covid.load(weight)
 else:
     fit_params = {
@@ -131,7 +131,7 @@ else:
 covid.model.summary()
 
 name = path_figure / f'{model}_{K_SPLIT}'
-print('[INFO] Predição de uma imagem')
+print(f'[INFO] Predição de uma imagem: {K_SPLIT}')
 print(covid.predict(image=TEST,n_splits=K_SPLIT,name=name,grad=False))
 
 matrix = covid.confusion_matrix(train_generator.x, 4)
