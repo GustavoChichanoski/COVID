@@ -2,20 +2,10 @@
     Biblioteca referente ao processamento das imagens
 """
 from typing import Tuple
-from src.images.read_image import read_images
 import numpy as np
 from tqdm import tqdm
 import cv2 as cv
 from src.plots.plots import plot_images
-
-DIM_SPLIT = 224
-DIM_ORIG = 1024
-K_SPLIT = 100
-SCALE = 255
-THRESHOLD = 224 * 224 * 255 * 0.1
-
-def resize_image(image, dim: int):
-    return cv.resize(image, (dim, dim))
 
 
 def find_start(image_with_black) -> Tuple[int, int]:
@@ -82,7 +72,9 @@ def find_end(image_with_black, size: int = 1024) -> Tuple[int, int]:
 
 
 def random_pixel(
-    start: tuple = (0, 0), end: tuple = (0, 0), dim_split: int = DIM_SPLIT
+    start: tuple = (0, 0),
+    end: tuple = (0, 0),
+    dim_split: int = 224
 ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
     """
     Seleciona um pixel randomicamente comecando de start e
@@ -110,26 +102,9 @@ def random_pixel(
     return pixel_x, pixel_y
 
 
-def rescale_images(original_image, scale: int = 255):
-    """
-    Rescala a imagem para ir de -1 a 1
-
-    Args:
-        original_image (list or np.array): imagem ainda não rescalada
-        scale (int, optional): escala da nova imagem.
-                               Defaults to 255.
-
-    Returns:
-        (list or np.array) : imagem rescalada
-    """
-    if isinstance(original_image, list):
-        rescales = []
-        for img in original_image:
-            scale_img = rescale_images(img, scale)
-            rescales.append(scale_img)
-        return rescales
-    half_scale = scale / 2
-    return (original_image - half_scale) / half_scale
+def resize_image(image, dim: int):
+    image = cv.resize(image, (dim, dim))
+    return image
 
 
 def normalize_image(images):
@@ -145,67 +120,37 @@ def normalize_image(images):
     return images / 256
 
 
-def gray2rgb(gray_image):
-    """
-    Transforma imagens em escala de cinza em coloridas.
-
-    Args:
-        gray_image (np.array): Imagem em escala de cinza.
-
-    Returns:
-        (np.array): Imagens colorida.
-    """
-    if isinstance(gray_image, list):
-        coloreds = []
-        for gray in gray_image:
-            colored = gray2rgb(gray)
-            coloreds.append(colored)
-        return coloreds
-    return cv.cvtColor(gray_image, cv.COLOR_GRAY2RGB)
-
-
-def bgr2gray(colored_images):
-    """
-    Transforma imagens coloridas em escala de cinza.
-
-    Args:
-        colored_images (np.array): Imagem colorida.
-
-    Returns:
-        (np.array): Imagens em escala cinza.
-    """
-    if isinstance(colored_images, list):
-        grays = []
-        for color in colored_images:
-            gray = bgr2gray(color)
-            grays.append(gray)
-        return grays
-    else:
-        return cv.cvtColor(colored_images, cv.COLOR_BGR2GRAY)
-
-
 def split_images_n_times(
-    image, n_split: int = 100, dim_split: int = 224, verbose: bool = True
+    image,
+    n_split: int = 100,
+    dim_split: int = 224,
+    verbose: bool = True,
+    need_positions: bool = True
 ):
     """
-    Recorta a imagem em n_split vezes de tamanhos dim_split ignorando
-    recortes totalmente pretos.
+        Recorta a imagem em n_split vezes de tamanhos dim_split ignorando
+        recortes totalmente pretos.
 
-    Args:
-        image (np.array): imagem a ser recortada
-        n_split (int, optional): Numero de cortes. Defaults to 100.
-        dim_orig (int, optional): Tamanho da imagem. Defaults to 1024.
-        dim_split (int, optional): Tamanho dos cortes. Defaults to 224.
+        Args:
+            image (np.array): imagem a ser recortada
+            n_split (int, optional): Numero de cortes. Defaults to 100.
+            dim_orig (int, optional): Tamanho da imagem. Defaults to 1024.
+            dim_split (int, optional): Tamanho dos cortes. Defaults to 224.
 
-    Returns:
-        (tuple): recortes das imagens e o pixel inicial.
+        Returns:
+            (tuple): recortes das imagens e o pixel inicial.
     """
     # Criação das listas
     cut_img = []  # lista de cortes
     cut_pos = []  # lista de posicoes do corte
+
     # Define os pixels em que a imgem começa
-    pixel_start = find_start(image)
-    pixel_end = find_end(image)
+    # pixel_start = find_start(image)
+    # pixel_end = find_end(image)
+    y_nonzero, x_nonzero = np.nonzero(image)
+    pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), \
+                             (np.max(y_nonzero), np.max(x_nonzero))
+
     # Cria os n_splits cortes
     pbar = range(n_split)
     if verbose:
@@ -215,26 +160,22 @@ def split_images_n_times(
         cut, pos = create_non_black_cut(image, pixel_start, pixel_end, dim_split)
         cut_norm = normalize_image(cut)
         cut_img = np.append(cut_img, cut_norm)  # Armazena o corte
-        cut_pos.append(pos)  # Armaxena o pixel inicial do corte
-    return cut_img, cut_pos
+        if need_positions:
+            cut_pos.append(pos)  # Armaxena o pixel inicial do corte
+    if need_positions:
+        cut_img = cut_img.reshape(cut.shape)
+        return cut_img, cut_pos
 
-
-def split_images(image, dim: int = 224):
-    # Define os pixels em que a imgem começa
-    y_nonzero, x_nonzero = np.nonzero(image)
-    pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), (
-        np.max(y_nonzero),
-        np.max(x_nonzero),
-    )
-
-    # Recebe um corte da imagem não inteiramente preto
-    cut, _pos = create_non_black_cut(image, pixel_start, pixel_end, dim)
-    cut_norm = normalize_image(cut)
-    return cut_norm
+    cut_img = cut_img.reshape((n_split,dim_split,dim_split,1))
+    return cut_img
 
 
 def create_non_black_cut(
-    image, start: tuple = (0, 0), end: tuple = (0, 0), dim: int = 224
+    image,
+    start: tuple = (0, 0),
+    end: tuple = (0, 0),
+    dim: int = 224,
+    threshold: float = 0.5
 ):
     """
     Cria um recorte que não é totalmente preto
@@ -267,8 +208,9 @@ def create_non_black_cut(
         return recort, pos
     pos = random_pixel(start, end, dim)
     recort = create_recort(image, pos, dim)
-    soma = np.sum(recort)
-    while soma < THRESHOLD:
+    soma = np.sum(recort > 0)
+    threshold = dim * dim * threshold
+    while soma > threshold:
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
         soma = np.sum(recort)

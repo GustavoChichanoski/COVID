@@ -10,7 +10,8 @@ from tensorflow.python.keras import backend as K
 from src.images.process_images import resize_image as resize
 from src.images.process_images import relu as relu_img
 from src.images.process_images import normalize_image as norm
-
+from numba import jit
+from varname import nameof
 
 def prob_grad_cam(pacotes_da_imagem,
                   classifier: List[str],
@@ -69,48 +70,75 @@ def prob_grad_cam(pacotes_da_imagem,
                                           posicao_pixel)
         grad_cam_prob, pacotes_por_pixel = somar_resultado
     # Divide o gradcam total pelas vezes que passou por um pixel
-    grad_cam_prob = divisao_pacotes_por_pixel(pacotes_por_pixel,
+    div_grad_cam_prob = divisao_pacotes_por_pixel(pacotes_por_pixel,
                                               grad_cam_prob)
-    grad_cam_prob = normalize(grad_cam_prob)
+    grad_cam_prob = normalize(div_grad_cam_prob )
     return grad_cam_prob
 
-
-def somar_grads_cam(grad_cam_atual: List[int],
-                    grad_cam_split: List[int],
-                    pixels_usados: List[int],
-                    inicio: tuple = (0, 0)):
+@jit(nopython=True)
+def somar_grads_cam(grad_cam_full: List[int],
+                    grad_cam_cut: List[int],
+                    used_pixels: List[int],
+                    start: tuple = (0, 0)):
     """
-        Realiza a soma do GradCam gerado pelo GradCam do
-        recorte, com a matriz que será o GradCam final.
-        Para isso é necessário conhecer os valores atuais
-        da GradCam, a GradCam gerada pelo recorte da
-        imagem e as posicões inicial do recorte.
+        Realiza a soma do GradCam completo com o GradCam do recorte.
+        Para isso é necessário conhecer os valores atuais da GradCam,
+        a GradCam gerada pelo recorte da imagem e as posicões inicial
+        do recorte.
+
         Args:
         -----
             grad_cam_atual (np.array):
                 GradCam atual da imagem
             grad_cam_split (np.array):
                 GradCam do recorte da imagem
-            pixels_usados (np.array):
+            used_pixels (np.array):
                 Matriz de pacotes por pixels.
-            inicio (tuple, optional):
+            start (tuple, optional):
                 Posições iniciais dos recortes.
-                Defaults to (0, 0).
+                Defaults to ```(0, 0)```.
+        
         Returns:
         --------
-            (tuple): GradCam calculada até o momento,
-                     pacotes por Pixel
+            (tuple): GradCam calculada até o momento, pacotes por Pixel
+        
+        Raises:
+        --------
+            ValueError:
+                if grad_cam_full and used_pixels don't have different shapes.
+            ValueError:
+                if grad_cam_cut have one dimension bigger than grad_cam_full.
     """
-    dimensao = grad_cam_split.shape[0]
-    valor_um = np.ones((dimensao, dimensao))
-    final = [inicio[0] + dimensao, inicio[1] + dimensao]
-    grad_cam_atual[inicio[0]:final[0],
-                   inicio[1]:final[1]] += grad_cam_split
-    pixels_usados[inicio[0]:final[0],
-                  inicio[1]:final[1]] += valor_um
-    return (grad_cam_atual, pixels_usados)
+    if grad_cam_full.shape == used_pixels.shape:
+        raise ValueError(
+            "The shape of {} and {} need be the same \n \
+                Shape of {}: {} \n \
+                Shape of {}: {} \n \
+            ".format(
+            nameof(grad_cam_full), nameof(used_pixels)
+        ))
 
+    for dimension_full, dimension_cut in zip(grad_cam_full.shape,
+                                             grad_cam_cut.shape):
+        if dimension_full < dimension_cut:
+            raise ValueError(
+                "The shape of {} must be equal or lesser than {}, \
+                \n Shape of {}: {} \
+                \n Shape of {}: {}".format(
+                    nameof(grad_cam_cut),nameof(grad_cam_full),
+                    grad_cam_full.shape, grad_cam_cut.shape
+                )
+            )
+    # Get the dimension of cut grad_cam
+    dimension_cut = grad_cam_cut.shape[0]
+    # Create the matriz of ones to sum to grad cam full
+    ones = np.ones((dimension_cut, dimension_cut))
+    final = [start[0] + dimension_cut, start[1] + dimension_cut]
+    grad_cam_full[start[0]:final[0], start[1]:final[1]] += grad_cam_cut
+    used_pixels[start[0]:final[0], start[1]:final[1]] += ones
+    return (grad_cam_full, used_pixels)
 
+@jit(nopython=True)
 def divisao_pacotes_por_pixel(pacotes_por_pixel: List[int],
                               grad_cam_prob: List[int]):
     """ Divide os numeros de pacotes de pixeis pela

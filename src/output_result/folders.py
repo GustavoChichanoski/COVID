@@ -1,4 +1,3 @@
-from os import mkdir
 from os.path import getctime
 from pathlib import Path
 from typing import List, Tuple, Union
