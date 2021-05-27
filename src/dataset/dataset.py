@@ -3,55 +3,120 @@
 """
 from os.path import join
 from os import listdir
-from src.dataset.dataset_functions import get_folders_names, listdir_full, proportion_of_files_in_folder, zeros
-from typing import List
-from src.images.read_image import read_images as ri
-from src.images.process_images import split_images, split_images_n_times as splits
+from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 from sklearn.model_selection import train_test_split
+from pathlib import Path
+from dataclasses import dataclass, fields
 
 
+@dataclass
 class Dataset:
     """
         Cria o dataset para o keras.
     """
+    path_data: Path
+    dimension_original: int = 1024
+    dimension_cut: int = 224
+    channels: int = 3
+    train: bool = True
 
-    def __init__(self,
-                 path_data: str,
-                 dimension_original: int = 1024,
-                 dimension_cut: int = 224,
-                 channels: int = 3,
-                 train: bool = True):
+    _lazy_label_names: Optional[List[Path]] = None
+    _lazy_files_in_folder: Optional[List[Path]] = None
+    _lazy_x: Optional[List[Path]] = None
+    _lazy_y: Optional[Any] = None
+    _lazy_number_files_in_folders: Optional[List[str]] = None
+    """
+        Args:
+            path_data (str): Caminho onde se encontra os dados dos raios-x
+            number_splits (int): numero de cortes por imagem.
+            dimension_original (int): dimensão da imagem original
+            dimension_cut (int): dimensão dos recortes
+    """
+
+    @property
+    def files_in_folder(self):
         """
-            Args:
-                path_data (str): Caminho onde se encontra os dados dos raios-x
-                number_splits (int): numero de cortes por imagem.
-                dimension_original (int): dimensão da imagem original
-                dimension_cut (int): dimensão dos recortes
+            Retorna o nomes dos arquivos contidos nas pastas.
+                Returns:
+                    (list): nomes dos arquivos nas pastas
         """
-        self.train = train
-        self.path_data = path_data
-        self.dimension_cut = dimension_cut
-        self.dimension_original = dimension_original
-        self.channels = channels
-        self.path_train = join(path_data, 'train')
-        self.path_test = join(path_data, 'test')
-        self.folder_names = get_folders_names(path=self.path_train)
-        self.files_in_folder = self.get_files_in_folder()
-        self.ids = zeros(len(self.folder_names))
-        self.x = self.input()
-        self.y = self.output()
+        if self._lazy_files_in_folder is None:
+            self._lazy_files_in_folder = [
+                list(folder.iterdir()) for folder in self.label_names
+            ]
+        return self._lazy_files_in_folder
 
-    def get_filenames(self):
-        if self.train:
-            return [listdir_full(join(self.path_train, label))
-                    for label in self.folder_names]
-        else:
-            return [listdir_full(join(self.path_test, label))
-                    for label in self.folder_names]
+    @property
+    def number_files_in_folders(self):
+        if self._lazy_number_files_in_folders is None:
+            files = np.array([
+                len(folder) for folder in self.files_in_folder
+            ])
+            self._lazy_number_files_in_folders = files
+        return self._lazy_number_files_in_folders
 
-    def partition(self,
-                  val_size: float = 0.2):
+    @property
+    def label_names(self) -> List[Path]:
+        if self._lazy_label_names is None:
+            folder_names = self.path_data.iterdir()
+            self._lazy_label_names = sorted(folder_names)
+        return self._lazy_label_names
+
+    @property
+    def y(self) -> Any:
+        """Retorna 
+
+        Returns:
+            numpy.array:
+        """
+        if self._lazy_y is None:
+            # Recebe os nomes dos rotulos
+            labels = np.array(list(self.label_names))
+            # Acha o tamanho dos rotulos
+            len_labels = len(labels)
+            # Cria a matriz dos resultados de saída
+            label_eyes = np.eye(len_labels)
+            # Cricao vetor de saída
+            outputs = np.array([])
+            # Preenchimento do vetor de saídas
+            for x in self.x:
+                # label verdadeiro
+                x_label = x.parts[-2]
+                # Acha o index da label
+                for i in range(len_labels):
+                    if x_label == labels[i].name:
+                        break
+                out = label_eyes[i]
+                outputs = np.append(outputs,out)
+            outputs = outputs.reshape(len(self.x), len_labels)
+            self._lazy_y = outputs
+        return self._lazy_y
+
+    @property
+    def x(self) -> List[Path]:
+        if self._lazy_x is None:
+            x = np.array([])
+            if self.train:
+                files = list(self.files_in_folder)
+                number_files = self.number_files_in_folders
+                min_n_files = np.min(number_files)
+                for index in range(min_n_files):
+                    for index_label, n_files in enumerate(number_files):
+                        index_file = index % n_files
+                        file = files[index_label][index_file]
+                        x = np.append(x,file)
+            else:
+                x = sum(list(self.files_in_folder), [])
+            self._lazy_x = x
+        return self._lazy_x
+
+    def partition(
+        self,
+        val_size: float = 0.2,
+        tamanho: Union[int,None] = None,
+        shuffle: bool = True
+    ) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
         """ Retorna a entrada e saidas dos keras.
 
             Args:
@@ -60,59 +125,17 @@ class Dataset:
                                             Defaults to 0.2.
             Returns:
             --------
-                (test), (val), pos: Saida para o keras.
+                (test), (val): Saida para o keras.
         """
         # t : train - v : validation
-        t_in, v_in, t_out, v_out = train_test_split(self.x,
-                                                    self.y,
-                                                    test_size=val_size,
-                                                    shuffle=True,
-                                                    random_state=42)
-        train, val = (t_in, t_out), (v_in, v_out)
+        if tamanho is None or tamanho > len(self.x) or tamanho < 1:
+            tamanho = len(self.x)
+        x = self.x[:tamanho]
+        y = self.y[:tamanho]
+        train_in, val_in, train_out, val_out = train_test_split(
+            x, y,
+            test_size=val_size,
+            shuffle=shuffle
+        )
+        train, val = (train_in, train_out), (val_in, val_out)
         return train, val
-
-    def input(self):
-        if self.train:
-            path = self.path_train
-        else:
-            path = self.path_test
-        paths = []
-        for i in range(len(listdir(path))):
-            paths.extend(self.files_in_folder[i])
-        return paths
-
-    def output(self) -> List[List[str]]:
-        output = np.eye(len(self.folder_names))
-        outputs = []
-        total = 0
-        for i in range(len(self.folder_names)):
-            total += len(self.files_in_folder[i])
-            out = [output[i]] * len(self.files_in_folder[i])
-            outputs = np.append(outputs, out)
-        outputs = np.array(outputs)
-        outputs = outputs.reshape(len(self.x), len(self.folder_names))
-        return outputs
-
-    def get_files_in_folder(self) -> List[int]:
-        """
-            Retorna o nomes dos arquivos contidos nas pastas.
-            Returns:
-                (list): nomes dos arquivos nas pastas
-        """
-        files_per_folder = []
-        for folder in self.folder_names:
-            if self.train:
-                path = join(self.path_train, folder)
-            else:
-                path = join(self.path_test, folder)
-            files_per_folder.append(listdir_full(path))
-        return files_per_folder
-
-    def custom_prop(self, value: List[float] = [1/3, 1/3]) -> None:
-        if len(value) == len(self.folder_names) - 1:
-            total = 0
-            for valor in value:
-                total += valor
-            value.append(1 - total)
-        self.proportion = value
-        return None

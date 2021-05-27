@@ -2,11 +2,14 @@
     Biblioteca de funções de leitura de imagens pelos caminhos
 """
 
+from pathlib import Path
+from typing import List, Union
 import cv2 as cv
 
 
 def read_random_image(paths: list,
-                      id_start) -> list:
+                      id_start: int,
+                      color:bool = False) -> list:
     """
         Lê as imagens dos ids contidos em id_start
 
@@ -20,14 +23,15 @@ def read_random_image(paths: list,
     """
     images = []
     for i in id_start:
-        image = read_images(iamges_paths=paths[i])
+        image = read_images(images_paths=paths[i],color=color)
         images.append(image)
     return images
 
 
 def read_sequencial_image(paths: list,
                           id_start: int = 0,
-                          id_end: int = 1) -> list:
+                          id_end: int = 1,
+                          color: bool = False) -> list:
     """
         Lê sequencialmente as imagens
 
@@ -44,14 +48,15 @@ def read_sequencial_image(paths: list,
     """
     images = []
     for i in range(id_start, id_end):
-        image = read_images(paths[i])
+        image = read_images(paths[i],color=color)
         images.append(image)
     return images
 
 
-def read_images(images_paths,
-                id_start=0,
-                id_end: int = -1):
+def read_images(images_paths: Union[List[Path], Path],
+                id_start: Union[List[int], int] = 0,
+                id_end: int = -1,
+                color: bool = False):
     """
         Lê as imagens do listas de caminhos da imagem de start até end -1
 
@@ -71,7 +76,14 @@ def read_images(images_paths,
         if isinstance(id_start, int):
             if id_end < id_start:
                 id_end = len(images_paths)
-            return read_sequencial_image(images_paths, id_start, id_end)
-        return read_random_image(images_paths, id_start)
-    image = cv.imread(images_paths)
+            return read_sequencial_image(images_paths, id_start, id_end, color)
+        return read_random_image(images_paths, id_start,color)
+    if color:
+        image = cv.imread(str(images_paths))
+    else:
+        image = cv.imread(str(images_paths),0)
+        image = equalize_histogram(image)
     return image
+
+def equalize_histogram(image):
+    return cv.equalizeHist(image)

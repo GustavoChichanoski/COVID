@@ -1,45 +1,26 @@
+from pathlib import Path
 from typing import List
 import os
 import numpy as np
 import matplotlib as mlp
 import matplotlib.pyplot as plt
 import seaborn as sns
-from  src.plots import save_as_png as save_png
+from src.plots import save_as_png as save_png
 from seaborn.matrix import heatmap
-
-def sum_list(array):
-    value = 0
-    for i in array:
-        value += i
-    return value
-
-
-def matrix_porc(matrix):
-    porc_matrix = []
-    for row in matrix:
-        sum = sum_list(row)
-        for col in row:
-            porc_matrix.append(col/sum)
-    return np.reshape(porc_matrix, (3, 3))
 
 
 def normalize_confusion_matrix(matrix):
-    norm = []
-    rank = len(matrix)
-    for i in matrix:
-        norm.append(matrix_porc(i))
-    norm = np.reshape(norm,matrix.shape)
-    return norm
-
-
-def total_true(entrada):
-    sum = np.zeros(len(entrada))
-    i = 0
-    for y in entrada:
-        for x in y:
-            sum[i] += x
-        i += 1
-    return sum
+    norm = np.array([])
+    if len(matrix.shape) > 2:
+        for split in matrix:
+            norm = np.append(norm, normalize_confusion_matrix(split))
+            return np.reshape(norm, matrix.shape)
+    for row in matrix:
+            sum = np.sum(row)
+            if sum == 0:
+                sum = 1
+            norm = np.append(norm, row / sum)
+    return np.reshape(norm, matrix.shape)
 
 
 def dist_dataset(matrix, porc, category_names, n_splits):
@@ -60,8 +41,8 @@ def dist_dataset(matrix, porc, category_names, n_splits):
     for i, (colname, color) in enumerate(zip(category_names, category_colors)):
         widths = data[:, i]
         starts = data_cum[:, i] - widths
-        ax.barh(labels, widths, left=starts, height=0.5,
-                label=colname, color=color)
+        ax.barh(labels, widths, left=starts,
+                height=0.5, label=colname, color=color)
         xcenters = starts + widths / 2
         r, g, b, _ = color
         text_color = 'white' if r * g * b < 0.5 else 'black'
@@ -72,48 +53,48 @@ def dist_dataset(matrix, porc, category_names, n_splits):
     ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 1),
               loc='lower left', fontsize='small')
     if n_splits == 1:
-        ax.set_title('{} imagem'.format(n_splits))
+        ax.set_title(f'{n_splits} imagem')
     else:
-        ax.set_title('{} imagens'.format(n_splits))
+        ax.set_title(f'{n_splits} imagens')
     return fig, ax
 
 
 def plot_dataset(absolut=None,
-                 n_images: List[int] = [1,2,3,4],
+                 n_images: List[int] = [1, 2, 3, 4],
                  names: List[int] = ['COVID-19', 'Normal', 'Pneumonia'],
-                 path: str = None,
+                 path: Path = None,
                  overwrite: bool = True):
-    
+
     perc = normalize_confusion_matrix(absolut)
     if isinstance(n_images, list):
         for i in range(len(n_images)):
-            dist_dataset(absolut[i], perc[i], names, n_images[i])
+            dist_dataset(absolut[i], perc, names, n_images[i])
     else:
-        dist_dataset(absolut[0], perc[0], names, n_images)
+        dist_dataset(absolut, perc, names, n_images)
     plt.show()
 
+    # fig, ax = plt.subplots()
+    # im = ax.imshow(absolut)
+    # ax.set_xticks(np.arange(len(names)))
+    # ax.set_yticks(np.arange(len(names)))
+    # ax.set_xticklabels(names)
+    # ax.set_yticklabels(names)
+
+    # plt.setp(ax.get_xticklabels(), rotation=45,
+    #          ha='right', rotation_mode='anchor')
+
+    # for i in range(len(names)):
+    #     for j in range(len(names)):
+    #         text = ax.text(j, i, absolut[i][j],
+    #                        ha='center', va='center', color='w')
+
+    # ax.set_title('Matriz Confusao')
+    # fig.tight_layout()
+    # plt.show()
+
     fig, ax = plt.subplots()
-    im = ax.imshow(absolut[0])
-    ax.set_xticks(np.arange(len(names)))
-    ax.set_yticks(np.arange(len(names)))
-    ax.set_xticklabels(names)
-    ax.set_yticklabels(names)
-
-    plt.setp(ax.get_xticklabels(), rotation=45,
-             ha='right', rotation_mode='anchor')
-
-    for i in range(len(names)):
-        for j in range(len(names)):
-            text = ax.text(j, i, absolut[0][i][j],
-                           ha='center', va='center', color='w')
-
-    ax.set_title('Matriz Confusao')
-    fig.tight_layout()
-    plt.show()
-
-    fig, ax = plt.subplots()
-    im, cbar = heatmap(np.array(absolut[0]), names, names, ax=ax,
-                    cmap='Blues', cbarlabel=None)
+    im, cbar = heatmap(np.array(absolut), names, names, ax=ax,
+                       cmap='Blues', cbarlabel=None)
 
     texts = annotate_heatmap(im, valfmt="{x}")
 
@@ -131,20 +112,21 @@ def plot_dataset(absolut=None,
     #             i += 1
     #     plt.savefig(fig_path,dpi=fig.dpi)
     plt.show()
-    mc_path = os.path.join(path,'mc_{}_pacotes.png'.format(n_images))
-    if os.path.exists(mc_path):
+    mc_path = path / f'mc_{n_images}_pacotes.png'
+    if mc_path.exists():
         if overwrite:
             i = 0
-            mc_path = mc_path[:-4]
-            fig_path = '{}_{}.png'.format(mc_path,i)
+            mc_path = str(mc_path.absolute())[:-4]
+            fig_path = f'{mc_path}_{i}.png'
             while os.path.exists(fig_path):
                 i += 1
-                fig_path = '{}_{}.png'.format(mc_path,i)
-            plt.savefig(fig_path,dpi=fig.dpi)
+                fig_path = f'{mc_path}_{i}.png'
+            plt.savefig(fig_path, dpi=fig.dpi)
             return fig_path
-        print('[save_png] Arquivo já existe: {}'.format(path))
+        print(f'[PLOT] Arquivo já existe: {str(path)}')
         return mc_path
-    plt.savefig(mc_path,dpi=fig.dpi)
+    plt.savefig(mc_path, dpi=fig.dpi)
+
 
 def heatmap(data, row_labels, col_labels, ax=None,
             cbar_kw={}, cbarlabel="", **kwargs):
@@ -242,7 +224,7 @@ def annotate_heatmap(im, data=None, valfmt="{x:.2f}",
     if threshold is not None:
         threshold = im.norm(threshold)
     else:
-        threshold = im.norm(data.max())/2.
+        threshold = im.norm(data.max()) / 2.0
 
     # Set default alignment to center, but allow it to be
     # overwritten by textkw.
@@ -276,8 +258,10 @@ def test():
     matrix50 = [[272, 1, 9], [1, 524, 25], [1, 18, 856]]
     ideal = [[282, 0, 0], [0, 550, 0], [0, 0, 875]]
 
-    matrix = np.array([matrix1, matrix2, matrix3, matrix4, matrix5, matrix10, matrix50])
-    plot_dataset(['Covid','Normal','Pneumonia'],matrix)
+    matrix = np.array([matrix1, matrix2, matrix3, matrix4,
+                       matrix5, matrix10, matrix50])
+    plot_dataset(['Covid', 'Normal', 'Pneumonia'], matrix)
+
 
 if __name__ == '__main__':
     test()
