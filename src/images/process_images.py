@@ -157,7 +157,10 @@ def split_images_n_times(
         pbar = tqdm(pbar)
     for _ in pbar:
         # Recebe um corte da imagem não inteiramente preto
-        cut, pos = create_non_black_cut(image, pixel_start, pixel_end, dim_split)
+        cut, pos = create_non_black_cut(
+            image=image, start=pixel_start, end=pixel_end,
+            dim=dim_split, threshold=0.3
+        )
         cut_norm = normalize_image(cut)
         cut_img = np.append(cut_img, cut_norm)  # Armazena o corte
         if need_positions:
@@ -209,11 +212,11 @@ def create_non_black_cut(
     pos = random_pixel(start, end, dim)
     recort = create_recort(image, pos, dim)
     soma = np.sum(recort > 0)
-    threshold = dim * dim * threshold
-    while soma > threshold:
+    threshold = int(dim * dim * threshold)
+    while soma < threshold:
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
-        soma = np.sum(recort)
+        soma = np.sum(recort > 0)
     return recort, pos
 
 
