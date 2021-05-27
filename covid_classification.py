@@ -4,11 +4,11 @@
     normais, com pneumonia ou com covid-19
 """
 from src.plots.history import plot_history
-from src.output_result.folders import *
 from src.plots.graph import plot_dataset
 from src.model.model import ModelCovid
 from src.dataset.dataset import Dataset
 from src.dataset.generator import DataGenerator
+from src.output_result.folders import *
 from pathlib import Path
 from os import listdir
 import sys

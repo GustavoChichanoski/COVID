@@ -5,6 +5,7 @@ from typing import Any, List, Tuple
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
+from pathlib import Path
 from tensorflow.python.keras import Model
 from tensorflow.python.keras import Input
 from tensorflow.python.keras.layers import Dense
@@ -24,13 +25,13 @@ from tensorflow.python.keras.applications.densenet import DenseNet201
 from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2
 from tensorflow.python.keras.applications.inception_v3 import InceptionV3
 from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3Small
-from src.dataset.generator import DataGenerator
+
+from src.plots.plots import plot_gradcam as plt_gradcam
+from src.model.metrics.f1_score import F1score
 from src.model.grad_cam_split import prob_grad_cam
 from src.images.process_images import split_images_n_times as splits
 from src.images.read_image import read_images as ri
-from src.plots.plots import plot_gradcam as plt_gradcam
-from src.model.metrics.f1_score import F1score
-from pathlib import Path
+from src.dataset.generator import DataGenerator
 
 
 class ModelCovid:
