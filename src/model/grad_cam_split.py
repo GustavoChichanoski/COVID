@@ -109,26 +109,26 @@ def somar_grads_cam(grad_cam_full: List[int],
             ValueError:
                 if grad_cam_cut have one dimension bigger than grad_cam_full.
     """
-    if grad_cam_full.shape == used_pixels.shape:
-        raise ValueError(
-            "The shape of {} and {} need be the same \n \
-                Shape of {}: {} \n \
-                Shape of {}: {} \n \
-            ".format(
-            nameof(grad_cam_full), nameof(used_pixels)
-        ))
+    # if grad_cam_full.shape == used_pixels.shape:
+    #     raise ValueError(
+    #         "The shape of {} and {} need be the same \n \
+    #             Shape of {}: {} \n \
+    #             Shape of {}: {} \n \
+    #         ".format(
+    #         nameof(grad_cam_full), nameof(used_pixels)
+    #     ))
 
-    for dimension_full, dimension_cut in zip(grad_cam_full.shape,
-                                             grad_cam_cut.shape):
-        if dimension_full < dimension_cut:
-            raise ValueError(
-                "The shape of {} must be equal or lesser than {}, \
-                \n Shape of {}: {} \
-                \n Shape of {}: {}".format(
-                    nameof(grad_cam_cut),nameof(grad_cam_full),
-                    grad_cam_full.shape, grad_cam_cut.shape
-                )
-            )
+    # for dimension_full, dimension_cut in zip(grad_cam_full.shape,
+    #                                          grad_cam_cut.shape):
+    #     if dimension_full < dimension_cut:
+    #         raise ValueError(
+    #             "The shape of {} must be equal or lesser than {}, \
+    #             \n Shape of {}: {} \
+    #             \n Shape of {}: {}".format(
+    #                 nameof(grad_cam_cut),nameof(grad_cam_full),
+    #                 grad_cam_full.shape, grad_cam_cut.shape
+    #             )
+    #         )
     # Get the dimension of cut grad_cam
     dimension_cut = grad_cam_cut.shape[0]
     # Create the matriz of ones to sum to grad cam full

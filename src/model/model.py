@@ -91,16 +91,17 @@ class ModelCovid:
         self,
         path: Path,
         name: str = None,
-        history=None,
+        history: Any = None,
         kaggle: bool = False,
         metric: str = "val_f1",
     ) -> Tuple[str, str, str]:
         """
-        Salva os pesos do modelo em um arquivo
-        Args:
-            history (list): Historico das metricas de apreendizagem
+            Salva os pesos do modelo em um arquivo.
+            
+            Args:
+            -----
+                history (list): Historico das metricas de apreendizagem
         """
-        # val_acc = (1 - history['val_loss'][-1])*100
         if name is not None:
             file = path / name
             self.model.save(f"{file}.hdf5", overwrite=True)
@@ -113,22 +114,27 @@ class ModelCovid:
 
         if history is not None:
             value = history[metric][-1] * 100
-            history_path = path / "history" / f"history_{self.model_name}_{value:.02f}"
-            if kaggle:
-                history_path = f"history_{self.model_name}_{value:.02f}"
+            history_path = f"history_{self.model_name}_{value:.02f}"
+            if not kaggle:
+                history_path = path / "history" / f"{history_path}"
             file_history = f"{history_path}.csv"
             hist_df = pd.DataFrame(history)
             with open(file_history, mode="w") as f:
                 hist_df.to_csv(f)
+            print(f"[INFO] Historico salvo em: {history_path}")
 
         file_name = f"{self.model_name}_{metric}_{value:.02f}"
+ 
         if not kaggle:
             file_model = path / f"{file_name}.hdf5"
+ 
         self.model.save(file, overwrite=True)
         print(f"[INFO] Modelo salvos em: {file}")
         file_weights = f"{file_name}_weights.hdf5"
+ 
         if not kaggle:
             file_weights = path / "weights" / file_weights
+ 
         self.model.save_weights(file_weights, overwrite=True)
         print(f"[INFO] Pesos salvos em: {file_weights}")
 
@@ -170,33 +176,37 @@ class ModelCovid:
         return None
 
     def predict(
-        self, image: str, n_splits: int = 100, name: str = None, grad: bool = True
+        self,
+        image: str,
+        n_splits: int = 100,
+        name: str = None,
+        grad: bool = True
     ) -> str:
         """
-        Realiza a predição do modelo podendo gerar o
-        Grad-Cam Probabilistico da imagem caso ```grad``` seja
-        ```True``` ou ```name``` seja diferente de ```None```.
+            Realiza a predição do modelo podendo gerar o
+            Grad-Cam Probabilistico da imagem caso ```grad``` seja
+            ```True``` ou ```name``` seja diferente de ```None```.
 
-        Args:
+            Args:
 
-            image (str):
-                path da imagem a ser predita.
+                image (str):
+                    path da imagem a ser predita.
 
-            n_splits (int, optional):
-                Numero de recortes aleatorios da imagem.
-                Defaults to 100.
+                n_splits (int, optional):
+                    Numero de recortes aleatorios da imagem.
+                    Defaults to 100.
 
-            name (str, optional):
-                O nome do arquivo png do grad cam gerado.
-                Caso None não é gerado um arquivo png.
-                Defaults to None
+                name (str, optional):
+                    O nome do arquivo png do grad cam gerado.
+                    Caso None não é gerado um arquivo png.
+                    Defaults to None
 
-            grad (bool, optional):
-                Mostra o grad cam probabilistico.
-                Default to True
+                grad (bool, optional):
+                    Mostra o grad cam probabilistico.
+                    Default to True
 
-        Returns:
-           ganhador (str): rotulo predito pelo modulo
+            Returns:
+            ganhador (str): rotulo predito pelo modulo
         """
         imagem = ri(image)
         cuts, positions = splits(

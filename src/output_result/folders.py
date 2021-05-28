@@ -1,6 +1,7 @@
 from os.path import getctime
 from pathlib import Path
 from typing import List, Tuple, Union
+from zipfile import ZipFile
 
 def last_file(path: Path,suffix_file: str = '.hdf5'):
     weight = None
@@ -57,3 +58,27 @@ def create_folders(
         history.mkdir(exist_ok=True)
 
     return nets_path
+
+def get_all_files(path: Path):
+    paths = []
+    for file in path.iterdir():
+        if file.is_dir():
+            paths.extend(get_all_files(file))
+        else:
+            paths.append(file)
+    return paths
+
+def zip_folder(
+    path: Path = Path('./outputs'),
+    output_name: str = 'outputs.zip'
+) -> None:
+    files = get_all_files(path)
+    with ZipFile(output_name,'w') as zip:
+        for file in files:
+            print(file)
+            zip.write(file)
+    if Path(output_name).exists():
+        print('[INFO] All files zipped successfully')
+        return None
+    print('[ERRO] Error when zipped files')
+    return None

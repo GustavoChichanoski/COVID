@@ -165,11 +165,9 @@ def split_images_n_times(
         cut_img = np.append(cut_img, cut_norm)  # Armazena o corte
         if need_positions:
             cut_pos.append(pos)  # Armaxena o pixel inicial do corte
-    if need_positions:
-        cut_img = cut_img.reshape(cut.shape)
-        return cut_img, cut_pos
-
     cut_img = cut_img.reshape((n_split,dim_split,dim_split,1))
+    if need_positions:
+        return cut_img, cut_pos
     return cut_img
 
 
