@@ -21,6 +21,7 @@ test
 .pytest_cach
 *.hdf5
 *.h5
+*.zip
 .gitignore
 Segmentacao/cxr_reg_weights.best.hdf5
 Segmentacao/weight_val_acc_95.93.h5
