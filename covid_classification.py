@@ -14,7 +14,7 @@ from pathlib import Path
 from os import listdir
 import sys
 import numpy as np
-
+import cProfile
 # %% [code]
 
 DIM_ORIGINAL = 1024
@@ -76,9 +76,10 @@ train_generator = DataGenerator(x_set=train[0], y_set=train[1], **params)
 val_generator = DataGenerator(x_set=validation[0], y_set=validation[1], **params)
 test_generator = DataGenerator(x_set=test_values[0], y_set=test_values[1], **params)
 # %% [code]
-for net, net_path in zip(NETS, nets_path):
-    model = NETS[0]
-    net_path = nets_path[0]
+for net, net_path in zip(NETS[1:], nets_path[1:]):
+    
+    model = net
+    net_path = net_path
 
     model_params = {"labels": labels, "model_name": model, "model_input_shape": SHAPE}
     covid = ModelCovid(weight_path=".model/weights.best.hfd5", **model_params)
@@ -111,11 +112,11 @@ for net, net_path in zip(NETS, nets_path):
 
     covid.model.summary()
 
-    # name = path_figure / f"{model}_{K_SPLIT}"
-    # print(f"[INFO] Predição de uma imagem: {K_SPLIT}")
-    # print(covid.predict(image=TEST, n_splits=K_SPLIT, name=name, grad=False))
+    name = path_figure / f"{model}_{K_SPLIT}"
+    print(f"[INFO] Predição de uma imagem: {K_SPLIT}")
+    print(covid.predict(image=TEST, n_splits=K_SPLIT, name=name, grad=False,threshold=0.75))
 
     # matrix = covid.confusion_matrix(test_generator.x, 4)
     # plot_dataset(absolut=matrix, names=labels, n_images=1, path=path_figure)
 
-    zip_folder(OUTPUT_PATH)
+zip_folder(OUTPUT_PATH)

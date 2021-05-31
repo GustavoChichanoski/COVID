@@ -180,7 +180,8 @@ class ModelCovid:
         image: str,
         n_splits: int = 100,
         name: str = None,
-        grad: bool = True
+        grad: bool = True,
+        threshold: float = 0.35
     ) -> str:
         """
             Realiza a predição do modelo podendo gerar o
@@ -209,12 +210,11 @@ class ModelCovid:
             ganhador (str): rotulo predito pelo modulo
         """
         imagem = ri(image)
-        cuts, positions = splits(
-            image=imagem,
-            n_split=n_splits,
-            dim_split=self.model_input_shape[0],
-            verbose=grad,
-        )
+        split_param = {
+            'n_split': n_splits, 'dim_split': self.model_input_shape[0],
+            'threshold': threshold, 'verbose': True
+        }
+        cuts, positions = splits(image=imagem, **split_param)
         shape = (
             n_splits,
             self.model_input_shape[0],
@@ -222,45 +222,45 @@ class ModelCovid:
             self.model_input_shape[2],
         )
         cuts = cuts.reshape(shape)
-        votes = self.model.predict(cuts)
-        elect = winner(labels=self.labels, votes=votes)
         if grad or name is not None:
             imagemColor = ri(image, color=True)
             heatmap = prob_grad_cam(
-                pacotes_da_imagem=cuts,
+                pacotes_imagem=cuts,
                 classifier=self.classifier_layers,
-                last_conv_layer=self.last_conv_layer,
+                last_conv_layer_name=self.last_conv_layer,
                 posicoes_iniciais_dos_pacotes=positions,
                 modelo=self.model,
-                winner_pos=self.labels.index(elect),
+                winner_pos=self.labels.index(image.parts[-2]),
             )
             plt_gradcam(heatmap, imagemColor, grad, name)
+        votes = self.model.predict(cuts)
+        elect = winner(labels=self.labels, votes=votes)
         return elect
 
     def confusion_matrix(self, x: DataGenerator, n_splits: int = 1):
         """
-        Metódo utilizado para avaliar o desempenho de uma rede de classificação.
-        A diagonal principal contem os valores preditos corretamente, enquantos os demais
-        valores são as predições incorretas realizadas pelo modelo.
+            Metódo utilizado para avaliar o desempenho de uma rede de classificação.
+            A diagonal principal contem os valores preditos corretamente, enquantos os demais
+            valores são as predições incorretas realizadas pelo modelo.
 
-        >>> modelo.confusion_matrix(teste.x,n_splits=2)
+            >>> modelo.confusion_matrix(teste.x,n_splits=2)
 
-        Esse código gerará uma matriz de confução para as imagens teste.x usando
-        ```2``` recortes por imagens, explicitado em ```n_splits```.
+            Esse código gerará uma matriz de confução para as imagens teste.x usando
+            ```2``` recortes por imagens, explicitado em ```n_splits```.
 
-        Args:
+            Args:
 
-            x (DataGenerator):
-                Gerador contendo os caminhos das imagens a serem preditas.
+                x (DataGenerator):
+                    Gerador contendo os caminhos das imagens a serem preditas.
 
-            n_splits (int, optional):
-                Numero de recortes randomicos utilizados para gerar a predição.
-                Defaults to 1.
+                n_splits (int, optional):
+                    Numero de recortes randomicos utilizados para gerar a predição.
+                    Defaults to 1.
 
-        Returns:
+            Returns:
 
-            (np.array):
-                [Matriz contendo os valores da matriz de confusão]
+                (np.array):
+                    [Matriz contendo os valores da matriz de confusão]
         """
         n_labels = len(self.labels)
         matriz = np.zeros((n_labels, n_labels))
@@ -283,18 +283,18 @@ def classification(
     resnet_train: bool = True,
 ) -> Model:
     """
-    Modelo de classificação entre covid, normal e pneumonia
+        Modelo de classificação entre covid, normal e pneumonia
 
-    Args:
-    -----
-        input_size (tuple, optional): Tamanho da imagem de entrada.
-                                      Defaults to (224, 224, 3).
-        n_class (int, optional): Número de classes de saída.
-                                 Defaults to 3.
+        Args:
+        -----
+            input_size (tuple, optional): Tamanho da imagem de entrada.
+                                        Defaults to (224, 224, 3).
+            n_class (int, optional): Número de classes de saída.
+                                    Defaults to 3.
 
-    Returns:
-    --------
-        (keras.Model) : Modelo do keras
+        Returns:
+        --------
+            (keras.Model) : Modelo do keras
     """
     inputs = Input(shape, name="entrada_modelo")
     model = Conv2D(
@@ -331,7 +331,8 @@ def classification(
 
 
 def winner(
-    labels: List[str] = ["Covid", "Normal", "Pneumonia"], votes: List[int] = [0, 0, 0]
+    labels: List[str] = ["Covid", "Normal", "Pneumonia"],
+    votes: List[int] = [0, 0, 0]
 ) -> str:
     """
     Retorna o label da doenca escolhido

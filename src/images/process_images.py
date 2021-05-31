@@ -8,88 +8,25 @@ import cv2 as cv
 from src.plots.plots import plot_images
 
 
-def find_start(image_with_black) -> Tuple[int, int]:
-    """
-    Encontra o primeiro pixel não zero da esquerda para a direita.
-    Args:
-        image_with_black (np.array): Imagem a ser analizada.
-        size (int, optional): Tamanho da imagem a ser analizada.
-                              Defaults to 1024.
-    Returns:
-        (tuple): Primeira linha e coluna contendo um pixel não zero.
-    """
-    size = image_with_black.shape[0]
-    if isinstance(image_with_black, list):
-        start = []
-        for img in image_with_black:
-            row, column = find_start(img, size)
-            start.append((row, column))
-        return start
-    row_start, column_start = 0, 0
-    # percorre a imagem da cima para baixo
-    for i in range(size):
-        if np.sum(image_with_black[i]) > 0:
-            row_start = i
-            break
-    # percorre a imagem da esquerda para a direita
-    for j in range(size):
-        if np.sum(image_with_black[:, j]) > 0:
-            column_start = j
-            break
-    return row_start, column_start
-
-
-def find_end(image_with_black, size: int = 1024) -> Tuple[int, int]:
-    """
-    Encontra o primeiro pixel não zero da direita para a esquerda0
-
-    Args:
-        image_with_black (np.array): imagem a ser analizada
-        size (int, optional): tamanho da imagem a ser analizada.
-                              Defaults to 1024.
-
-    Returns:
-        (tuple): Primeira linha e coluna contendo um pixel não zero.
-    """
-    if isinstance(image_with_black, list):
-        ends = []
-        for image in image_with_black:
-            row, column = find_end(image, size)
-            ends.append((row, column))
-        return ends
-    row_end, column_end = 0, 0
-    # percorre a imagem da baixo para cima
-    for i in range(size - 1, -1, -1):
-        if np.sum(image_with_black[i]) > 0:
-            row_end = i
-            break
-    # percorre a imagem da direita para a esquerda
-    for j in range(size - 1, -1, -1):
-        if np.sum(image_with_black[:, j]) > 0:
-            column_end = j
-            break
-    return row_end, column_end
-
-
 def random_pixel(
     start: tuple = (0, 0),
     end: tuple = (0, 0),
     dim_split: int = 224
 ) -> Tuple[Tuple[int, int], Tuple[int, int]]:
     """
-    Seleciona um pixel randomicamente comecando de start e
-    indo end menos a dimensão maxima do corte.
+        Seleciona um pixel randomicamente comecando de start e
+        indo end menos a dimensão maxima do corte.
 
-    Args:
-        start (tuple, optional): Pixel superior.
-                                 Defaults to (0,0).
-        end (tuple, optional): Pixel inferior.
-                               Defaults to (0,0).
-        dim_split (int, optional): Dimensão do corte.
-                                   Defaults to 224.
+        Args:
+            start (tuple, optional): Pixel superior.
+                                    Defaults to (0,0).
+            end (tuple, optional): Pixel inferior.
+                                Defaults to (0,0).
+            dim_split (int, optional): Dimensão do corte.
+                                    Defaults to 224.
 
-    Returns:
-        (tuple): pixel gerados aleatoriamente
+        Returns:
+            (tuple): pixel gerados aleatoriamente
     """
     x_i, y_i = start
     x_e, y_e = end
@@ -125,7 +62,8 @@ def split_images_n_times(
     n_split: int = 100,
     dim_split: int = 224,
     verbose: bool = True,
-    need_positions: bool = True
+    need_positions: bool = True,
+    threshold: float = 0.45
 ):
     """
         Recorta a imagem em n_split vezes de tamanhos dim_split ignorando
@@ -145,12 +83,10 @@ def split_images_n_times(
     cut_pos = []  # lista de posicoes do corte
 
     # Define os pixels em que a imgem começa
-    # pixel_start = find_start(image)
-    # pixel_end = find_end(image)
     y_nonzero, x_nonzero = np.nonzero(image)
     pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), \
                              (np.max(y_nonzero), np.max(x_nonzero))
-
+    shape_cut = (n_split,dim_split,dim_split,1)
     # Cria os n_splits cortes
     pbar = range(n_split)
     if verbose:
@@ -159,13 +95,13 @@ def split_images_n_times(
         # Recebe um corte da imagem não inteiramente preto
         cut, pos = create_non_black_cut(
             image=image, start=pixel_start, end=pixel_end,
-            dim=dim_split, threshold=0.3
+            dim=dim_split, threshold=threshold
         )
         cut_norm = normalize_image(cut)
         cut_img = np.append(cut_img, cut_norm)  # Armazena o corte
         if need_positions:
             cut_pos.append(pos)  # Armaxena o pixel inicial do corte
-    cut_img = cut_img.reshape((n_split,dim_split,dim_split,1))
+    cut_img = cut_img.reshape(shape_cut)
     if need_positions:
         return cut_img, cut_pos
     return cut_img
@@ -173,8 +109,8 @@ def split_images_n_times(
 
 def create_non_black_cut(
     image,
-    start: tuple = (0, 0),
-    end: tuple = (0, 0),
+    start: Tuple[int,int] = (0, 0),
+    end: Tuple[int,int] = (0, 0),
     dim: int = 224,
     threshold: float = 0.5
 ):
@@ -192,29 +128,33 @@ def create_non_black_cut(
     Returns:
         numpy.array: recorte da imagem nao totalmente preta
     """
-    if start[1] > end[1] - dim and start[0] > end[0] - dim:
-        end = (start[0] + dim + 10, start[1] + dim + 10)
+    xi_maior_xf = start[1] > end[1] - dim
+    yi_maior_yf = start[0] > end[0] - dim
+    offset = 10
+    dim_offset = dim + offset
+    if xi_maior_xf and yi_maior_yf:
+        end = (start[0] + dim_offset, start[1] + dim_offset)
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
         return recort, pos
-    if start[1] > end[1] - dim:
-        end = (end[0], start[1] + dim + 10)
+    if xi_maior_xf:
+        end = (end[0], start[1] + dim_offset)
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
         return recort, pos
-    if start[0] > end[0] - dim:
-        end = (start[0] + dim + 10, end[1])
+    if yi_maior_yf:
+        end = (start[0] + dim_offset, end[1])
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
         return recort, pos
     pos = random_pixel(start, end, dim)
     recort = create_recort(image, pos, dim)
-    soma = np.sum(recort > 0)
-    threshold = int(dim * dim * threshold)
-    while soma < threshold:
+    valores_validos = np.sum(recort > 0)
+    minimo_valores_validos = int(dim * dim * threshold)
+    while valores_validos < minimo_valores_validos:
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
-        soma = np.sum(recort > 0)
+        valores_validos = np.sum(recort > 0)
     return recort, pos
 
 
