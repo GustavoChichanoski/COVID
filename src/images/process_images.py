@@ -1,7 +1,7 @@
 """
     Biblioteca referente ao processamento das imagens
 """
-from typing import Tuple
+from typing import Any, Tuple, Union
 import numpy as np
 from tqdm import tqdm
 import cv2 as cv
@@ -46,13 +46,13 @@ def resize_image(image, dim: int):
 
 def normalize_image(images):
     """
-    Normaliza as imagens para que todos variem de 0 a 1.
+        Normaliza as imagens para que todos variem de 0 a 1.
 
-    Args:
-        images (list or np.array): Pode ser uma lista de imagens ou uma imagem.
+        Args:
+            images (list or np.array): Pode ser uma lista de imagens ou uma imagem.
 
-    Returns:
-        (np.array): Imagens normalizadas
+        Returns:
+            (np.array): Imagens normalizadas
     """
     return images / 256
 
@@ -64,7 +64,7 @@ def split_images_n_times(
     verbose: bool = True,
     need_positions: bool = True,
     threshold: float = 0.45
-):
+) -> Union[Tuple[Any,Any],Any]:
     """
         Recorta a imagem em n_split vezes de tamanhos dim_split ignorando
         recortes totalmente pretos.
@@ -115,18 +115,18 @@ def create_non_black_cut(
     threshold: float = 0.5
 ):
     """
-    Cria um recorte que não é totalmente preto
+        Cria um recorte que não é totalmente preto
 
-    Args:
-        image (np.array): Imagem a ser cortada
-        start (tuple, optional): Pixel por onde comecar a cortar.
+        Args:
+            image (np.array): Imagem a ser cortada
+            start (tuple, optional): Pixel por onde comecar a cortar.
+                                    Defaults to (0, 0).
+            end (tuple, optional): Pixel para parar de corte.
                                 Defaults to (0, 0).
-        end (tuple, optional): Pixel para parar de corte.
-                            Defaults to (0, 0).
-        dim (int, optional): Dimensão do corte. Defaults to 224.
+            dim (int, optional): Dimensão do corte. Defaults to 224.
 
-    Returns:
-        numpy.array: recorte da imagem nao totalmente preta
+        Returns:
+            numpy.array: recorte da imagem nao totalmente preta
     """
     xi_maior_xf = start[1] > end[1] - dim
     yi_maior_yf = start[0] > end[0] - dim
@@ -157,21 +157,24 @@ def create_non_black_cut(
         valores_validos = np.sum(recort > 0)
     return recort, pos
 
-
-def create_recort(image, pos_start: tuple = (0, 0), dim_split: int = 224):
+def create_recort(
+    image,
+    pos_start: Tuple[int,int] = (0, 0),
+    dim_split: int = 224
+):
     """
-    Cria um recorte da imagem indo da posicao inicial até a
-    dimensão do recorte
+        Cria um recorte da imagem indo da posicao inicial até a
+        dimensão do recorte
 
-    Args:
-        image (np.array): Imagem a ser recortada.
-        pos_start (tuple, optional): Posicao do recorte.
-                                     Defaults to (0,0).
-        dim_split (int, optional): Dimensão do recorte.
-                                   Defaults to 224.
+        Args:
+            image (np.array): Imagem a ser recortada.
+            pos_start (tuple, optional): Posicao do recorte.
+                                        Defaults to (0,0).
+            dim_split (int, optional): Dimensão do recorte.
+                                    Defaults to 224.
 
-    Return:
-        (np.array): Recorte da imagem
+        Return:
+            (np.array): Recorte da imagem
     """
     pos_end = (pos_start[0] + dim_split, pos_start[1] + dim_split)
     cut = image[pos_start[0] : pos_end[0], pos_start[1] : pos_end[1]]

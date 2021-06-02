@@ -1,7 +1,7 @@
 """
     Biblioteca contendo as informações referente ao modelo.
 """
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -34,7 +34,7 @@ from src.images.read_image import read_images as ri
 from src.dataset.generator import DataGenerator
 
 
-class ModelCovid:
+class ModelCovid(Model):
     """[summary]"""
 
     def __init__(
@@ -46,37 +46,34 @@ class ModelCovid:
         labels: List[str] = ["Covid", "Normal", "Pneumonia"],
     ) -> None:
         """
-        Construtor da minha classe ModelCovid
+            Construtor da minha classe ModelCovid
 
-        Args:
-        -----
-            weight_path (str):
-                Caminho para salvar os pesos.
+            Args:
+            -----
+                weight_path (str):
+                    Caminho para salvar os pesos.
 
-            model_input_shape (tuple, optional):
-                Dimensão das imagens recortadas.
-                Defaults to ```(224, 224, 3)```.
+                model_input_shape (tuple, optional):
+                    Dimensão das imagens recortadas.
+                    Defaults to ```(224, 224, 3)```.
 
-            batch_size (int, optional): 
-                Pacotes por treinamento.
-                Defaults to ```32```.
+                batch_size (int, optional): 
+                    Pacotes por treinamento.
+                    Defaults to ```32```.
 
-            model_name (str, optional):
-                Nome do modelo de rede a ser importado, podendo variar
-                entre ```'ResNet50V2'```, ```'VGG19'```, ```'DenseNet201'``` ou
-                ```'InceptionNetV3'```.
+                model_name (str, optional):
+                    Nome do modelo de rede a ser importado, podendo variar
+                    entre ```'ResNet50V2', 'VGG19', 'DenseNet201' ou 'InceptionNetV3'```.
 
-            labels (list, optional):
-                Rotulos de saída.
-                Defaults to ```['Covid','Normal','Pneumonia']```.
+                labels (list, optional):
+                    Rotulos de saída.
+                    Defaults to ```['Covid','Normal','Pneumonia']```.
         """
         self.batch_size = batch_size
         self.model_input_shape = model_input_shape
         self.model_name = model_name
         self.labels = labels
-        self.model = classification(
-            shape=self.model_input_shape, n_class=len(self.labels), model_net=model_name
-        )
+        self._lazy_model = None
         self.weight_path = weight_path
         # Nomes das camadas até a ultima camada de convolução
         self.classifier_layers = []
@@ -86,6 +83,44 @@ class ModelCovid:
                 self.last_conv_layer = layer.layers[-2].name
                 break
             self.classifier_layers.insert(0, layer.name)
+
+    @property
+    def model(self):
+        if self.lazy_model is None:
+            shape = self.model_input_shape
+            inputs = Input(self.model_input_shape, name="entrada_modelo")
+            model = Conv2D(
+                filters=3,
+                kernel_size=(1,1),
+                padding="same",
+                activation="relu",
+                name="conv_gray_rgb",
+            )(inputs)
+            params = {
+                "include_top": False,
+                "weights": "imagenet",
+                "input_shape": (shape[0], shape[1], 3),
+                "pooling": "avg",
+            }
+            if self.model_name == "VGG19":
+                base_model = VGG19(**params)
+            elif self.model_name == "InceptionResNetV2":
+                base_model = InceptionV3(**params)
+            elif self.model_name == "MobileNetV2":
+                base_model = MobileNetV3Small(**params)
+            elif self.model_name == "DenseNet201":
+                base_model = DenseNet201(**params)
+            else:
+                base_model = ResNet50V2(**params)
+            base_model.trainable = True
+            model = base_model(model)
+            model = Dropout(0.5, name="drop_0")(model)
+            model = Dense(units=256, name="dense_0")(model)
+            model = Dropout(0.5, name="drop_1")(model)
+            model = Dense(units=len(self.labels), name="classifier")(model)
+            predictions = Activation(activation="softmax", name="output")(model)
+            self._lazy_model = Model(inputs=inputs, outputs=predictions)
+        return self._lazy_model
 
     def save(
         self,
@@ -102,15 +137,15 @@ class ModelCovid:
             -----
                 history (list): Historico das metricas de apreendizagem
         """
+        value = 100.00
+        file = "model.hdf5"
+
         if name is not None:
             file = path / name
             self.model.save(f"{file}.hdf5", overwrite=True)
             self.model.save_weights(f"{file}_weights.hdf5", overwrite=True)
             print(f"Pesos salvos em {file}")
             return file + "_weights.hdf5"
-
-        value = 100.00
-        file = "model.hdf5"
 
         if history is not None:
             value = history[metric][-1] * 100
@@ -219,7 +254,7 @@ class ModelCovid:
             n_splits,
             self.model_input_shape[0],
             self.model_input_shape[1],
-            self.model_input_shape[2],
+            self.model_input_shape[2]
         )
         cuts = cuts.reshape(shape)
         if grad or name is not None:
@@ -237,6 +272,7 @@ class ModelCovid:
         elect = winner(labels=self.labels, votes=votes)
         return elect
 
+    # [0 100] 1707 = 170.700
     def confusion_matrix(self, x: DataGenerator, n_splits: int = 1):
         """
             Metódo utilizado para avaliar o desempenho de uma rede de classificação.
@@ -276,75 +312,21 @@ class ModelCovid:
         return None
 
 
-def classification(
-    shape: Tuple[int, int, int] = (224, 224, 3),
-    n_class: int = 3,
-    model_net: str = "Resnet50V2",
-    resnet_train: bool = True,
-) -> Model:
-    """
-        Modelo de classificação entre covid, normal e pneumonia
-
-        Args:
-        -----
-            input_size (tuple, optional): Tamanho da imagem de entrada.
-                                        Defaults to (224, 224, 3).
-            n_class (int, optional): Número de classes de saída.
-                                    Defaults to 3.
-
-        Returns:
-        --------
-            (keras.Model) : Modelo do keras
-    """
-    inputs = Input(shape, name="entrada_modelo")
-    model = Conv2D(
-        filters=3,
-        kernel_size=(3, 3),
-        padding="same",
-        activation="relu",
-        name="conv_gray_rgb",
-    )(inputs)
-    params = {
-        "include_top": False,
-        "weights": "imagenet",
-        "input_shape": (shape[0], shape[1], 3),
-        "pooling": "avg",
-    }
-    if model_net == "VGG19":
-        base_model = VGG19(**params)
-    elif model_net == "InceptionResNetV2":
-        base_model = InceptionV3(**params)
-    elif model_net == "MobileNetV2":
-        base_model = MobileNetV3Small(**params)
-    elif model_net == "DenseNet201":
-        base_model = DenseNet201(**params)
-    else:
-        base_model = ResNet50V2(**params)
-    base_model.trainable = resnet_train
-    model = base_model(model)
-    model = Dropout(0.5, name="drop_0")(model)
-    model = Dense(units=256, name="dense_0")(model)
-    model = Dropout(0.5, name="drop_1")(model)
-    model = Dense(units=n_class, name="classifier")(model)
-    predictions = Activation(activation="softmax", name="output")(model)
-    return Model(inputs=inputs, outputs=predictions)
-
-
 def winner(
     labels: List[str] = ["Covid", "Normal", "Pneumonia"],
     votes: List[int] = [0, 0, 0]
 ) -> str:
     """
-    Retorna o label da doenca escolhido
+        Retorna o label da doenca escolhido
 
-    Args:
-    -----
-        labels (list): nomes das classes
-        votes (list): predicao das imagens
+        Args:
+        -----
+            labels (list): nomes das classes
+            votes (list): predicao das imagens
 
-    Returns:
-    --------
-        elect (str): label escolhido pelo modelo
+        Returns:
+        --------
+            elect (str): label escolhido pelo modelo
     """
     poll = np.sum(votes, axis=0)
     elect = labels[np.argmax(poll)]
@@ -353,10 +335,10 @@ def winner(
 
 def get_metrics() -> List[Metric]:
     """
-    Gera as metricas para o modelo
-    Returns:
-    --------
-        (list): metricas do modelo
+        Gera as metricas para o modelo
+        Returns:
+        --------
+            (list): metricas do modelo
     """
     m = F1score()
     metrics = ["accuracy", m]
@@ -365,13 +347,13 @@ def get_metrics() -> List[Metric]:
 
 def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
     """
-    Retorna a lista callbacks do modelo
-    Args:
-    -----
-        weight_path: Caminho para salvar os checkpoints
-    Returns:
-    --------
-        (list of keras.callbacks): lista dos callbacks
+        Retorna a lista callbacks do modelo
+        Args:
+        -----
+            weight_path: Caminho para salvar os checkpoints
+        Returns:
+        --------
+            (list of keras.callbacks): lista dos callbacks
     """
     # Salva os pesos dos modelo para serem carregados
     # caso o monitor não diminua
@@ -411,13 +393,6 @@ def get_callbacks(weight_path: str, history_path: str) -> List[Callback]:
         # Vetor a ser passado na função fit
         callbacks = [checkpoint, early_stop, reduce_lr, terminate, csv_logger]
     else:
-        # Vetor a ser passado na função fit
-        # callbacks = [
-        #     checkpoint,
-        #     early_stop,
-        #     reduce_lr,
-        #     terminate
-        # ]
         callbacks = [checkpoint, reduce_lr, terminate]
     # callbacks = [checkpoint, early_stop, reduce_lr, terminate]
     return callbacks

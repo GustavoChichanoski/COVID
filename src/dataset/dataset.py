@@ -48,11 +48,9 @@ class Dataset:
         return self._lazy_files_in_folder
 
     @property
-    def number_files_in_folders(self):
+    def number_files_in_folders(self) -> List[List[int]]:
         if self._lazy_number_files_in_folders is None:
-            files = np.array([
-                len(folder) for folder in self.files_in_folder
-            ])
+            files = np.array([ len(folder) for folder in self.files_in_folder ])
             self._lazy_number_files_in_folders = files
         return self._lazy_number_files_in_folders
 
@@ -65,10 +63,10 @@ class Dataset:
 
     @property
     def y(self) -> Any:
-        """Retorna 
+        """Retorna
 
-        Returns:
-            numpy.array:
+            Returns:
+                numpy.array:
         """
         if self._lazy_y is None:
             # Recebe os nomes dos rotulos
@@ -133,9 +131,7 @@ class Dataset:
         x = self.x[:tamanho]
         y = self.y[:tamanho]
         train_in, val_in, train_out, val_out = train_test_split(
-            x, y,
-            test_size=val_size,
-            shuffle=shuffle
+            x, y, test_size=val_size, shuffle=shuffle
         )
         train, val = (train_in, train_out), (val_in, val_out)
         return train, val
