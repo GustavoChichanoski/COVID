@@ -88,12 +88,12 @@ def read_images(
                 id_end = len(images_paths)
             return read_sequencial_image(images_paths, id_start, id_end, color)
         return read_random_image(images_paths, id_start,color)
+    if color:
+        image = cv.imread(str(images_paths))
+    else:
+        image = cv.imread(str(images_paths), cv.COLOR_BGR2GRAY)
+        image = cv.equalizeHist(image)
     try:
-        if color:
-            image = cv.imread(str(images_paths))
-        else:
-            image = cv.imread(str(images_paths), cv.COLOR_BGR2GRAY)
-            image = cv.equalizeHist(image)
         if output_dim is not None:
             image = cv.resize(image, shape, interpolation=cv.INTER_AREA)
     except:
