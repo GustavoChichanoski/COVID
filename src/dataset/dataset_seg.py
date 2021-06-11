@@ -57,9 +57,11 @@ class SegmentationDataset:
                 for mask_id in self.y:
                     filename = mask_id.parts[-1]
                     if filename.startswith('CNH'):
+                        print('CNH')
                         lung_id = filename.replace('_mask.png', '.png')
                         lung = self.path_lung / lung_id
                     else:
+                        print('Not CNH')
                         lung = self.path_lung / filename
                     print(lung)
                     if lung.exists():
