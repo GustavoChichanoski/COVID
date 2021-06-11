@@ -57,17 +57,7 @@ class SegmentationDataset:
     def x(self) -> List[Path]:
         if self._lazy_x is None:
             x = np.array([])
-            if self.train:
-                files = list(self.files_in_folder)
-                number_files = self.number_files_in_folders
-                min_n_files = np.min(number_files)
-                for index in range(min_n_files):
-                    for index_label, n_files in enumerate(number_files):
-                        index_file = index % n_files
-                        file = files[index_label][index_file]
-                        x = np.append(x,file)
-            else:
-                x = sum(list(self.files_in_folder), [])
+            x = sum(list(path for path in self.path_lung.iterdir()), [])
             self._lazy_x = x
         return self._lazy_x
 
