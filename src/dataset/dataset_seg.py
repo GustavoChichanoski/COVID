@@ -39,6 +39,11 @@ class SegmentationDataset:
             self._lazy_y = y
         return self._lazy_y
 
+    def change_extension(self, filename: str, old: str, new: str) -> str:
+        file_id = filename.split(old)[0]
+        file_id = f'{file_id}{new}'
+        return file_id
+
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
@@ -47,9 +52,7 @@ class SegmentationDataset:
                 for mask_id in self.y:
                     filename = mask_id.parts[-1]
                     if filename.startswith('CNH'):
-                        lung_id = filename.split('_mask.png')
-                        lung_id += '.png'
-                        print_info(lung_id)
+                        lung_id = filename.replace('_mask.png', '.png')
                         lung = self.path_lung / lung_id
                         if lung.exists():
                             x = np.append(x, lung)
