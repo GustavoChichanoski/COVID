@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 from dataclasses import dataclass
+from src.prints.prints import print_info
 
 
 @dataclass
@@ -45,7 +46,9 @@ class SegmentationDataset:
         new_extension: str = '_mask.png'
     ) -> Path:
         filename = path.parts[-1].split(old_extension)[0]
-        return filename + new_extension
+        filename = filename + new_extension
+        print_info(filename)
+        return filename
 
     @property
     def x(self) -> List[Path]:
@@ -54,7 +57,11 @@ class SegmentationDataset:
             if self.path_mask is not None:
                 for mask_id in self.y:
                     if mask_id.parts[-1].startswith('CNH'):
-                        lung_id = self.change_extension(mask_id,'_mask.png','.png')
+                        lung_id = self.change_extension(
+                            mask_id,
+                            '_mask.png',
+                            '.png'
+                        )
                         lung = self.path_lung / lung_id
                         if lung.exists():
                             x = np.append(x, lung)
