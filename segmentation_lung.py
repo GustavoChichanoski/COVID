@@ -210,9 +210,9 @@ params = {
     "n_class": len(labels),
     "channels": CHANNELS,
 }
-train_generator = DataGenerator(x_set=train[0], y_set=train[1], **params)
-val_generator = DataGenerator(x_set=validation[0], y_set=validation[1], **params)
-test_generator = DataGenerator(x_set=test_values[0], y_set=test_values[1], **params)
+train_generator = SegmentationDataGenerator(x_set=train[0], y_set=train[1], **params)
+val_generator = SegmentationDataGenerator(x_set=validation[0], y_set=validation[1], **params)
+test_generator = SegmentationDataGenerator(x_set=test_values[0], y_set=test_values[1], **params)
 
 # %% [code] {"jupyter":{"outputs_hidden":false},"execution":{"iopub.status.busy":"2021-06-11T14:41:24.315437Z","iopub.execute_input":"2021-06-11T14:41:24.315839Z","iopub.status.idle":"2021-06-11T14:41:24.394821Z","shell.execute_reply.started":"2021-06-11T14:41:24.315788Z","shell.execute_reply":"2021-06-11T14:41:24.393909Z"}}
 m = F1score()

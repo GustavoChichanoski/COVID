@@ -35,7 +35,7 @@ class SegmentationDataset:
             y = np.array([])
             for path in self.path_mask.iterdir():
                 y = np.append(y, path)
-            self._lazy_y = y 
+            self._lazy_y = y
         return self._lazy_y
 
     def change_extension(
@@ -92,7 +92,10 @@ class SegmentationDataset:
         """
         # t : train - v : validation
         tam_max = tamanho if tamanho > 0 and tamanho < len(self.x) else len(self.x)
-        x, y = self.x[:tam_max], self.y[:tam_max]
+        x = self.x[:tam_max]
+        if self.path_mask is None:
+            return self.x
+        y = self.y[:tam_max]
         train_in, val_in, train_out, val_out = train_test_split(
             x,
             y,

@@ -6,7 +6,7 @@ from src.images.process_images import split, split_images_n_times as split_image
 from src.images.read_image import read_images
 import numpy as np
 
-class DataGenerator(Sequence):
+class SegmentationDataGenerator(Sequence):
 
     def __init__(
         self,
