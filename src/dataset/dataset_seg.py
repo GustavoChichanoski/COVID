@@ -34,14 +34,14 @@ class SegmentationDataset:
         if self._lazy_y is None:
             y = np.array([])
             for lung_id in self.x:
-                if str(lung_id).find('CHN'):
-                    mask_id = self.change_extension(lung_id,'_mask.png')
+                if str(lung_id.parts[-1]).find('CHN'):
+                    mask_id = self.change_extension(lung_id, '_mask.png')
                     path_mask = self.path_mask / mask_id
                     if not path_mask.exists():
                         raise ValueError(f'O caminho {path_mask} não é valido')
                 else:
-                    path_mask = self.path_mask / str(lung_id)
-                y = np.append(y,path_mask)
+                    path_mask = self.path_mask / str(lung_id.parts[-1])
+                y = np.append(y, path_mask)
             self._lazy_y = y
         return self._lazy_y
 
