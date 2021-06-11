@@ -48,9 +48,9 @@ class SegmentationDataset:
     def change_extension(
         self,
         path: Path,
-        new_extension: str
+        new_extension: str = '_mask.png'
     ) -> Path:
-        filename = str(path).split(path.suffix)[0]
+        filename = path.parts[-1].split(path.suffix)[0]
         return filename + new_extension
 
     @property
