@@ -33,7 +33,7 @@ class SegmentationDataset:
         """
         if self._lazy_y is None:
             y = np.array([])
-            for lung_id in self.x.iterdir():
+            for lung_id in self.x:
                 if lung_id.find('CHN'):
                     mask_id = self.change_extension(lung_id,'_mask.png')
                     path_mask = self.path_mask / mask_id
