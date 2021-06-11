@@ -1,9 +1,11 @@
 from os.path import getctime
 from pathlib import Path
-from typing import List, Tuple, Union
+from src.prints.prints import print_info
+from typing import Any, List, Tuple, Union
 from zipfile import ZipFile
+import pandas as pd
 
-def last_file(path: Path,suffix_file: str = '.hdf5'):
+def last_file(path: Path,suffix_file: str = '.hdf5') -> Path:
     weight = None
     max_weight = None
     for weight in path.iterdir():
@@ -59,7 +61,7 @@ def create_folders(
 
     return nets_path
 
-def get_all_files(path: Path):
+def get_all_files(path: Path) -> List[Path]:
     paths = []
     for file in path.iterdir():
         if file.is_dir():
@@ -81,4 +83,27 @@ def zip_folder(
         print('[INFO] All files zipped successfully')
         return None
     print('[ERRO] Error when zipped files')
+    return None
+
+def pandas2csv(history: Any, history_path: Path) -> None:
+    """ Arquivo para salvar o treinamento do modelo em um csv.
+
+        Args:
+            history (Any): historico do treinamento do modelo.
+            history_path (Path): nome do arquivo a ser salvo
+
+        Raises:
+            ValueError: Aparece quando o nome o arquivo foi corrompido
+
+        Returns:
+            None : função sem retorno
+    """    
+    file_history = f"{history_path}.csv"
+    hist_df = pd.DataFrame(history)
+    with open(file_history, mode="w") as f:
+        hist_df.to_csv(f)
+        f.close()
+    if file_history.exists():
+        raise ValueError('Arquivo corrompido')
+    print_info(f'Historico salvo em {file_history}')
     return None

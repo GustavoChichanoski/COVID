@@ -4,19 +4,15 @@
     normais, com pneumonia ou com covid-19
 """
 from src.plots.history import plot_history
-from src.plots.graph import plot_dataset
-from src.model.model import ModelCovid
+from src.models.classificacao.model import ModelCovid
 from src.dataset.dataset import Dataset
 from src.dataset.generator import DataGenerator
 from src.output_result.folders import *
-from zipfile import ZipFile
 from pathlib import Path
 from os import listdir
 import sys
-import numpy as np
-import cProfile
-# %% [code]
 
+# %% [code]
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 CHANNELS = 1
@@ -81,8 +77,12 @@ for net, net_path in zip(NETS[1:], nets_path[1:]):
     model = net
     net_path = net_path
 
-    model_params = {"labels": labels, "model_name": model, "model_input_shape": SHAPE}
-    covid = ModelCovid(weight_path=".model/weights.best.hfd5", **model_params)
+    model_params = {
+        'labels': labels, 'name': model,
+        'orig_dim': DIM_ORIGINAL, 'split_dim': DIM_SPLIT,
+        'trainable': True,
+    }
+    covid = ModelCovid(**model_params)
     covid.compile(loss="categorical_crossentropy", lr=1e-5)
 
     path_weight = net_path / "weights"
@@ -93,20 +93,23 @@ for net, net_path in zip(NETS[1:], nets_path[1:]):
 
     if weight is not None:
         print(f"[INFO] Carregando o modelo: {weight}")
-        covid.load(weight)
+        covid.load_weights(weight)
     else:
         fit_params = {
             "epochs": EPOCHS,
             "shuffle": True,
-            "workers": 1,
             "batch_size": BATCH_SIZE,
             "verbose": True,
         }
-        history = covid.fit_generator(
-            train_generator=train_generator, val_generator=val_generator, **fit_params
+        history = covid.fit(
+            x=train_generator,
+            validation_data=val_generator,
+            **fit_params
         )
-        file_model, file_weights, file_history = covid.save(
-            path=net_path, history=history.history, metric="accuracy", kaggle=KAGGLE
+        file_model, file_weights, file_history = covid.save_weights(
+            file_path=net_path,
+            history=history,
+            metric="val_f1"
         )
         plot_history(history)
 
@@ -114,7 +117,7 @@ for net, net_path in zip(NETS[1:], nets_path[1:]):
 
     name = path_figure / f"{model}_{K_SPLIT}"
     print(f"[INFO] Predição de uma imagem: {K_SPLIT}")
-    print(covid.predict(image=TEST, n_splits=K_SPLIT, name=name, grad=False,threshold=0.75))
+    print(covid.make_grad_cam(image=TEST, n_splits=K_SPLIT,threshold=0.75,verbose=True))
 
     # matrix = covid.confusion_matrix(test_generator.x, 4)
     # plot_dataset(absolut=matrix, names=labels, n_images=1, path=path_figure)

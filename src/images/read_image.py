@@ -3,13 +3,15 @@
 """
 
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Any
 import cv2 as cv
 
 
-def read_random_image(paths: list,
-                      id_start: int,
-                      color:bool = False) -> list:
+def read_random_image(
+    paths: list,
+    id_start: int = 0,
+    color: bool = False
+) -> List[Any]:
     """
         Lê as imagens dos ids contidos em id_start
 
@@ -28,10 +30,12 @@ def read_random_image(paths: list,
     return images
 
 
-def read_sequencial_image(paths: list,
-                          id_start: int = 0,
-                          id_end: int = 1,
-                          color: bool = False) -> list:
+def read_sequencial_image(
+    paths: List[Path],
+    id_start: int = 0,
+    id_end: int = 1,
+    color: bool = False
+) -> List[Any]:
     """
         Lê sequencialmente as imagens
 
@@ -53,10 +57,13 @@ def read_sequencial_image(paths: list,
     return images
 
 
-def read_images(images_paths: Union[List[Path], Path],
-                id_start: Union[List[int], int] = 0,
-                id_end: int = -1,
-                color: bool = False):
+def read_images(
+    images_paths: Union[List[Path], Path],
+    id_start: Union[List[int], int] = 0,
+    id_end: int = -1,
+    color: bool = False,
+    output_dim: int = 1024
+):
     """
         Lê as imagens do listas de caminhos da imagem de start até end -1
 
@@ -67,11 +74,13 @@ def read_images(images_paths: Union[List[Path], Path],
                                              Defaults to 0.
             id_end (int, optional): ID do fim das imagens.
                                     Defaults to -1.
-            normalize (bool, optional): A saída sera normalizada
-                                              Default to false.
+            output_dim (int, optional): Image output dimension.
+                                        Defaults to -1.
+        
         Returns:
             (np.array or list): retorna uma lista np.array das imagens lidas
     """
+    shape = (output_dim, output_dim)
     if isinstance(images_paths, list):
         if isinstance(id_start, int):
             if id_end < id_start:
@@ -81,9 +90,8 @@ def read_images(images_paths: Union[List[Path], Path],
     if color:
         image = cv.imread(str(images_paths))
     else:
-        image = cv.imread(str(images_paths),0)
-        image = equalize_histogram(image)
+        image = cv.imread(str(images_paths), cv.COLOR_BGR2GRAY)
+        image = cv.equalizeHist(image)
+    if output_dim is not None:
+        image = cv.resize(image, shape)
     return image
-
-def equalize_histogram(image):
-    return cv.equalizeHist(image)
