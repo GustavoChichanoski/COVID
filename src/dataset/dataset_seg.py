@@ -54,11 +54,11 @@ class SegmentationDataset:
             for mask_id in self.y:
                 if mask_id.parts[-1].startswith('CNH'):
                     lung_id = self.change_extension(mask_id,'_mask.png','.png')
-                    lung = self.lung_path / lung_id
+                    lung = self.path_lung / lung_id
                     if lung.exists():
                         x = np.append(x, lung)
                 else:
-                    lung = self.lung_path / mask_id.parts[-1]
+                    lung = self.path_lung / mask_id.parts[-1]
                     x = np.append(x, lung)
             self._lazy_x = x
         return self._lazy_x
