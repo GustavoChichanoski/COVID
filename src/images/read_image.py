@@ -93,9 +93,6 @@ def read_images(
     else:
         image = cv.imread(str(images_paths), cv.COLOR_BGR2GRAY)
         # image = cv.equalizeHist(image)
-    try:
-        if output_dim is not None:
-            image = cv.resize(image, shape, interpolation=cv.INTER_AREA)
-    except:
-        raise ValueError(f'O caminho {images_paths} do tipo {type(images_paths)} contem erros')
+    if output_dim is not None:
+        image = cv.resize(image, shape, interpolation=cv.INTER_AREA)
     return image
