@@ -53,6 +53,7 @@ class SegmentationDataset:
                 for lung_id in self.path_lung.iterdir():
                     x = np.append(x, lung_id)
             else:
+                print('Mask not None')
                 for mask_id in self.y:
                     filename = mask_id.parts[-1]
                     if filename.startswith('CNH'):
