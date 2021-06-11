@@ -57,7 +57,7 @@ class SegmentationDataset:
     def x(self) -> List[Path]:
         if self._lazy_x is None:
             x = np.array([])
-            x = sum(list(path for path in self.path_lung.iterdir()), [])
+            x = sum(list([path for path in self.path_lung.iterdir()]), [])
             self._lazy_x = x
         return self._lazy_x
 
