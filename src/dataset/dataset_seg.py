@@ -33,30 +33,33 @@ class SegmentationDataset:
         """
         if self._lazy_y is None:
             y = np.array([])
-            for lung_id in self.x:
-                if lung_id.parts[-1].startswith('CHN'):
-                    mask_id = self.change_extension(lung_id, '_mask.png')
-                    path_mask = self.path_mask / mask_id
-                    if not path_mask.exists():
-                        raise ValueError(f'O caminho {path_mask} não é valido')
-                else:
-                    path_mask = self.path_mask / str(lung_id.parts[-1])
-                y = np.append(y, path_mask)
-            self._lazy_y = y
+            for path in self.path_mask.iterdir():
+                y = np.append(y, path)
+            self._lazy_y = y 
         return self._lazy_y
 
     def change_extension(
         self,
         path: Path,
+        old_extension: str = '.png'
         new_extension: str = '_mask.png'
     ) -> Path:
-        filename = path.parts[-1].split(path.suffix)[0]
+        filename = path.parts[-1].split(old_extension)[0]
         return filename + new_extension
 
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
-            x = [path for path in self.path_lung.iterdir()]
+            x = np.array([])
+            for mask_id in self.y:
+                if mask_id.parts[-1].startswith('CNH'):
+                    lung_id = self.change_extension(mask_id,'_mask.png','.png')
+                    lung = self.lung_path / lung_id
+                    if lung.exists():
+                        x = np.append(x, lung)
+                else:
+                    lung = self.lung_path / mask_id.parts[-1]
+                    x = np.append(x, lung)
             self._lazy_x = x
         return self._lazy_x
 
