@@ -56,9 +56,8 @@ class SegmentationDataGenerator(Sequence):
         idf = (idx + 1) * self.batch_size
         batch_x, batch_y = self.x[idi:idf], self.y[idi:idf]
 
-        read_params = { 'color': False, 'output_dim': self.dim}
-        batch_x = read_images(batch_x, **read_params)
-        batch_y = read_images(batch_y, **read_params)
+        batch_x = read_step(batch_x, **read_params)
+        batch_y = read_step(batch_y, **read_params)
 
         batch_x = np.reshape(batch_x, shape)
         batch_y = np.reshape(batch_y, shape)
@@ -67,3 +66,10 @@ class SegmentationDataGenerator(Sequence):
         batch_y = (batch_y > 127).astype(np.float32)
 
         return batch_x, batch_y
+
+    def read_step(images: Any) -> Any:
+        read_params = { 'color': False, 'output_dim': self.dim}
+        batch = np.array([])
+        for image in images:
+            batch = np.append(batch, read_images(image, **read_params))
+        return batch
