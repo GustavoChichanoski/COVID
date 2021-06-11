@@ -5,7 +5,7 @@
 from pathlib import Path
 from typing import List, Union, Any
 import cv2 as cv
-
+import numpy as np
 
 def read_random_image(
     paths: list,
