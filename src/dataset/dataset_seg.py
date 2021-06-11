@@ -51,15 +51,19 @@ class SegmentationDataset:
     def x(self) -> List[Path]:
         if self._lazy_x is None:
             x = np.array([])
-            for mask_id in self.y:
-                if mask_id.parts[-1].startswith('CNH'):
-                    lung_id = self.change_extension(mask_id,'_mask.png','.png')
-                    lung = self.path_lung / lung_id
-                    if lung.exists():
+            if self.path_mask is not None:
+                for mask_id in self.y:
+                    if mask_id.parts[-1].startswith('CNH'):
+                        lung_id = self.change_extension(mask_id,'_mask.png','.png')
+                        lung = self.path_lung / lung_id
+                        if lung.exists():
+                            x = np.append(x, lung)
+                    else:
+                        lung = self.path_lung / mask_id.parts[-1]
                         x = np.append(x, lung)
-                else:
-                    lung = self.path_lung / mask_id.parts[-1]
-                    x = np.append(x, lung)
+            else:
+                for lung_id in self.path_lung.iterdir():
+                    x = np.append(x, lung_id)
             self._lazy_x = x
         return self._lazy_x
 
