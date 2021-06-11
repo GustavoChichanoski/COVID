@@ -81,6 +81,7 @@ def read_images(
             (np.array or list): retorna uma lista np.array das imagens lidas
     """
     shape = (output_dim, output_dim)
+    image = None
     if isinstance(images_paths, list):
         if isinstance(id_start, int):
             if id_end < id_start:
@@ -92,6 +93,6 @@ def read_images(
     else:
         image = cv.imread(str(images_paths), cv.COLOR_BGR2GRAY)
         image = cv.equalizeHist(image)
-    if output_dim is not None and image is not None:
+    if output_dim is not None:
         image = cv.resize(src=image, dsize=shape, interpolation=cv.INTER_AREA)
     return image
