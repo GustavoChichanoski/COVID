@@ -40,7 +40,7 @@ class SegmentationDataset:
                     if not path_mask.exists():
                         raise ValueError(f'O caminho {path_mask} não é valido')
                 else:
-                    path_mask = self.path_mask / lung_id
+                    path_mask = self.path_mask / str(lung_id)
                 y = np.append(y,path_mask)
             self._lazy_y = y
         return self._lazy_y
