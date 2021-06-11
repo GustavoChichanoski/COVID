@@ -24,33 +24,6 @@ class SegmentationDataset:
     _lazy_y: Optional[Any] = None
 
     @property
-    def files_in_folder(self):
-        """
-            Retorna o nomes dos arquivos contidos nas pastas.
-                Returns:
-                    (list): nomes dos arquivos nas pastas
-        """
-        if self._lazy_files_in_folder is None:
-            self._lazy_files_in_folder = [
-                list(folder.iterdir()) for folder in self.label_names
-            ]
-        return self._lazy_files_in_folder
-
-    @property
-    def number_files_in_folders(self) -> List[List[int]]:
-        if self._lazy_number_files_in_folders is None:
-            files = np.array([ len(folder) for folder in self.files_in_folder ])
-            self._lazy_number_files_in_folders = files
-        return self._lazy_number_files_in_folders
-
-    @property
-    def label_names(self) -> List[Path]:
-        if self._lazy_label_names is None:
-            folder_names = self.path_data.iterdir()
-            self._lazy_label_names = sorted(folder_names)
-        return self._lazy_label_names
-
-    @property
     def y(self) -> Any:
         """
             Generate the y values of inputs images based in your class
@@ -83,7 +56,7 @@ class SegmentationDataset:
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
-            x = sum(list(self.files_in_folder), [])
+            x = [path in self.path_lung.iterdir()]
             self._lazy_x = x
         return self._lazy_x
 
