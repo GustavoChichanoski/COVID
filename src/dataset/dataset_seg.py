@@ -54,10 +54,10 @@ class SegmentationDataset:
                     if filename.startswith('CNH'):
                         lung_id = filename.replace('_mask.png', '.png')
                         lung = self.path_lung / lung_id
-                        if lung.exists():
-                            x = np.append(x, lung)
                     else:
                         lung = self.path_lung / filename
+                    print(lung)
+                    if lung.exists():
                         x = np.append(x, lung)
             else:
                 for lung_id in self.path_lung.iterdir():
