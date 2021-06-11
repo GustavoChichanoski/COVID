@@ -49,21 +49,16 @@ class SegmentationDataset:
         if self._lazy_x is None:
             x = np.array([])
             if self.path_mask is None:
-                print('mask None')
                 for lung_id in self.path_lung.iterdir():
                     x = np.append(x, lung_id)
             else:
-                print('Mask not None')
                 for mask_id in self.y:
                     filename = mask_id.parts[-1]
-                    if filename.startswith('CNH'):
-                        print('CNH')
+                    if filename.startswith('CHN'):
                         lung_id = filename.replace('_mask.png', '.png')
                         lung = self.path_lung / lung_id
                     else:
-                        print('Not CNH')
                         lung = self.path_lung / filename
-                    print(lung)
                     if lung.exists():
                         x = np.append(x, lung)
             self._lazy_x = x
