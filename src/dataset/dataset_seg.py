@@ -56,7 +56,7 @@ class SegmentationDataset:
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
-            x = [path in self.path_lung.iterdir()]
+            x = [path for path in self.path_lung.iterdir()]
             self._lazy_x = x
         return self._lazy_x
 
