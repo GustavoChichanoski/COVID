@@ -206,9 +206,7 @@ test_values, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
 
 params = {
     "dim": DIM_SPLIT,
-    "batch_size": BATCH_SIZE,
-    "n_class": len(labels),
-    "channels": CHANNELS,
+    "batch_size": BATCH_SIZE
 }
 train_generator = SegmentationDataGenerator(x_set=train[0], y_set=train[1], **params)
 val_generator = SegmentationDataGenerator(x_set=validation[0], y_set=validation[1], **params)

@@ -92,6 +92,6 @@ def read_images(
     else:
         image = cv.imread(str(images_paths), cv.COLOR_BGR2GRAY)
         image = cv.equalizeHist(image)
-    if output_dim is not None:
-        image = cv.resize(image, shape, interpolation=cv.INTER_AREA)
+    if output_dim is not None and image is not None:
+        image = cv.resize(src=image, dsize=shape, interpolation=cv.INTER_AREA)
     return image
