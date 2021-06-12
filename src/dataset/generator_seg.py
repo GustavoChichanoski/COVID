@@ -56,10 +56,10 @@ class SegmentationDataGenerator(Sequence):
         idf = (idx + 1) * self.batch_size
         batch_x, batch_y = self.x[idi:idf], self.y[idi:idf]
 
-        print(len(batch_x))
-
         batch_x = self.read_step(batch_x)
         batch_y = self.read_step(batch_y)
+
+        print(len(batch_x))
 
         batch_x = np.reshape(batch_x, shape)
         batch_y = np.reshape(batch_y, shape)
