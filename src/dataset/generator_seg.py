@@ -68,7 +68,10 @@ class SegmentationDataGenerator(Sequence):
         return batch_x, batch_y
 
     def read_step(self, images: Any) -> Any:
-        read_params = { 'color': False, 'output_dim': self.dim}
+        read_params = {
+            'color': False,
+            'output_dim': self.dim
+        }
         batch = np.array([])
         for image in images:
             batch = np.append(batch, read_images(image, **read_params))
