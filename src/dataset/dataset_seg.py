@@ -22,10 +22,10 @@ class SegmentationDataset:
             dimension_cut (int): dimensão dos recortes
     """
     _lazy_x: Optional[List[Path]] = None
-    _lazy_y: Optional[Any] = None
+    _lazy_y: Optional[List[Path]] = None
 
     @property
-    def y(self) -> Any:
+    def y(self) -> List[Path]:
         """
             Generate the y values of inputs images based in your class
 
@@ -34,8 +34,7 @@ class SegmentationDataset:
         """
         if self._lazy_y is None:
             y = np.array([])
-            for path in self.path_mask.iterdir():
-                y = np.append(y, path)
+            y = [path for path in self.path_mask.iterdir()]
             self._lazy_y = y
         return self._lazy_y
 
@@ -47,10 +46,9 @@ class SegmentationDataset:
     @property
     def x(self) -> List[Path]:
         if self._lazy_x is None:
-            x = np.array([])
+            x = []
             if self.path_mask is None:
-                for lung_id in self.path_lung.iterdir():
-                    x = np.append(x, lung_id)
+                x = [lung_id for lung_id in self.path_lung.iterdir()]
             else:
                 for mask_id in self.y:
                     filename = mask_id.parts[-1]
@@ -60,7 +58,7 @@ class SegmentationDataset:
                     else:
                         lung = self.path_lung / filename
                     if lung.exists():
-                        x = np.append(x, lung)
+                        x.append(lung)
             self._lazy_x = x
         return self._lazy_x
 
@@ -93,6 +91,9 @@ class SegmentationDataset:
         if self.path_mask is None:
             return self.x
         y = self.y[:tam_max]
+
+        x = np.array(x)
+        y = np.array(y)
         train_in, val_in, train_out, val_out = train_test_split(
             x,
             y,
