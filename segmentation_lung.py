@@ -37,7 +37,7 @@ import tensorflow as tf
 
 
 sys.path.append('./Covid')
-from src.model.metrics.f1_score import F1score
+from src.models.metrics.f1_score import F1score
 from src.dataset.dataset_seg import SegmentationDataset
 from src.dataset.dataset_seg import SegmentationDataGenerator
 
@@ -205,7 +205,7 @@ train, validation = ds_train.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
 
 params = {
-    "dim": DIM_SPLIT,
+    "dim": DIM,
     "batch_size": BATCH_SIZE
 }
 train_generator = SegmentationDataGenerator(x_set=train[0], y_set=train[1], **params)
