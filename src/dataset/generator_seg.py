@@ -13,9 +13,7 @@ class SegmentationDataGenerator(Sequence):
         x_set,
         y_set,
         batch_size: int = 64,
-        dim: int = 224,
-        n_class: int = 3,
-        channels: int = 3,
+        dim: int = 224
     ) -> None:
         """[Initialize the Datagenerator]
 
@@ -26,10 +24,6 @@ class SegmentationDataGenerator(Sequence):
                 batch size per get. Defaults to 64.
             dim (int, optional):
                 dimension of splits. Defaults to 224.
-            n_class (int, optional):
-                number of class of your model. Defaults to 3.
-            channels (int, optional):
-                number of channel of images. Defaults to 3.
         """    
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
@@ -64,7 +58,7 @@ class SegmentationDataGenerator(Sequence):
 
         print(type(batch_x))
 
-        batch_x /= 255.0
+        batch_x = (batch_x / 255).astype(np.float32)
         batch_y = (batch_y > 127).astype(np.float32)
 
         return batch_x, batch_y
