@@ -56,11 +56,11 @@ class SegmentationDataGenerator(Sequence):
         batch_x = np.reshape(batch_x, shape)
         batch_y = np.reshape(batch_y, shape)
 
-        print(type(batch_x))
 
         batch_x = (batch_x / 255).astype(np.float32)
         batch_y = (batch_y > 127).astype(np.float32)
 
+        print(batch_x)
         return batch_x, batch_y
 
     def read_step(self, images: Any) -> Any:
