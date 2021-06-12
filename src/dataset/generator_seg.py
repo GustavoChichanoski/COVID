@@ -62,6 +62,8 @@ class SegmentationDataGenerator(Sequence):
         batch_x = np.reshape(batch_x, shape)
         batch_y = np.reshape(batch_y, shape)
 
+        print(type(batch_x))
+
         batch_x /= 255.0
         batch_y = (batch_y > 127).astype(np.float32)
 
