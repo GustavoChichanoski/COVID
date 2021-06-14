@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Union
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.python.keras.engine.base_layer import Layer
@@ -120,7 +120,7 @@ class Unet(Model):
 
     def metrics(self) -> List[Metric]:
         m = F1score()
-        metrics = [ BinaryAccuracy(name='accuracy'), m ]
+        metrics = [BinaryAccuracy(name='accuracy'), m ]
         return metrics
 
     def Up_plus_Concatenate(
@@ -242,12 +242,12 @@ class Unet(Model):
         self,
         optimizer: Optimizer = None,
         loss: str = None,
-        metrics: Metric = None,
+        metrics: Union[None, List[Metric]] = None,
         lr: float = 1e-5,
         **params
     ) -> None:
         optimizer = self.optimizer(lr) if optimizer is None else optimizer
-        metrics = self.metrics if metrics is None else metrics
+        metrics = self.metrics() if metrics is None else metrics
         loss = self.dice_coef_loss if loss is None else loss
         return super().compile(
             optimizer=optimizer,
