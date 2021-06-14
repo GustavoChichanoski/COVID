@@ -39,6 +39,9 @@ def random_pixel(
         print(end)
     return pixel_x, pixel_y
 
+def resize_image(image, dim: int):
+    image = cv.resize(image, (dim, dim))
+    return image
 
 def normalize_image(images):
     """

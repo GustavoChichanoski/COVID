@@ -1,5 +1,4 @@
 from typing import Any, List, Tuple
-from tensorflow.keras import layers
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.python.keras.engine.base_layer import Layer
@@ -13,9 +12,13 @@ from tensorflow.python.keras.layers import Dropout
 from tensorflow.python.keras.regularizers import l1_l2
 from tensorflow.python.keras.optimizers import Optimizer
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
-from tensorflow.python.keras.losses import Loss
 from tensorflow.python.keras.metrics import Metric
+from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras import backend as K
+
+from src.models.metrics.f1_score import F1score
+
+
 class Unet(Model):
 
     def __init__(
@@ -114,6 +117,11 @@ class Unet(Model):
             # Vetor a ser passado na função fit
             self._lazy_callbacks = [checkpoint, early, reduceLROnPlat]
         return self._lazy_callbacks
+
+    def metrics(self) -> List[Metric]:
+        m = F1score()
+        metrics = [ BinaryAccuracy(name='accuracy'), m ]
+        return metrics
 
     def Up_plus_Concatenate(
         self,
