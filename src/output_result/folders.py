@@ -5,7 +5,7 @@ from typing import Any, List, Tuple, Union
 from zipfile import ZipFile
 import pandas as pd
 
-def last_file(path: Path,suffix_file: str = '.hdf5') -> Path:
+def last_file(path: Path, suffix_file: str = '.hdf5') -> Path:
     weight = None
     max_weight = None
     for weight in path.iterdir():
@@ -52,10 +52,10 @@ def create_folders(
 
         weight = net_path / 'weights'
         weight.mkdir(exist_ok=True)
-        
+
         figure = net_path / 'figures'
         figure.mkdir(exist_ok=True)
-        
+
         history = net_path / 'history'
         history.mkdir(exist_ok=True)
 

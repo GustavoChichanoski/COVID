@@ -8,7 +8,6 @@ from tensorflow.python.keras.engine.base_layer import Layer
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras import Input
 from tensorflow.python.keras import backend as K
-from src.images.process_images import resize_image as resize, split
 from src.images.process_images import relu as relu_img
 from numba import jit
 from varname import nameof

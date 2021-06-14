@@ -13,7 +13,7 @@ def random_pixel(
     start: Tuple[int,int] = (0, 0),
     end: Tuple[int,int] = (0, 0),
     dim_split: int = 224
-) -> Tuple[Tuple[int, int], Tuple[int, int]]:
+) -> Tuple[int, int]:
     """
         Seleciona um pixel randomicamente comecando de start e
         indo end menos a dimensão maxima do corte.
@@ -39,10 +39,6 @@ def random_pixel(
         print(end)
     return pixel_x, pixel_y
 
-
-def resize_image(image: Any, dim: int) -> Any:
-    image = cv.resize(image, (dim, dim))
-    return image
 
 def normalize_image(images):
     """
