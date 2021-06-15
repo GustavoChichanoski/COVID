@@ -16,7 +16,7 @@ from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras.metrics import Metric
 from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras import backend as K
-
+from tensorflow.python.keras import regularizers
 from src.models.metrics.f1_score import F1score
 
 
@@ -63,15 +63,22 @@ class Unet(Model):
                 conv_name = f'conv_{k}'
                 self.conv[k] = Conv2D(
                     filters=filters,kernel_size=self.kernel,
-                    padding='same', name=conv_name
+                    padding='same', kernel_regularizer=regularizers.l1_l2(l1=1e-5, l2=1e-4),
+                    bias_regularizer=regularizers.l2(1e-4),
+                    activity_regularizer=regularizers.l2(1e-5),
+                    name=conv_name
                 )
                 k += 1
         for i in range(depth-2,-1,-1):
             filters = (2 ** i) * filter_root
+            conv_name = f'conv_{k}'
             for _ in range(2):
                 self.conv[k] = Conv2D(
                     filters=filters,kernel_size=self.kernel,
-                    padding='same', name=conv_name
+                    padding='same', kernel_regularizer=regularizers.l1_l2(l1=1e-5, l2=1e-4),
+                    bias_regularizer=regularizers.l2(1e-4),
+                    activity_regularizer=regularizers.l2(1e-5),
+                    name=conv_name
                 )
                 k += 1
         
