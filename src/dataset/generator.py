@@ -36,7 +36,7 @@ class DataGenerator(Sequence):
                 Defaults to 0.45.
         """    
         self.x, self.y = x_set, y_set
-        self.batch_size = len(self.x) if batch_size < len(self.x) else batch_size
+        self.batch_size = len(self.x) if batch_size > len(self.x) else batch_size
         self.dim = dim
         self.n_class = n_class
         self.channels = channels

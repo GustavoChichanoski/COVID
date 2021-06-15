@@ -253,7 +253,7 @@ def split(
     split_return = [
         split_images_n_times(image, **params) for image in images
     ]
-    splited_images, positions = split_return
+    splited_images, positions = split_return[0][0], split_return[0][1]
     positions = np.array(positions)
     positions = positions.reshape((batch_size, 2))
     cuts = np.array(splited_images)

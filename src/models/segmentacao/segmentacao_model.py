@@ -1,14 +1,15 @@
-from typing import Any, List, Tuple, Union
+from src.dataset.generator_seg import SegmentationDataGenerator
+from typing import Any, List, Optional, Tuple, Union
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
 from tensorflow.python.keras.engine.base_layer import Layer
 from tensorflow.python.keras.engine.input_layer import Input
 from tensorflow.python.keras.layers.convolutional import Conv2D, UpSampling2D
+from tensorflow.python.keras.layers.core import Dropout
 from tensorflow.python.keras.layers.core import Activation
 from tensorflow.python.keras.layers.merge import Concatenate
 from tensorflow.python.keras.layers.normalization_v2 import BatchNormalization
 from tensorflow.python.keras.layers.pooling import MaxPooling2D
-from tensorflow.python.keras.layers import Dropout
 from tensorflow.python.keras.regularizers import l1_l2
 from tensorflow.python.keras.optimizers import Optimizer
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
@@ -78,22 +79,18 @@ class Unet(Model):
         self.act = [Activation(self.activation,name=f'act_{k}') for k in range(len(self.act))]
         self.drop = [Dropout(rate=0.5,name=f'drop_{k}') for k in range(len(self.drop))]
 
-        self.max = [MaxPooling2D(
-                        (2,2),
-                        padding='same',
-                        name=f'max_{k}'
-                    ) for k in range(len(self.max))]
+        self.max = [MaxPooling2D((2,2), padding='same', name=f'max_{k}') for k in range(len(self.max))]
         self.up = [UpSampling2D(name=f'up_{k}') for k in range(len(self.up))]
         self.cat = [Concatenate(axis=-1,name=f'cat_{k}') for k in range(len(self.cat))]
         
         # Unique layers
         self.last_conv = Conv2D(
-            n_class, (1,1),padding='same',
-            activation=final_activation, name='output'
+            n_class, (1,1), padding='same', activation=final_activation, name='output'
         )
 
         # Propriedades da classe
         self._lazy_callbacks = None
+        self._lazy_metrics = None
 
     @property
     def callbacks(self) -> List[Callback]:
@@ -104,9 +101,9 @@ class Unet(Model):
                 save_weights_only=True,
             )
             # Metrica para a redução do valor de LR
-            reduceLROnPlat = ReduceLROnPlateau(
+            reduce_lr = ReduceLROnPlateau(
                 monitor='val_loss', factor=0.5, patience=5,
-                verbose=1, mode='min', epsilon=1e-2, cooldown=3,
+                verbose=1, mode='min', min_delta=1e-2, cooldown=3,
                 min_lr=1e-8
             )
             # Metrica para a parada do treino
@@ -115,56 +112,15 @@ class Unet(Model):
                 restore_best_weights=True, patience=40
             )
             # Vetor a ser passado na função fit
-            self._lazy_callbacks = [checkpoint, early, reduceLROnPlat]
+            self._lazy_callbacks = [checkpoint, early, reduce_lr]
         return self._lazy_callbacks
-
-    def metrics(self) -> List[Metric]:
-        m = F1score()
-        metrics = [BinaryAccuracy(name='accuracy'), m ]
-        return metrics
-
-    def Up_plus_Concatenate(
-        self,
-        layer: Layer,
-        connection: Layer,
-        i: int = 0
-    ) -> Layer:
-        # Define names of layers
-        up_name = f'UpSampling{i}_1'
-        conc_name = f'UpConcatenate{i}_1'
-        # Create the layer sequencial
-        layer = UpSampling2D(name=up_name)(layer)
-        layer = Concatenate(
-            axis=-1, name=conc_name
-        )([layer, connection])
-        return layer
-
-    def conv_block(
-        self,
-        layer: Layer,
-        act: str = 'relu',
-        filters: int = 32,
-        kernel: int = 3,
-        i: int = 1,
-        j: int = 1
-    ) -> Layer:
-        # Define os nomes das layers
-        pos = f'{i}_{j}'
-        conv_name = f'Conv{pos}'
-        bn_name = f'BN{pos}'
-        act_name = f'Act{pos}'
-
-        layer = Conv2D(
-            filters=filters,
-            kernel_size=kernel,
-            padding='same',
-            kernel_regularizer=l1_l2(),
-            name=conv_name
-        )(layer)
-        layer = BatchNormalization(name=bn_name)(layer)
-        layer = Activation(act, name=act_name)(layer)
-        return layer
     
+    @property
+    def metrics(self) -> List[Metric]:
+        if self._lazy_metrics is None:
+            self._lazy_metrics = [BinaryAccuracy(name='accuracy'), F1score()]
+        return self._lazy_metrics
+
     def call(self, inputs):
 
         store_layers = {}
@@ -175,15 +131,9 @@ class Unet(Model):
         for i in range(self.depth):
 
             # Cria as duas convoluções da camada
-            layer = self.conv[k](first_layer)
-            layer = self.bn[k](layer)
-            layer = self.act[k](layer)
-            layer = self.drop[k](layer)
+            layer = self.unet_conv(first_layer, k)
             k += 1
-            layer = self.conv[k](layer)
-            layer = self.bn[k](layer)
-            layer = self.act[k](layer)
-            layer = self.drop[k](layer)
+            layer = self.unet_conv(layer, k)
             k += 1
 
             # Verifica se está na ultima camada
@@ -201,15 +151,9 @@ class Unet(Model):
             layer = self.up[i](first_layer)
             layer = self.cat[i]([layer, connection])
 
-            layer = self.conv[k](layer)
-            layer = self.bn[k](layer)
-            layer = self.act[k](layer)
-            layer = self.drop[k](layer)
+            layer = self.unet_conv(layer, k)
             k += 1
-            layer = self.conv[k](layer)
-            layer = self.bn[k](layer)
-            layer = self.act[k](layer)
-            layer = self.drop[k](layer)
+            layer = self.unet_conv(layer, k)
             k += 1
 
             first_layer = layer
@@ -217,80 +161,83 @@ class Unet(Model):
         layer = self.drop[k](layer)
         return self.last_conv(layer)
 
+    def unet_conv(self, layer: Layer, k: int = 0) -> Layer:
+        layer = self.conv[k](layer)
+        layer = self.bn[k](layer)
+        layer = self.act[k](layer)
+        layer = self.drop[k](layer)
+        return layer
+
     def fit(
-        self, x: Any,
-        y: Any = None,
-        callbacks: List[Callback] = None,
-        validation_data: Any = None,
-        batch_size: int = 32,
+        self, x: SegmentationDataGenerator,
+        callbacks: Optional[List[Callback]] = None,
+        validation_data: Optional[SegmentationDataGenerator] = None,
+        batch_size: Optional[int] = None,
         epochs: int = 100,
         verbose: bool = True,
         shuffle: bool = True,
         **params
-    ) -> None:
+    ) -> Any:
         callbacks = self.callbacks if callbacks is None else callbacks
         return super().fit(
-            x=x, y=y, batch_size=batch_size, epochs=epochs, verbose=verbose,
+            x=x, batch_size=batch_size, epochs=epochs, verbose=verbose,
             callbacks=callbacks, validation_data=validation_data,
             shuffle=shuffle, **params
         )
 
     def optimizer(self, lr: float = 1e-5) -> Optimizer:
-        return Adamax(lr=lr)
+        return Adamax(learning_rate=lr)
 
     def compile(
         self,
-        optimizer: Optimizer = None,
-        loss: str = None,
-        metrics: Union[None, List[Metric]] = None,
-        lr: float = 1e-5,
+        optimizer: Optional[Optimizer] = None,
+        loss: Optional[str] = None,
+        metrics: List[Metric] = [None],
+        lr: Optional[float] = 1e-5,
         **params
     ) -> None:
+        metrics = self.metrics if metrics is None else metrics
         optimizer = self.optimizer(lr) if optimizer is None else optimizer
-        metrics = self.metrics() if metrics is None else metrics
-        loss = self.dice_coef_loss if loss is None else loss
+        loss = dice_coef_loss if loss is None else loss
         return super().compile(
-            optimizer=optimizer,
-            loss=loss,
-            metrics=metrics,
-            **params
+            optimizer=optimizer, loss=loss, metrics=self.metrics, **params
         )
 
-    def save_weights(self, filepath, overwrite, save_format, options):
-        return super().save_weights(filepath, overwrite=overwrite, save_format=save_format, options=options)
+    def save_weights(self, filepath: str, overwrite: bool = True, **params):
+        return super().save_weights(filepath, overwrite=overwrite, **params)
 
-    def load_weights(self, filepath, by_name, skip_mismatch, options):
-        return super().load_weights(filepath, by_name=by_name, skip_mismatch=skip_mismatch, options=options)
+    def load_weights(self, filepath: str, **params):
+        return super().load_weights(filepath, **params)
 
-    def dice_coef(self, y_true: Any, y_pred: Any) -> Any:
-        class_num = 1
+def dice_coef(y_true: Any, y_pred: Any) -> Any:
+    class_num = 1
 
-        for class_now in range(class_num):
-        
-            # Converte y_pred e y_true em vetores
-                y_true_f = K.flatten(y_true[:,:,:,class_now])
-                y_pred_f = K.flatten(y_pred[:,:,:,class_now])
+    for class_now in range(class_num):
+    
+        # Converte y_pred e y_true em vetores
+            y_true_f = K.flatten(y_true[:,:,:,class_now])
+            y_pred_f = K.flatten(y_pred[:,:,:,class_now])
 
-                # Calcula o numero de vezes que
-                # y_true(positve) é igual y_pred(positive) (tp)
-                intersection = K.sum(y_true_f * y_pred_f)
-                # Soma o número de vezes que ambos foram positivos
-                union = K.sum(y_true_f) + K.sum(y_pred_f)
-                # Smooth - Evita que o denominador fique muito pequeno
-                smooth = K.constant(1e-6);
-                # Calculo o erro entre eles
-                num = (K.constant(2) * intersection + 1)
-                den = (union + smooth)
-                loss = num / den
-                
-                if class_now == 0:
-                    total_loss = loss
-                else:
-                    total_loss = total_loss + loss
+            # Calcula o numero de vezes que
+            # y_true(positve) é igual y_pred(positive) (tp)
+            intersection = K.sum(y_true_f * y_pred_f)
+            # Soma o número de vezes que ambos foram positivos
+            union = K.sum(y_true_f) + K.sum(y_pred_f)
+            # Smooth - Evita que o denominador fique muito pequeno
+            smooth = K.constant(1e-6);
+            # Calculo o erro entre eles
+            num = (K.constant(2) * intersection + 1)
+            den = (union + smooth)
+            loss = num / den
             
-        total_loss = total_loss / class_num
+            if class_now == 0:
+                total_loss = loss
+            else:
+                total_loss = total_loss + loss
+        
+    total_loss = total_loss / class_num
 
-        return total_loss
+    return total_loss
 
-    def dice_coef_loss(self, y_true: Any, y_pred: Any) -> Any:
-        return 1 - self.dice_coef(y_true, y_pred)
+def dice_coef_loss(y_true: Any, y_pred: Any) -> Any:
+    return 1 - dice_coef(y_true, y_pred)

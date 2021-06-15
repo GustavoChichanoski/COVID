@@ -1,7 +1,7 @@
 """
     $Module GradCam
 """
-from typing import List, Tuple
+from typing import Any, List, Tuple
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.engine.base_layer import Layer
@@ -12,16 +12,17 @@ from src.images.process_images import relu as relu_img
 from numba import jit
 from varname import nameof
 from tqdm import tqdm
+import cv2 as cv
 
 def prob_grad_cam(
-    cuts_images,
+    cuts_images: Any,
     classifier: List[str],
     last_conv_layer_name: str,
-    paths_start_positions,
+    paths_start_positions: Any,
     model: Model,
     dim_orig: int = 1024,
     winner_pos: int = 0,
-):
+) -> Any:
     """Gera o grad cam a partir de pedaços da imagem original
         Args:
         -----
@@ -113,7 +114,7 @@ def modelo_grad_cam(
     new_model = Model(inputs, new_model)
     return new_model, resnet
 
-def get_layer(resnet: Model, last_conv_layer_name: str):
+def get_layer(resnet: Model, last_conv_layer_name: str) -> Layer:
     for layer in reversed(resnet.layers):
         if layer.name == last_conv_layer_name:
             return layer
@@ -121,11 +122,11 @@ def get_layer(resnet: Model, last_conv_layer_name: str):
 
 @jit(nopython=True)
 def sum_grads_cam(
-    grad_cam_full,
-    grad_cam_cut,
-    used_pixels,
+    grad_cam_full: Any,
+    grad_cam_cut: Any,
+    used_pixels: Any,
     start: Tuple[int,int] = (0, 0),
-):
+) -> Any:
     """
         Realiza a soma do GradCam completo com o GradCam do recorte.
         Para isso é necessário conhecer os valores atuais da GradCam,
@@ -169,7 +170,7 @@ def sum_grads_cam(
 def div_cuts_per_pixel(
     splits_per_pixel: List[int],
     grad_cam_prob: List[int]
-):
+) -> Any:
     """ Divide os numeros de pacotes de pixeis pela
         grad cam do pacote gerado pela função para
         gerar o grad cam probabilistico.
@@ -191,18 +192,18 @@ def div_cuts_per_pixel(
     return grad_cam_prob
 
 
-def find_base_model(model: Model):
+def find_base_model(model: Model) -> Model:
     for layer in model.layers:
         if type(model) == type(layer):
             return layer
 
 
 def grad_cam(
-    image,
+    image: Any,
     model: Model,
     classifier_layer_names: List[str],
     last_conv_layer_name: str = "avg_pool",
-):
+) -> Any:
     """ Gera o mapa de processamento da CNN.
         Args:
             image (np.array): Recorte da imagem
@@ -242,7 +243,7 @@ def grad_cam(
 
 def generate_grads_image(
     model_until_last_conv: Model,
-    image,
+    image: Any,
     classifier_model: Model
 ):
     """
@@ -283,7 +284,7 @@ def grads_calc(
     tape: tf.GradientTape,
     last_cnn_output: Model,
     top_class_channel: List[List[int]]
-):
+) -> Any:
     """"""
     # Calcula o gradiente do modelo para saída máxima (pesos)
     grads = tape.gradient(top_class_channel, last_cnn_output)
@@ -299,7 +300,7 @@ def model_after(
     resnet_model: Model,
     model: Model,
     classifier_layer_names: List[str]
-):
+) -> Model:
     """
         Cria apenas o modelo de classificação do modelo passado pelo usuario
         Args:
@@ -322,11 +323,14 @@ def model_after(
     classifier_model = Model(classifier_input, layer)
     return classifier_model
 
+def resize(image: Any, dim: int) -> Any:
+    image = cv.resize(image, (dim, dim))
+    return image
 
 def create_heatmap(
     last_conv_layer_output: Layer,
     dim_split: int = 224
-):
+) -> Any:
     """Cria o heatmap do recorte da imagem gerada
     Args:
     -----

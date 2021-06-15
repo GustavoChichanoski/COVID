@@ -61,6 +61,8 @@ class ModelCovid(Model):
                 (keras.Model) : Modelo do keras
         """
         super(ModelCovid, self).__init__(name=f"Covid_{name}", **kwargs)
+        self.split_dim = split_dim
+        self.channels = channels
         input_shape = (split_dim,split_dim,channels)
         n_class = len(labels)
         
@@ -129,7 +131,7 @@ class ModelCovid(Model):
     @property
     def base(self) -> Model:
         if self._lazy_base is None:
-            shape = (self.input_shape[0], self.input_shape[1], 3)
+            shape = (self.split_dim, self.split_dim, 3)
             params = {
                 "include_top": False, "weights": "imagenet",
                 "pooling": "avg", "input_shape": shape,
@@ -242,8 +244,7 @@ class ModelCovid(Model):
         optimizer = Adamax(learning_rate=lr) if optimizer is None else optimizer
         metrics = ["accuracy", F1score()] if metrics is None else metrics
         return super().compile(
-            optimizer=optimizer, loss=loss,
-            metrics=metrics, **kwargs
+            optimizer=optimizer, loss=loss, metrics=metrics, **kwargs
         )
 
     def predict(self, x, **params):

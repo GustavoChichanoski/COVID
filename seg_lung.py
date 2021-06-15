@@ -11,9 +11,9 @@ dataset = SegmentationDataset(
     path_lung=data_path / 'CXR_png',
     path_mask=data_path / 'masks'
 )
-train, val = dataset.partition(val_size=0.2)
+train, val = dataset.partition(val_size=0.2, tamanho=10)
 
-train_generator = SegmentationDataGenerator(train[0],train[1], batch_size=1, dim = 256)
-val_generator = SegmentationDataGenerator(val[0],val[1], batch_size=1, dim = 256)
+train_generator = SegmentationDataGenerator(train[0], train[1], batch_size=1, dim = 256)
+val_generator = SegmentationDataGenerator(val[0], val[1], batch_size=1, dim = 256)
 
-model.fit(train_generator, validation_data=val_generator)
+model.fit(x=train_generator, validation_data=val_generator)
