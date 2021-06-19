@@ -1,5 +1,4 @@
 import tensorflow as tf
-from tensorflow.python.keras import metrics
 from tensorflow.python.keras.metrics import Metric
 import tensorflow.python.keras.backend as K
 from tensorflow.python.keras.utils import metrics_utils
@@ -71,6 +70,19 @@ class F1score(Metric):
         )
 
     def reset_states(self):
+        num_thresholds = len(to_list(self.thresholds))
+        K.batch_set_value(
+            [
+                (v, np.zeros((num_thresholds,)))
+                for v in (
+                    self.true_positives,
+                    self.false_positives,
+                    self.false_negatives,
+                )
+            ]
+        )
+
+    def reset_state(self):
         num_thresholds = len(to_list(self.thresholds))
         K.batch_set_value(
             [

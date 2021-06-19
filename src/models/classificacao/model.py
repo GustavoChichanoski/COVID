@@ -65,13 +65,13 @@ class ModelCovid(Model):
         self.channels = channels
         input_shape = (split_dim,split_dim,channels)
         n_class = len(labels)
-        
+
         # Parametros do modelo
         self.labels = labels
         self.trainable = trainable
         self.orig_dim = orig_dim
         self.split_dim = split_dim
-        
+
         # Camadas do modelo
         self.inputs = Input(shape=input_shape, name="entrada_modelo")
         self.conv_1 = Conv2D(
@@ -83,9 +83,15 @@ class ModelCovid(Model):
         self.drop_0 = Dropout(0.5, name="drop_0")
         self.dense_0 = Dense(units=256, name="dense_0")
         self.drop_1 = Dropout(0.5, name="drop_1")
-        self.dense_1 = Dense(units=n_class, name="classifier")
-        self.act_1 = Activation(activation="softmax", name="output")
-        
+        self.dense_1 = Dense(
+            units=n_class,
+            name="classifier"
+        )
+        self.act_1 = Activation(
+            activation="softmax",
+            name="output"
+        )
+
         # Variaveis internas
         self._lazy_base = None
         self._lazy_callbacks = None
@@ -240,11 +246,12 @@ class ModelCovid(Model):
 
             Returns:
                 None: [description]
-        """    
+        """
         optimizer = Adamax(learning_rate=lr) if optimizer is None else optimizer
         metrics = ["accuracy", F1score()] if metrics is None else metrics
         return super().compile(
-            optimizer=optimizer, loss=loss, metrics=metrics, **kwargs
+            optimizer=optimizer, loss=loss, metrics=metrics,
+            **kwargs
         )
 
     def predict(self, x, **params):

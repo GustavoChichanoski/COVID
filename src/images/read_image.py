@@ -8,8 +8,8 @@ import cv2 as cv
 import numpy as np
 
 def read_random_image(
-    paths: list,
-    id_start: int = 0,
+    paths: List[Path],
+    id_start: List[int] = [0],
     **params
 ) -> List[Any]:
     """

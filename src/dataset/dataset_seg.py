@@ -6,14 +6,12 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 from dataclasses import dataclass
-from src.prints.prints import print_info
-
 
 @dataclass
 class SegmentationDataset:
     """ Cria o dataset para o keras. """
     path_lung: Path
-    path_mask: Path = None
+    path_mask: Optional[Path]= None
     """
         Args:
             path_data (str): Caminho onde se encontra os dados dos raios-x
@@ -33,9 +31,12 @@ class SegmentationDataset:
                 numpy.array: the classes of images
         """
         if self._lazy_y is None:
-            y = np.array([])
-            y = [path for path in self.path_mask.iterdir()]
-            self._lazy_y = y
+            if self.path_mask is not None:
+                y = np.array([])
+                y = [path for path in self.path_mask.iterdir()]
+                self._lazy_y = y
+            else:
+                self._lazy_y = self.x
         return self._lazy_y
 
     def change_extension(self, filename: str, old: str, new: str) -> str:
@@ -88,17 +89,12 @@ class SegmentationDataset:
         # t : train - v : validation
         tam_max = tamanho if tamanho > 0 and tamanho < len(self.x) else len(self.x)
         x = self.x[:tam_max]
-        if self.path_mask is None:
-            return self.x
         y = self.y[:tam_max]
 
         x = np.array(x)
         y = np.array(y)
         train_in, val_in, train_out, val_out = train_test_split(
-            x,
-            y,
-            test_size=val_size,
-            shuffle=shuffle
+            x, y, test_size=val_size, shuffle=shuffle
         )
         train, val = (train_in, train_out), (val_in, val_out)
         return train, val

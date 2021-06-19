@@ -177,21 +177,6 @@ def create_recort(
     cut = image[pos_start[0] : pos_end[0], pos_start[1] : pos_end[1]]
     return cut
 
-
-def adjust_gamma(
-    image: Any,
-    gamma: float = 1.0
-) -> Any:
-    # build a lookup table mapping the pixel values [0, 255]
-    # to their adjusted gamma values
-    invGamma = 1.0 / gamma
-    table = np.array(
-        [((i / 255.0) ** invGamma) * 255
-         for i in np.arange(0, 256)]).astype("uint8")
-    # apply gamma correction using the lookup table
-    return cv.LUT(image, table)
-
-
 def relu(image: Any) -> Any:
     """
         Retifica a imagem.
@@ -206,7 +191,7 @@ def relu(image: Any) -> Any:
     """
     return np.clip(image, 0, None)
 
-def adjust_gamma(image, gamma=1.0):
+def adjust_gamma(image: Any, gamma: float = 1.0) -> Any:
     # build a lookup table mapping the pixel values [0, 255] 
     # to their adjusted gamma values
     invGamma = 1.0 / gamma
@@ -244,16 +229,17 @@ def split(
     batch_size = len(path_images)
     shape = (batch_size, dim, dim, channels)
     images = (read_images(path) for path in path_images)
-    params = {
-        'n_split': n_splits,
-        'dim_split': dim,
-        'verbose': verbose,
-        'threshold': threshold
-    }
     split_return = [
-        split_images_n_times(image, **params) for image in images
+        split_images_n_times(
+            image,
+            n_split=n_splits,
+            dim_split=dim,
+            verbose=verbose,
+            threshold=threshold
+        ) for image in images
     ]
-    splited_images, positions = split_return[0][0], split_return[0][1]
+    splited_images = split_return[0][0]
+    positions = split_return[0][1]
     positions = np.array(positions)
     positions = positions.reshape((batch_size, 2))
     cuts = np.array(splited_images)
