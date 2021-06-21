@@ -49,7 +49,7 @@ class Unet(Model):
         self.conv = [Layer] * self.depth * 4
         self.bn = [Layer] * self.depth * 4
         self.act = [Layer] * self.depth * 4
-        self.drop = [Layer] * (self.depth * 4 + 1)
+        self.drop = [Layer] * (self.depth * 4)
         self.max = [Layer] * (self.depth - 1)
         self.up = [Layer] * (self.depth - 1)
         self.cat = [Layer] * (self.depth - 1)
@@ -91,7 +91,7 @@ class Unet(Model):
             for k in range(len(self.act))
         ]
         self.drop = [
-            Dropout(rate=0.5, name=f'drop_{k}')
+            Dropout(rate=0.2, name=f'drop_{k}')
             for k in range(len(self.drop))
         ]
 
@@ -187,7 +187,6 @@ class Unet(Model):
 
             first_layer = layer
 
-        layer = self.drop[k](layer)
         return self.last_conv(layer)
 
     def unet_conv(self, layer: Layer, k: int) -> Layer:
