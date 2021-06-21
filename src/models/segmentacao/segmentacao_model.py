@@ -49,7 +49,6 @@ class Unet(Model):
         self.conv = [Layer] * self.depth * 4
         self.bn = [Layer] * self.depth * 4
         self.act = [Layer] * self.depth * 4
-        self.drop = [Layer] * (self.depth * 4)
         self.max = [Layer] * (self.depth - 1)
         self.up = [Layer] * (self.depth - 1)
         self.cat = [Layer] * (self.depth - 1)
@@ -90,10 +89,7 @@ class Unet(Model):
             Activation(self.activation, name=f'act_{k}')
             for k in range(len(self.act))
         ]
-        self.drop = [
-            Dropout(rate=0.2, name=f'drop_{k}')
-            for k in range(len(self.drop))
-        ]
+        self.drop = Dropout(rate=0.33, name=f'drop')
 
         self.max = [
             MaxPooling2D((2,2), padding='same', name=f'max_{k}')
@@ -186,14 +182,14 @@ class Unet(Model):
             k += 1
 
             first_layer = layer
-
+        layer = self.drop(layer)
         return self.last_conv(layer)
 
     def unet_conv(self, layer: Layer, k: int) -> Layer:
         layer = self.conv[k](layer)
         layer = self.bn[k](layer)
         layer = self.act[k](layer)
-        layer = self.drop[k](layer)
+        # layer = self.drop[k](layer)
         return layer
 
     def fit(
