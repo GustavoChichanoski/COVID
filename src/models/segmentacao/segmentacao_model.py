@@ -120,11 +120,11 @@ class Unet(Model):
     @property
     def inner_callbacks(self) -> List[Callback]:
         if self._lazy_callbacks is None:
-            checkpoint = ModelCheckpoint(
-                './model/best.weights.hdf5', monitor='val_loss',
-                verbose=1,save_best_only=True, mode='min',
-                save_weights_only=True,
-            )
+            # checkpoint = ModelCheckpoint(
+            #     './model/best.weights.hdf5', monitor='val_loss',
+            #     verbose=1,save_best_only=True, mode='min',
+            #     save_weights_only=True,
+            # )
             # Metrica para a redução do valor de LR
             reduce_lr = ReduceLROnPlateau(
                 monitor='val_loss', factor=0.5, patience=5,
@@ -138,7 +138,7 @@ class Unet(Model):
             )
             terminate = TerminateOnNaN()
             # Vetor a ser passado na função fit
-            self._lazy_callbacks = [checkpoint, early, reduce_lr, terminate]
+            self._lazy_callbacks = [early, reduce_lr, terminate]
         return self._lazy_callbacks
 
     @property
