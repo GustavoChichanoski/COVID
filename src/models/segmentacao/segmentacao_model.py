@@ -182,7 +182,7 @@ class Unet(Model):
             k += 1
 
             first_layer = layer
-        layer = self.drop(layer)
+        # layer = self.drop(layer)
         return self.last_conv(layer)
 
     def unet_conv(self, layer: Layer, k: int) -> Layer:
