@@ -96,8 +96,8 @@ def read_images(
     if color:
         image = cv.imread(str(images_paths))
     else:
-        image = cv.imread(str(images_paths))
-        image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+        image = cv.imread(str(images_paths), cv.IMREAD_GRAYSCALE)
+        # image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     if dim is not None:
         image = cv.resize(image, shape, interpolation=cv.INTER_AREA)
     return image

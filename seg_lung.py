@@ -12,14 +12,15 @@ dataset = SegmentationDataset(
     path_lung=data_path / 'CXR_png',
     path_mask=data_path / 'masks'
 )
-train, val = dataset.partition(val_size=0.2, tamanho=10)
+train, val = dataset.partition(val_size=0.2, tamanho=40)
 
-train_generator = SegDataGen(train[0], train[1], batch_size=1, dim=128)
-val_generator = SegDataGen(val[0], val[1], batch_size=1, dim=128)
+train_generator = SegDataGen(train[0], train[1], batch_size=16, dim=128)
+val_generator = SegDataGen(val[0], val[1], batch_size=16, dim=128)
 
 model.fit(
     x=train_generator,
-    validation_data=val_generator
+    validation_data=val_generator,
+    epochs=2
 )
 
 # optimizer = Adam(learning_rate=1e-3)
