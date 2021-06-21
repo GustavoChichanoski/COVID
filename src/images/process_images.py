@@ -5,7 +5,6 @@ from src.images.read_image import read_images
 from typing import Tuple
 import numpy as np
 from tqdm import tqdm
-import cv2 as cv
 from pathlib import Path
 from typing import Any, List, Union
 
@@ -38,10 +37,6 @@ def random_pixel(
         print(start)
         print(end)
     return pixel_x, pixel_y
-
-def resize_image(image, dim: int):
-    image = cv.resize(image, (dim, dim))
-    return image
 
 def normalize_image(images):
     """
@@ -190,16 +185,6 @@ def relu(image: Any) -> Any:
             (np.array): imagem retificada. (np.array)
     """
     return np.clip(image, 0, None)
-
-def adjust_gamma(image: Any, gamma: float = 1.0) -> Any:
-    # build a lookup table mapping the pixel values [0, 255] 
-    # to their adjusted gamma values
-    invGamma = 1.0 / gamma
-    table = np.array(
-    	[((i / 255.0) ** invGamma) * 255
-        for i in np.arange(0, 256)]).astype("uint8")
-    # apply gamma correction using the lookup table
-    return cv.LUT(image, table)
 
 def split(
     path_images: List[Path],

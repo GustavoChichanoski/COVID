@@ -121,7 +121,7 @@ class Unet(Model):
     def inner_callbacks(self) -> List[Callback]:
         if self._lazy_callbacks is None:
             checkpoint = ModelCheckpoint(
-                './.model/best.weights.hdf5', monitor='val_loss',
+                './model/best.weights.hdf5', monitor='val_loss',
                 verbose=1,save_best_only=True, mode='min',
                 save_weights_only=True,
             )

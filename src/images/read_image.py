@@ -3,7 +3,7 @@
 """
 
 from pathlib import Path
-from typing import List, Union, Any
+from typing import List, Union, Any, Tuple
 import cv2 as cv
 import numpy as np
 
@@ -97,7 +97,32 @@ def read_images(
         image = cv.imread(str(images_paths))
     else:
         image = cv.imread(str(images_paths), cv.IMREAD_GRAYSCALE)
-        # image = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
     if dim is not None:
         image = cv.resize(image, shape, interpolation=cv.INTER_AREA)
     return image
+
+def resize_image(image, dim: int):
+    image = cv.resize(image, (dim, dim))
+    return image
+
+def adjust_gamma(image: Any, gamma: float = 1.0) -> Any:
+    # build a lookup table mapping the pixel values [0, 255] 
+    # to their adjusted gamma values
+    invGamma = 1.0 / gamma
+    table = np.array(
+    	[((i / 255.0) ** invGamma) * 255
+        for i in np.arange(0, 256)]).astype("uint8")
+    # apply gamma correction using the lookup table
+    return cv.LUT(image, table)
+
+def read_step(
+    images: Any,
+    shape: Tuple[int,int,int,int]
+) -> Any:
+    dim = shape[1]
+    color = shape[1] == 1
+    return np.array([read_images(
+        image,
+        color=color,
+        dim=dim
+    ) for image in images]).reshape(shape)

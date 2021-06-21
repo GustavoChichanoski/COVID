@@ -1,7 +1,6 @@
 from typing import Any, Tuple
 from tensorflow.python.keras.utils.all_utils import Sequence
-from src.images.read_image import read_images
-from src.images.read_image import read_images
+from src.images.read_image import read_step
 import numpy as np
 
 class SegmentationDataGenerator(Sequence):
@@ -54,21 +53,10 @@ class SegmentationDataGenerator(Sequence):
             self.dim,
             1
         )
-        batch_x = self.read_step(batch_x, shape)
-        batch_y = self.read_step(batch_y, shape)
+        batch_x = read_step(batch_x, shape)
+        batch_y = read_step(batch_y, shape)
 
         batch_x = (batch_x / 256).astype(np.float32)
         batch_y = (batch_y > 127).astype(np.float32)
 
         return batch_x, batch_y
-
-    def read_step(
-        self,
-        images: Any,
-        shape: Tuple[int,int,int,int]
-    ) -> Any:
-        return np.array([read_images(
-            image,
-            color=False,
-            dim=self.dim
-        ) for image in images]).reshape(shape)

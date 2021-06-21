@@ -7,15 +7,15 @@ from src.models.segmentacao.segmentacao_model import Unet
 model = Unet()
 model.compile()
 
-data_path = Path('D:\Mestrado\data\Lung Segmentation')
+data_path = Path('D:\Mestrado\\new_data')
 dataset = SegmentationDataset(
-    path_lung=data_path / 'CXR_png',
+    path_lung=data_path / 'lungs',
     path_mask=data_path / 'masks'
 )
-train, val = dataset.partition(val_size=0.2, tamanho=40)
+train, val = dataset.partition(val_size=0.2, tamanho=10)
 
-train_generator = SegDataGen(train[0], train[1], batch_size=16, dim=128)
-val_generator = SegDataGen(val[0], val[1], batch_size=16, dim=128)
+train_generator = SegDataGen(train[0], train[1], batch_size=1, dim=128)
+val_generator = SegDataGen(val[0], val[1], batch_size=1, dim=128)
 
 model.fit(
     x=train_generator,
