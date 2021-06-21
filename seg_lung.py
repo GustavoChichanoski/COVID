@@ -1,12 +1,8 @@
 from pathlib import Path
 
-from tensorflow.python.keras.optimizer_v2.adam import Adam
-from src.models.losses.dice_loss import DiceError
 from src.dataset.generator_seg import SegmentationDataGenerator as SegDataGen
 from src.dataset.dataset_seg import SegmentationDataset
 from src.models.segmentacao.segmentacao_model import Unet
-from tensorflow.python.keras.metrics import Mean
-import tensorflow as tf
 
 model = Unet()
 model.compile()

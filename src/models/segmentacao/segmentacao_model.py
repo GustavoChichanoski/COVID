@@ -224,11 +224,12 @@ class Unet(Model):
         loss: str = 'binary_crossentropy',
         metrics: Optional[List[Metric]] = None,
         lr: float = 1e-5,
+        rf: float = 1.0,
         **params
     ) -> None:
         metrics = self.inner_metrics if metrics is None else metrics
         optimizer = Adamax(learning_rate=lr) if optimizer == 'adamax' else optimizer
-        loss = DiceError() if loss == 'dice' else loss
+        loss = DiceError(regularization_factor=rf) if loss == 'dice' else loss
         super().compile(
             optimizer=optimizer,
             loss=loss,
