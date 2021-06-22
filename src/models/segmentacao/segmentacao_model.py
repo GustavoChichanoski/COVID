@@ -1,9 +1,8 @@
 from src.dataset.generator_seg import SegmentationDataGenerator as SegDataGen
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TerminateOnNaN
 from tensorflow.python.keras.engine.base_layer import Layer
-from tensorflow.python.keras.engine.input_layer import Input
 from tensorflow.python.keras.layers.convolutional import Conv2D, UpSampling2D
 from tensorflow.python.keras.layers.core import Dropout
 from tensorflow.python.keras.layers.core import Activation
@@ -11,15 +10,13 @@ from tensorflow.python.keras.layers.merge import Concatenate
 from tensorflow.python.keras.layers.normalization_v2 import BatchNormalization
 from tensorflow.python.keras.layers.pooling import MaxPooling2D
 from tensorflow.python.keras.regularizers import l1_l2
-from tensorflow.python.keras.optimizers import Optimizer
+from tensorflow.python.keras.regularizers import l2
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras.metrics import Metric
 from tensorflow.python.keras.metrics import BinaryAccuracy
-from tensorflow.python.keras import backend as K
 from tensorflow.python.keras import regularizers
 from src.models.metrics.f1_score import F1score
 from src.models.losses.dice_loss import DiceError
-import tensorflow
 
 class Unet(Model):
 
@@ -66,7 +63,7 @@ class Unet(Model):
                 conv_name = f'conv_{k}'
                 self.conv[k] = Conv2D(
                     filters=filters,kernel_size=self.kernel,
-                    padding='same', kernel_regularizer=regularizers.l1_l2(l1=1e-5, l2=1e-4),
+                    padding='same', kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4),
                     bias_regularizer=regularizers.l2(1e-4),
                     activity_regularizer=regularizers.l2(1e-5),
                     name=conv_name
@@ -78,8 +75,8 @@ class Unet(Model):
                 conv_name = f'conv_{k}'
                 self.conv[k] = Conv2D(
                     filters=filters,kernel_size=self.kernel,
-                    padding='same', kernel_regularizer=regularizers.l1_l2(l1=1e-5, l2=1e-4),
-                    bias_regularizer=regularizers.l2(1e-4), activity_regularizer=regularizers.l2(1e-5),
+                    padding='same', kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4),
+                    bias_regularizer=l2(1e-4), activity_regularizer=l2(1e-5),
                     name=conv_name
                 )
                 k += 1
@@ -118,8 +115,8 @@ class Unet(Model):
         )
 
         # Propriedades da classe
-        self._lazy_callbacks = None
-        self._lazy_metrics = None
+        self._lazy_callbacks: Optional[List[Callback]] = None
+        self._lazy_metrics: Optional[List[Metric]] = None
 
     @property
     def inner_callbacks(self) -> List[Callback]:
@@ -195,8 +192,8 @@ class Unet(Model):
 
     def unet_conv(self, layer: Layer, k: int) -> Layer:
         layer = self.conv[k](layer)
-        layer = self.bn[k](layer)
         layer = self.act[k](layer)
+        layer = self.bn[k](layer)
         layer = self.drop[k](layer)
         return layer
 
@@ -232,10 +229,10 @@ class Unet(Model):
     ) -> None:
         metrics = self.inner_metrics if metrics is None else metrics
         optimizer = Adamax(learning_rate=lr) if optimizer == 'adamax' else optimizer
-        loss = DiceError(regularization_factor=rf) if loss == 'dice' else loss
+        loss_function = DiceError(regularization_factor=rf) if loss == 'dice' else loss
         super().compile(
             optimizer=optimizer,
-            loss=loss,
+            loss=loss_function,
             metrics=metrics,
              **params
         )
@@ -246,10 +243,10 @@ class Unet(Model):
         overwrite: bool = True,
         **params
     ) -> None:
-        return super().save_weights(filepath, overwrite=overwrite, **params)
+        super().save_weights(filepath, overwrite=overwrite, **params)
 
     def load_weights(self, filepath: str, **params) -> None:
-        return super().load_weights(filepath, **params)
+        super().load_weights(filepath, **params)
 
     def predict(self, x: SegDataGen, **params) -> Any:
         return super().predict(x, **params)
