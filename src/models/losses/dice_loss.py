@@ -1,6 +1,5 @@
 from typing import Any
 from tensorflow.python.keras.losses import Loss
-from tensorflow.python import keras
 from tensorflow.python.keras import backend as K
 import tensorflow as tf
 
@@ -8,7 +7,7 @@ class DiceError(Loss):
     
     def __init__(
         self,
-        regularization_factor: float = 0.1,
+        regularization_factor: float = 1,
         name: str = 'f1'
     ) -> None:
         super().__init__(name=name)
@@ -25,17 +24,19 @@ class DiceError(Loss):
             y_true_f = K.flatten(y_true[:,:,:,class_now])
             y_pred_f = K.flatten(y_pred[:,:,:,class_now])
 
+            one = tf.constant(1.0, dtype=tf.float32)
+
             # Calcula o numero de vezes que
             # y_true(positve) é igual y_pred(positive) (tp)
             intersection = K.sum(y_true_f * y_pred_f)
             # Soma o número de vezes que ambos foram positivos
-            union = K.sum(y_true_f) + K.sum(y_pred_f)
+            union = K.sum(y_true_f) + K.sum(y_pred_f) + one
             # Smooth - Evita que o denominador fique muito pequeno
             smooth = K.constant(1e-6, dtype=tf.float32)
             # Calculo o erro entre eles
             constant = K.constant(2.0, dtype=tf.float32)
             num = constant * intersection
-            den = union + smooth
+            den = union + smooth + one
             loss = num / den
             
             if class_now == 0:
@@ -45,4 +46,4 @@ class DiceError(Loss):
         
             total_loss = total_loss / class_num
 
-        return (1 - total_loss) * self.regularization_factor
+        return tf.math.log(tf.math.cosh(1 - total_loss)) * self.regularization_factor

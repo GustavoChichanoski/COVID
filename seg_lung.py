@@ -5,7 +5,7 @@ from src.dataset.dataset_seg import SegmentationDataset
 from src.models.segmentacao.segmentacao_model import Unet
 
 model = Unet()
-model.compile()
+model.compile(loss='dice')
 
 data_path = Path('D:\Mestrado\\new_data')
 dataset = SegmentationDataset(
