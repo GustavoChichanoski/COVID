@@ -43,7 +43,7 @@ class F1score(Metric):
 
     def result(self):
         precision = tf.math.divide_no_nan(
-            self.true_positives, self.true_positives + self.false_negatives
+            self.true_positives, self.true_positives + self.false_positives
         )
         precision = precision[0] if len(self.thresholds) == 1 else precision
         recall = tf.math.divide_no_nan(

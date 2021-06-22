@@ -244,11 +244,16 @@ class Unet(Model):
              **params
         )
 
-    def save_weights(self, filepath: str, overwrite: bool = True, **params):
+    def save_weights(
+        self,
+        filepath: str,
+        overwrite: bool = True,
+        **params
+    ) -> None:
         return super().save_weights(filepath, overwrite=overwrite, **params)
 
-    def load_weights(self, filepath: str, **params):
+    def load_weights(self, filepath: str, **params) -> None:
         return super().load_weights(filepath, **params)
 
-    def predict(self, x: SegDataGen, **params):
+    def predict(self, x: SegDataGen, **params) -> Any:
         return super().predict(x, **params)
