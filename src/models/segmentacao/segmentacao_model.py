@@ -1,3 +1,4 @@
+from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.dataset.generator_seg import SegmentationDataGenerator as SegDataGen
 from typing import Any, List, Optional
 from tensorflow.python.keras import Model
@@ -230,6 +231,7 @@ class Unet(Model):
         metrics = self.inner_metrics if metrics is None else metrics
         optimizer = Adamax(learning_rate=lr) if optimizer == 'adamax' else optimizer
         loss_function = DiceError(regularization_factor=rf) if loss == 'dice' else loss
+        loss_function = LogCoshDiceError(regularization_factor=rf) if loss == 'log_cosh_dice' else loss_function
         super().compile(
             optimizer=optimizer,
             loss=loss_function,

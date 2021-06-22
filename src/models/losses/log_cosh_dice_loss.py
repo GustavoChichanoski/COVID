@@ -3,7 +3,7 @@ from tensorflow.python.keras.losses import Loss
 from tensorflow.python.keras import backend as K
 import tensorflow as tf
 
-class DiceError(Loss):
+class LogCoshDiceError(Loss):
     
     def __init__(
         self,
@@ -46,4 +46,4 @@ class DiceError(Loss):
         
             total_loss = total_loss / class_num
 
-        return (1 - total_loss) * self.regularization_factor
+        return tf.math.log(tf.math.cosh(1 - total_loss)) * self.regularization_factor
