@@ -33,6 +33,7 @@ class Unet(Model):
         final_activation: str = 'sigmoid',
         filter_root: int = 32,
         name: str = 'UNet',
+        rate: float = 0.33,
         **kwargs
     ) -> None:
         super().__init__(name=name,**kwargs)
@@ -45,10 +46,12 @@ class Unet(Model):
         self.channels = channels
         self.filter_root = filter_root
         self.depth = depth
+        self.rate = rate if rate < 0.375 else 0.375
         # Repeateble layers
         self.conv = [Layer] * self.depth * 4
         self.bn = [Layer] * self.depth * 4
         self.act = [Layer] * self.depth * 4
+        self.drop = [Layer] * (self.depth * 4 + 1)
         self.max = [Layer] * (self.depth - 1)
         self.up = [Layer] * (self.depth - 1)
         self.cat = [Layer] * (self.depth - 1)
@@ -89,7 +92,16 @@ class Unet(Model):
             Activation(self.activation, name=f'act_{k}')
             for k in range(len(self.act))
         ]
-        self.drop = Dropout(rate=0.33, name=f'drop')
+        self.drop = [
+            Dropout(
+                rate=self.rate * 2,
+                name=f'drop_{k}'
+            ) for k in range(len(self.drop) - 1)
+        ]
+        self.drop[-1] = Dropout(
+            rate=self.rate,
+            name=f'drop_{len(self.drop) - 1}'
+        )
 
         self.max = [
             MaxPooling2D((2,2), padding='same', name=f'max_{k}')
@@ -116,11 +128,11 @@ class Unet(Model):
     @property
     def inner_callbacks(self) -> List[Callback]:
         if self._lazy_callbacks is None:
-            # checkpoint = ModelCheckpoint(
-            #     './model/best.weights.hdf5', monitor='val_loss',
-            #     verbose=1,save_best_only=True, mode='min',
-            #     save_weights_only=True,
-            # )
+            checkpoint = ModelCheckpoint(
+                './best.weights.hdf5', monitor='val_loss',
+                verbose=1,save_best_only=True, mode='min',
+                save_weights_only=True,
+            )
             # Metrica para a redução do valor de LR
             reduce_lr = ReduceLROnPlateau(
                 monitor='val_loss', factor=0.5, patience=5,
@@ -182,14 +194,14 @@ class Unet(Model):
             k += 1
 
             first_layer = layer
-        # layer = self.drop(layer)
+        layer = self.drop[k](layer)
         return self.last_conv(layer)
 
     def unet_conv(self, layer: Layer, k: int) -> Layer:
         layer = self.conv[k](layer)
         layer = self.bn[k](layer)
         layer = self.act[k](layer)
-        # layer = self.drop[k](layer)
+        layer = self.drop[k](layer)
         return layer
 
     def fit(
