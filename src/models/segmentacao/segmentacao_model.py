@@ -146,7 +146,7 @@ class Unet(Model):
             )
             terminate = TerminateOnNaN()
             # Vetor a ser passado na função fit
-            self._lazy_callbacks = [early, reduce_lr, terminate]
+            self._lazy_callbacks = [checkpoint, early, reduce_lr, terminate]
         return self._lazy_callbacks
 
     @property
