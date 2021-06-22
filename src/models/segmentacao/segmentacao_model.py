@@ -194,7 +194,7 @@ class Unet(Model):
         layer = self.conv[k](layer)
         layer = self.act[k](layer)
         layer = self.bn[k](layer)
-        layer = self.drop[k](layer)
+        # layer = self.drop[k](layer)
         return layer
 
     def fit(
