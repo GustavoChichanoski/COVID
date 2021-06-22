@@ -30,12 +30,12 @@ class DiceError(Loss):
             # y_true(positve) é igual y_pred(positive) (tp)
             intersection = K.sum(y_true_f * y_pred_f)
             # Soma o número de vezes que ambos foram positivos
-            union = K.sum(y_true_f) + K.sum(y_pred_f) + one
+            union = K.sum(y_true_f) + K.sum(y_pred_f)
             # Smooth - Evita que o denominador fique muito pequeno
             smooth = K.constant(1e-6, dtype=tf.float32)
             # Calculo o erro entre eles
             constant = K.constant(2.0, dtype=tf.float32)
-            num = constant * intersection
+            num = constant * intersection + one
             den = union + smooth + one
             loss = num / den
             
