@@ -74,8 +74,8 @@ class Unet(Model):
                 k += 1
         for i in range(depth-2,-1,-1):
             filters = (2 ** i) * filter_root
-            conv_name = f'conv_{k}'
             for _ in range(2):
+                conv_name = f'conv_{k}'
                 self.conv[k] = Conv2D(
                     filters=filters,kernel_size=self.kernel,
                     padding='same', kernel_regularizer=regularizers.l1_l2(l1=1e-5, l2=1e-4),
@@ -96,12 +96,8 @@ class Unet(Model):
             Dropout(
                 rate=self.rate * 2,
                 name=f'drop_{k}'
-            ) for k in range(len(self.drop) - 1)
+            ) for k in range(len(self.drop))
         ]
-        self.drop[-1] = Dropout(
-            rate=self.rate,
-            name=f'drop_{len(self.drop) - 1}'
-        )
 
         self.max = [
             MaxPooling2D((2,2), padding='same', name=f'max_{k}')
@@ -129,7 +125,7 @@ class Unet(Model):
     def inner_callbacks(self) -> List[Callback]:
         if self._lazy_callbacks is None:
             checkpoint = ModelCheckpoint(
-                './best.weights.h5', monitor='val_loss',
+                '.\\best.weights.hdf5', monitor='val_loss',
                 verbose=1,save_best_only=True, mode='min',
                 save_weights_only=True,
             )
