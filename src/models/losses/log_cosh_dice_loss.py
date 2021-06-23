@@ -8,7 +8,7 @@ class LogCoshDiceError(Loss):
     def __init__(
         self,
         regularization_factor: float = 1,
-        name: str = 'f1'
+        name: str = 'log_cosh_f1'
     ) -> None:
         super().__init__(name=name)
         self.regularization_factor = regularization_factor
