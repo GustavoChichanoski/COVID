@@ -1,6 +1,6 @@
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.dataset.generator_seg import SegmentationDataGenerator as SegDataGen
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TerminateOnNaN
 from tensorflow.python.keras.engine.base_layer import Layer
@@ -74,12 +74,7 @@ class Unet(Model):
             filters = (2 ** i) * filter_root
             for _ in range(2):
                 conv_name = f'conv_{k}'
-                self.conv[k] = Conv2D(
-                    filters=filters,kernel_size=self.kernel,
-                    padding='same', kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4),
-                    bias_regularizer=l2(1e-4), activity_regularizer=l2(1e-5),
-                    name=conv_name
-                )
+                self.conv[k] = self._conv(filters,conv_name)
                 k += 1
 
         self.bn = [
@@ -96,6 +91,7 @@ class Unet(Model):
                 name=f'drop_{k}'
             ) for k in range(len(self.drop))
         ]
+        self.drop[-1] = Dropout(rate=self.rate,name='dropout')
 
         self.max = [
             MaxPooling2D((2,2), padding='same', name=f'max_{k}')
@@ -118,6 +114,23 @@ class Unet(Model):
         # Propriedades da classe
         self._lazy_callbacks: Optional[List[Callback]] = None
         self._lazy_metrics: Optional[List[Metric]] = None
+
+    def _conv(self, filters: int = 32, conv_name: str = 'conv') -> Conv2D:
+        return Conv2D(
+            filters=filters,
+            kernel_size=self.kernel,
+            padding='same',
+            name=conv_name
+        )
+        # return Conv2D(
+        #     filters=filters,
+        #     kernel_size=self.kernel,
+        #     padding='same',
+        #     kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4),
+        #     bias_regularizer=l2(1e-4),
+        #     activity_regularizer=l2(1e-5),
+        #     name=conv_name
+        # )
 
     @property
     def inner_callbacks(self) -> List[Callback]:
@@ -188,14 +201,18 @@ class Unet(Model):
             k += 1
 
             first_layer = layer
-        layer = self.drop[k](layer)
+        layer = self.drop[-1](layer)
         return self.last_conv(layer)
 
-    def unet_conv(self, layer: Layer, k: int) -> Layer:
+    def unet_conv(
+        self,
+        layer: Layer,
+        k: int
+    ) -> Layer:
         layer = self.conv[k](layer)
         layer = self.act[k](layer)
         layer = self.bn[k](layer)
-        # layer = self.drop[k](layer)
+        layer = self.drop[k](layer)
         return layer
 
     def fit(
@@ -238,6 +255,7 @@ class Unet(Model):
             metrics=metrics,
              **params
         )
+        return None
 
     def save_weights(
         self,

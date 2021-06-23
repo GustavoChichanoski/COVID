@@ -23,6 +23,8 @@ model.fit(
     epochs=2
 )
 
+model.summary()
+
 # optimizer = Adam(learning_rate=1e-3)
 # loss = DiceError()
 # loss_metric = Mean()
