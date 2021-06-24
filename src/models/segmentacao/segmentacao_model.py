@@ -1,3 +1,4 @@
+from tensorflow.python.keras.engine import input_spec
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.dataset.generator_seg import SegmentationDataGenerator as SegDataGen
 from typing import Any, List, Optional, Tuple
@@ -16,8 +17,10 @@ from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras.metrics import Metric
 from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras import regularizers
+from tensorflow.python.keras.models import Input
 from src.models.metrics.f1_score import F1score
 from src.models.losses.dice_loss import DiceError
+import tensorflow as tf
 
 class Unet(Model):
 
@@ -45,6 +48,7 @@ class Unet(Model):
         self.filter_root = filter_root
         self.depth = depth
         self.rate = rate if rate < 0.375 else 0.375
+
         # Repeateble layers
         self.conv = [Layer] * self.depth * 4
         self.bn = [Layer] * self.depth * 4
@@ -57,6 +61,7 @@ class Unet(Model):
         self.kernel = (3,3)
 
         k = 0
+
 
         for i in range(depth):
             filters = (2 ** i) * filter_root
@@ -74,7 +79,7 @@ class Unet(Model):
             filters = (2 ** i) * filter_root
             for _ in range(2):
                 conv_name = f'conv_{k}'
-                self.conv[k] = self._conv(filters,conv_name)
+                self.conv[k] = self._conv(filters, conv_name)
                 k += 1
 
         self.bn = [
@@ -115,6 +120,11 @@ class Unet(Model):
         self._lazy_callbacks: Optional[List[Callback]] = None
         self._lazy_metrics: Optional[List[Metric]] = None
 
+        # Input layer
+        input_shape = (self.dim, self.dim, self.channels)
+        self.input_layer = Input(input_shape)
+        self.output_layer = self.call(self.input_layer)
+
     def _conv(self, filters: int = 32, conv_name: str = 'conv') -> Conv2D:
         return Conv2D(
             filters=filters,
@@ -122,15 +132,6 @@ class Unet(Model):
             padding='same',
             name=conv_name
         )
-        # return Conv2D(
-        #     filters=filters,
-        #     kernel_size=self.kernel,
-        #     padding='same',
-        #     kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4),
-        #     bias_regularizer=l2(1e-4),
-        #     activity_regularizer=l2(1e-5),
-        #     name=conv_name
-        # )
 
     @property
     def inner_callbacks(self) -> List[Callback]:
@@ -193,6 +194,8 @@ class Unet(Model):
             connection = store_layers[str(i)]
 
             layer = self.up[i](first_layer)
+            
+            # self.cat[i].build(shape)
             layer = self.cat[i]([layer, connection])
 
             layer = self.unet_conv(layer, k)
@@ -235,6 +238,13 @@ class Unet(Model):
             shuffle=shuffle,
             **params
         )
+
+    def build(self):
+        is_tensor = tf.is_tensor(self.input_layer)
+        super(Unet, self).build(
+            self.input_layer.shape if is_tensor else self.inputs_layer
+        )
+        self.call(self.input_layer)
 
     def compile(
         self,

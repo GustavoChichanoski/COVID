@@ -47,12 +47,7 @@ class SegmentationDataGenerator(Sequence):
         batch_x = self.x[idi:idf]
         batch_y = self.y[idi:idf]
 
-        shape = (
-            len(batch_x),
-            self.dim,
-            self.dim,
-            1
-        )
+        shape = (len(batch_x),self.dim,self.dim,1)
         batch_x = read_step(batch_x, shape)
         batch_y = read_step(batch_y, shape)
 
