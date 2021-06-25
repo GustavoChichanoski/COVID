@@ -54,4 +54,6 @@ class SegmentationDataGenerator(Sequence):
         batch_x = (batch_x / 256).astype(np.float32)
         batch_y = (batch_y > 127).astype(np.float32)
 
+        image = batch_x[0]
+
         return batch_x, batch_y

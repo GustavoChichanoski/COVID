@@ -31,7 +31,7 @@ class Unet(Model):
         n_class: int = 1,
         channels: int = 1,
         depth: int = 5,
-        final_activation: str = 'sigmoid',
+        final_activation: str = 'softmax',
         filter_root: int = 32,
         name: str = 'UNet',
         rate: float = 0.33,
@@ -67,13 +67,7 @@ class Unet(Model):
             filters = (2 ** i) * filter_root
             for _ in range(2):
                 conv_name = f'conv_{k}'
-                self.conv[k] = Conv2D(
-                    filters=filters,kernel_size=self.kernel,
-                    padding='same', kernel_regularizer=l1_l2(l1=1e-5, l2=1e-4),
-                    bias_regularizer=regularizers.l2(1e-4),
-                    activity_regularizer=regularizers.l2(1e-5),
-                    name=conv_name
-                )
+                self.conv[k] = self._conv(filters,conv_name)
                 k += 1
         for i in range(depth-2,-1,-1):
             filters = (2 ** i) * filter_root
@@ -239,7 +233,7 @@ class Unet(Model):
             **params
         )
 
-    def build(self):
+    def build(self) -> None:
         is_tensor = tf.is_tensor(self.input_layer)
         super(Unet, self).build(
             self.input_layer.shape if is_tensor else self.inputs_layer

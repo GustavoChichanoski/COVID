@@ -6,8 +6,8 @@ from src.models.segmentacao.segmentacao_model import Unet
 
 DIM = 128
 
-model = Unet(dim=DIM)
-model.compile(loss='dice')
+model = Unet(dim=DIM,rate=0.0,activation='elu', final_activation='sigmoid')
+model.compile(loss='log_cosh_dice', rf=1)
 model.build()
 data_path = Path('D:\\Mestrado\\new_data')
 dataset = SegmentationDataset(
