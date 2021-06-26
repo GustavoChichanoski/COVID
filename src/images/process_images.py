@@ -2,11 +2,13 @@
     Biblioteca referente ao processamento das imagens
 """
 from src.images.read_image import read_images
-from typing import Tuple
+from typing import Optional, Tuple
 import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 from typing import Any, List, Union
+import tensorflow_addons as tfa
+import tensorflow as tf
 
 def random_pixel(
     start: Tuple[int,int] = (0, 0),
@@ -49,6 +51,28 @@ def normalize_image(images):
             (np.array): Imagens normalizadas
     """
     return images / 255
+
+def augmentation_image(
+    images: tfa.types.TensorLike,
+    max_angle_rotate: Optional[float] = 5.0,
+    flip_horizontal: bool = True,
+    flip_vertical: bool = True,
+) -> tfa.types.TensorLike:
+    images_augmentation = np.array
+    if max_angle_rotate is not None:
+        shape = images.shape[0]
+        shape = shape if len(images.shape) > 3 or shape != 1 else 1
+        rotate = (-1 + 2 * np.random.rand(shape)).astype(np.float32)
+        angle = rotate * np.pi / 180
+        image_rotate = tfa.image.rotate(
+            images,
+            tf.constant(angle)
+        )
+    if flip_vertical:
+        image_flip = np.flipup(images)
+    if flip_horizontal:
+        image_lr = np.fliplr(images)
+    return np.append(images, image_rotate)
 
 # @jit(parallel=True)
 def split_images_n_times(

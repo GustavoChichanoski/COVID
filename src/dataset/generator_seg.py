@@ -2,13 +2,14 @@ from typing import Any, Tuple
 from tensorflow.python.keras.utils.all_utils import Sequence
 from src.images.read_image import read_step
 import numpy as np
+from src.images.process_images import augmentation_image
 
 class SegmentationDataGenerator(Sequence):
 
     def __init__(
         self,
-        x_set,
-        y_set,
+        x_set: Any,
+        y_set: Any,
         batch_size: int = 64,
         dim: int = 224
     ) -> None:
@@ -54,6 +55,6 @@ class SegmentationDataGenerator(Sequence):
         batch_x = (batch_x / 256).astype(np.float32)
         batch_y = (batch_y > 127).astype(np.float32)
 
-        image = batch_x[0]
+        # batch_x_ = augmentation_image(batch_x)
 
         return batch_x, batch_y

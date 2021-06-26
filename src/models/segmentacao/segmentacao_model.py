@@ -124,7 +124,10 @@ class Unet(Model):
             filters=filters,
             kernel_size=self.kernel,
             padding='same',
-            name=conv_name
+            name=conv_name,
+            kernel_regularizer=l1_l2(l1=1e-5,l2=1e-4),
+            bias_regularizer=l1_l2(l1=1e-5,l2=1e-4),
+            activity_regularizer=l1_l2(l1=1e-5,l2=1e-4)
         )
 
     @property
@@ -144,7 +147,7 @@ class Unet(Model):
             # Metrica para a parada do treino
             early = EarlyStopping(
                 monitor='val_loss', mode='min',
-                restore_best_weights=True, patience=40
+                restore_best_weights=True, patience=20
             )
             terminate = TerminateOnNaN()
             # Vetor a ser passado na função fit
