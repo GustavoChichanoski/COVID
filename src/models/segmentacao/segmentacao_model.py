@@ -50,10 +50,10 @@ class Unet(Model):
         self.rate = rate if rate < 0.375 else 0.375
 
         # Repeateble layers
-        self.conv = [Layer] * self.depth * 4
-        self.bn = [Layer] * self.depth * 4
-        self.act = [Layer] * self.depth * 4
-        self.drop = [Layer] * (self.depth * 4 + 1)
+        self.conv = [Layer] * (self.depth * 4 - 2)
+        self.bn = [Layer] * (self.depth * 4 - 2)
+        self.act = [Layer] * (self.depth * 4 - 2)
+        self.drop = [Layer] * (self.depth * 4 - 1)
         self.max = [Layer] * (self.depth - 1)
         self.up = [Layer] * (self.depth - 1)
         self.cat = [Layer] * (self.depth - 1)
@@ -124,10 +124,7 @@ class Unet(Model):
             filters=filters,
             kernel_size=self.kernel,
             padding='same',
-            name=conv_name,
-            kernel_regularizer=l1_l2(l1=1e-5,l2=1e-4),
-            bias_regularizer=l1_l2(l1=1e-5,l2=1e-4),
-            activity_regularizer=l1_l2(l1=1e-5,l2=1e-4)
+            name=conv_name
         )
 
     @property
