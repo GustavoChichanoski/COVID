@@ -53,26 +53,63 @@ def normalize_image(images):
     return images / 255
 
 def augmentation_image(
-    images: tfa.types.TensorLike,
+    batch_x: tfa.types.TensorLike,
+    batch_y: Optional[tfa.types.TensorLike],
     max_angle_rotate: Optional[float] = 5.0,
     flip_horizontal: bool = True,
     flip_vertical: bool = True,
+    is_mask: bool = True
 ) -> tfa.types.TensorLike:
-    images_augmentation = np.array
+    batch_x_augmentation = batch_x
+    batch_y_augmentation = batch_y
     if max_angle_rotate is not None:
-        shape = images.shape[0]
-        shape = shape if len(images.shape) > 3 or shape != 1 else 1
-        rotate = (-1 + 2 * np.random.rand(shape)).astype(np.float32)
+        shape = batch_x.shape[0]
+        shape = shape if len(batch_x.shape) > 3 or shape != 1 else 1
+        rotate = -1 + 2 * np.random.rand(shape)
+        rotate = (rotate * max_angle_rotate).astype(np.float32)
         angle = rotate * np.pi / 180
-        image_rotate = tfa.image.rotate(
-            images,
-            tf.constant(angle)
+        batch_x_rotate = tfa.image.rotate(batch_x,tf.constant(angle))
+        batch_x_augmentation = np.append(
+            batch_x_augmentation,
+            batch_x_rotate,
+            axis=0
         )
+        if is_mask:
+            batch_y_rotate = tfa.image.rotate(batch_y,tf.constant(angle))
+            batch_y_augmentation = np.append(
+                batch_y_augmentation,
+                batch_y_rotate,
+                axis=0
+            )
     if flip_vertical:
-        image_flip = np.flipup(images)
+        batch_x_flip_vert = tf.image.flip_up_down(batch_x)
+        batch_x_augmentation = np.append(
+            batch_x_augmentation,
+            batch_x_flip_vert,
+            axis=0
+        )
+        if is_mask:
+            batch_y_flip_vert = tf.image.flip_up_down(batch_y)
+            batch_y_augmentation = np.append(
+                batch_y_augmentation,
+                batch_y_flip_vert,
+                axis=0
+            )
     if flip_horizontal:
-        image_lr = np.fliplr(images)
-    return np.append(images, image_rotate)
+        batch_x_flip_hort = tf.image.flip_left_right(batch_x)
+        batch_x_augmentation = np.append(
+            batch_x_augmentation,
+            batch_x_flip_hort,
+            axis=0
+        )
+        if is_mask:
+            batch_y_flip_hort = tf.image.flip_left_right(batch_y)
+            batch_y_augmentation = np.append(
+                batch_y_augmentation,
+                batch_y_flip_hort,
+                axis=0
+            )
+    return batch_x_augmentation, batch_y_augmentation
 
 # @jit(parallel=True)
 def split_images_n_times(
