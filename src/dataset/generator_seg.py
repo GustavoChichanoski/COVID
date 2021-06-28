@@ -2,7 +2,6 @@ from typing import Any, Tuple
 from tensorflow.python.keras.utils.all_utils import Sequence
 from src.images.read_image import read_step
 from src.images.process_images import augmentation_image
-import tensorflow_datasets as tfds
 import tensorflow as tf
 import numpy as np
 
@@ -57,9 +56,6 @@ class SegmentationDataGenerator(Sequence):
         batch_x = (batch_x / 255.0).astype(np.float32)
         batch_y = (batch_y > 127).astype(np.float32)
 
-        lung_1 = batch_x[0]
-        mask_1 = batch_y[0]
-
         batch_x, batch_y = augmentation_image(batch_x, batch_y)
         total = 1
         for shape in list(batch_x.shape):
@@ -69,14 +65,5 @@ class SegmentationDataGenerator(Sequence):
 
         batch_x = batch_x.reshape(shape)
         batch_y = batch_y.reshape(shape)
-
-        lung_0 = batch_x[0]
-        mask_0 = batch_y[0]
-        lung_1 = batch_x[1]
-        mask_1 = batch_y[1]
-        lung_2 = batch_x[2]
-        mask_2 = batch_y[2]
-        lung_3 = batch_x[3]
-        mask_3 = batch_y[3]
 
         return batch_x, batch_y

@@ -60,6 +60,7 @@ def augmentation_image(
     flip_vertical: bool = True,
     is_mask: bool = True
 ) -> tfa.types.TensorLike:
+    print('Augmentation image')
     batch_x_augmentation = batch_x
     batch_y_augmentation = batch_y
     if max_angle_rotate is not None:

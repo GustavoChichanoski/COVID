@@ -4,3 +4,5 @@ tensorflow
 keras
 opencv-python
 varname
+tensorflow_datasets
+tensorflow_addons
