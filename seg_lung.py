@@ -16,8 +16,8 @@ dataset = SegmentationDataset(
 )
 train, val = dataset.partition(val_size=0.2, tamanho=10)
 
-train_generator = SegDataGen(train[0], train[1], batch_size=1, dim=DIM)
-val_generator = SegDataGen(val[0], val[1], batch_size=1, dim=DIM)
+train_generator = SegDataGen(train[0],train[1],batch_size=1,dim=DIM)
+val_generator = SegDataGen(val[0],val[1],batch_size=1,dim=DIM)
 
 model.fit(
     x=train_generator,
@@ -29,6 +29,7 @@ model.save_weights('./peso.hdf5')
 model.load_weights('./peso.hdf5')
 
 model.summary()
+
 # optimizer = Adam(learning_rate=1e-3)
 # loss = DiceError()
 # loss_metric = Mean()

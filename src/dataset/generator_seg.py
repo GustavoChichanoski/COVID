@@ -11,6 +11,7 @@ class SegmentationDataGenerator(Sequence):
         self,
         x_set: Any,
         y_set: Any,
+        augmentation: bool = False,
         batch_size: int = 64,
         dim: int = 224
     ) -> None:
@@ -27,6 +28,7 @@ class SegmentationDataGenerator(Sequence):
         self.x, self.y = x_set, y_set
         self.batch_size = batch_size
         self.dim = dim
+        self.augmentation = augmentation
 
     def __len__(self) -> int:
         'Denotes the number of batches per epoch'
@@ -56,7 +58,8 @@ class SegmentationDataGenerator(Sequence):
         batch_x = (batch_x / 255.0).astype(np.float32)
         batch_y = (batch_y > 127).astype(np.float32)
 
-        batch_x, batch_y = augmentation_image(batch_x, batch_y)
+        if self.augmentation:
+            batch_x, batch_y = augmentation_image(batch_x, batch_y)
         total = 1
         for shape in list(batch_x.shape):
             total *= shape
