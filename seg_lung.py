@@ -47,7 +47,7 @@ random_index = np.random.randint(10)
 predicts = model.predict(train_generator)
 
 # %%
-for i in range(TAMANHO_DATASET):
+for i in range(len(train_generator)):
     plt.imshow(train_generator[i][0][:][:][0].reshape(DIM,DIM),cmap='gray')
     plt.axis('off')
     plt.show()

@@ -3,12 +3,13 @@
 """
 from src.images.read_image import read_images
 from typing import Optional, Tuple
-import numpy as np
 from tqdm import tqdm
 from pathlib import Path
 from typing import Any, List, Union
 import tensorflow_addons as tfa
 import tensorflow as tf
+import numpy as np
+import math
 
 def random_pixel(
     start: Tuple[int,int] = (0, 0),
@@ -52,13 +53,13 @@ def normalize_image(images):
     """
     return images / 255
 
-def rotate_images(
+def random_rotate_image(
     image: tfa.types.TensorLike,
     angle: float = 0.0
 ) -> tfa.types.TensorLike:
-    angle_radianos = (angle * np.pi / 180).astype(np.float32)
-    batch_x_rotate = tfa.image.rotate(image,tf.constant(angle_radianos))
-    return batch_x_rotate
+    rotation = angle * math.pi / 180
+    image = tfa.image.rotate(image,rotation,interpolation='BILINEAR')
+    return image
 
 def augmentation_image(
     batch: tfa.types.TensorLike,
@@ -69,7 +70,7 @@ def augmentation_image(
 ) -> tfa.types.TensorLike:
     batch_augmentation = batch
     if angle is not None:
-        batch_rotate = rotate_images(batch, angle)
+        batch_rotate = random_rotate_image(batch, angle)
         batch_augmentation = np.append(
             batch_augmentation,
             batch_rotate,

@@ -4,6 +4,8 @@ from tensorflow.python.keras.utils.all_utils import Sequence
 from src.images.process_images import split
 import numpy as np
 import tensorflow_addons as tfa
+import tensorflow as tf
+import math
 
 class KerasGenerator(Sequence):
 
@@ -48,9 +50,9 @@ class KerasGenerator(Sequence):
         self.angle = angle
 
     def generate_random_angle(self):
-        random_angle = -1 + 2*np.random.rand(self.batch_size)
-        random_angle *= self.angle
-        return random_angle
+        max_angle = self.angle * math.pi / 180
+        rotation = tf.random.uniform([],-max_angle,max_angle,dtype=tf.float32)
+        return rotation
 
     def __len__(self) -> int:
         'Denotes the number of batches per epoch'
