@@ -120,7 +120,7 @@ def read_step(
     shape: Tuple[int,int,int,int]
 ) -> Any:
     dim = shape[1]
-    color = shape[1] == 1
+    color = shape[-1] != 1
     return np.array([read_images(
         image,
         color=color,

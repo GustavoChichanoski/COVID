@@ -1,18 +1,20 @@
+from abc import abstractmethod
 from typing import Any, Tuple
 from tensorflow.python.keras.utils.all_utils import Sequence
 from src.images.process_images import split
 import numpy as np
+import tensorflow_addons as tfa
 
-class DataGenerator(Sequence):
+class KerasGenerator(Sequence):
 
     def __init__(
         self,
-        x_set: Any,
-        y_set: Any,
+        x_set: tfa.types.TensorLike,
+        y_set: tfa.types.TensorLike,
         batch_size: int = 64,
         dim: int = 224,
-        n_class: int = 3,
-        channels: int = 3,
+        n_class: int = 1,
+        channels: int = 1,
         threshold: float = 0.45
     ) -> None:
         """[Initialize the Datagenerator]
@@ -43,31 +45,18 @@ class DataGenerator(Sequence):
         'Denotes the number of batches per epoch'
         return int(np.floor(len(self.x) / self.batch_size))
 
-    def __getitem__(
-        self,
-        idx: int
-    ) -> Tuple[Any,Any]:
-        """
-            Get th data of dataset with position initial in idx to idx plus batch_size.
+    def __getitem__(self, index: int) -> tfa.types.TensorLike:
+        angle = np.random.rand(self.batch_size)
+        idi = index * self.batch_size
+        idf = (index + 1) * self.batch_size
+        batch_x = self.x[idi:idf]
+        batch_x = self.step(batch_x, angle)
+        if self.y is not None:
+            batch_y = self.y[idi:idf]
+            batch_y = self.step(batch_y, angle)
+            return batch_x, batch_y
+        return batch_x
 
-            Args:
-                idx (int): initial position
-
-            Returns:
-                (Any,Any): the first term is x values of dataset
-                           the second term is y vlaues of dataset
-        """
-        idi = idx * self.batch_size
-        idf = (idx + 1) * self.batch_size
-        batch_x, batch_y = self.x[idi:idf], self.y[idi:idf]
-        y_shape = (self.batch_size, self.n_class)
-        batch_y = batch_y.reshape(y_shape)
-        params_splits = {
-            'verbose': False,
-            'dim': self.dim,
-            'channels': self.channels,
-            'threshold': self.threshold,
-            'n_splits': 1
-        }
-        batch_x, _positions = split(batch_x, **params_splits)
-        return batch_x, batch_y
+    @abstractmethod
+    def step(self, angle: float = 0.0) -> tfa.types.TensorLike:
+        raise NotImplementedError("Must override with correct step read")

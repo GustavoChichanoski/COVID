@@ -1,19 +1,20 @@
-from typing import Any, Tuple
-from tensorflow.python.keras.utils.all_utils import Sequence
+from typing import Any, Optional, Tuple
 from src.images.read_image import read_step
 from src.images.process_images import augmentation_image
+from src.dataset.generator import KerasGenerator
+from src.dataset.dataset import Dataset
 import tensorflow as tf
 import numpy as np
+import tensorflow_addons as tfa
 
-class SegmentationDataGenerator(Sequence):
+class SegmentationDatasetGenerator(KerasGenerator):
 
     def __init__(
         self,
-        x_set: Any,
-        y_set: Any,
+        x_set: tfa.types.TensorLike,
+        y_set: Optional[tfa.types.TensorLike],
         augmentation: bool = False,
-        batch_size: int = 64,
-        dim: int = 224
+        **params
     ) -> None:
         """[Initialize the Datagenerator]
 
@@ -24,17 +25,11 @@ class SegmentationDataGenerator(Sequence):
                 batch size per get. Defaults to 64.
             dim (int, optional):
                 dimension of splits. Defaults to 224.
-        """    
-        self.x, self.y = x_set, y_set
-        self.batch_size = batch_size
-        self.dim = dim
+        """
+        super().__init__(x_set=x_set,y_set=y_set,**params)
         self.augmentation = augmentation
 
-    def __len__(self) -> int:
-        'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.x) / self.batch_size))
-
-    def __getitem__(self, idx: int) -> Tuple[Any,Any]:
+    def step(self, batch: tfa.types.TensorLike, angle: float = 0) -> Tuple[Any,Any]:
         """
             Get th data of dataset with position initial in idx to idx plus batch_size.
 
@@ -45,28 +40,15 @@ class SegmentationDataGenerator(Sequence):
                 (Any,Any): the first term is x values of dataset
                            the second term is y vlaues of dataset
         """
-
-        idi = idx * self.batch_size
-        idf = (idx + 1) * self.batch_size
-        batch_x = self.x[idi:idf]
-        batch_y = self.y[idi:idf]
-
-        shape = (len(batch_x),self.dim,self.dim,1)
-        batch_x = read_step(batch_x, shape)
-        batch_y = read_step(batch_y, shape)
-
-        batch_x = (batch_x / 255.0).astype(np.float32)
-        batch_y = (batch_y > 127).astype(np.float32)
-
+        shape = (len(batch), self.dim,self.dim,self.channels)
+        batch = read_step(batch, shape)
+        batch = (batch / 255.0).astype(np.float32)
         if self.augmentation:
-            batch_x, batch_y = augmentation_image(batch_x, batch_y)
+            batch = augmentation_image(batch, angle)
         total = 1
-        for shape in list(batch_x.shape):
+        for shape in list(batch.shape):
             total *= shape
 
         shape = (int(total / (self.dim * self.dim)),self.dim,self.dim,1)
-
-        batch_x = batch_x.reshape(shape)
-        batch_y = batch_y.reshape(shape)
-
-        return batch_x, batch_y
+        batch = batch.reshape(shape)
+        return batch

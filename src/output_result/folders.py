@@ -61,11 +61,11 @@ def create_folders(
 
     return nets_path
 
-def get_all_files(path: Path) -> List[Path]:
+def get_all_files_in_folder(path: Path) -> List[Path]:
     paths = []
     for file in path.iterdir():
         if file.is_dir():
-            paths.extend(get_all_files(file))
+            paths.extend(get_all_files_in_folder(file))
         else:
             paths.append(file)
     return paths
@@ -74,7 +74,7 @@ def zip_folder(
     path: Path = Path('./outputs'),
     output_name: str = 'outputs.zip'
 ) -> None:
-    files = get_all_files(path)
+    files = get_all_files_in_folder(path)
     with ZipFile(output_name,'w') as zip:
         for file in files:
             print(file)

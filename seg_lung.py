@@ -1,14 +1,20 @@
+# %%
 from pathlib import Path
 
-from src.dataset.generator_seg import SegmentationDataGenerator as SegDataGen
+import numpy as np
+
+from src.dataset.generator_seg import SegmentationDatasetGenerator as SegDataGen
 from src.dataset.dataset_seg import SegmentationDataset
 from src.models.segmentacao.segmentacao_model import Unet
 
-DIM = 128
+DIM = 512
+BATCH_SIZE = 1
 
 model = Unet(dim=DIM,rate=0.25,activation='relu', final_activation='sigmoid')
 model.compile(loss='log_cosh_dice', rf=1)
 model.build()
+model.summary()
+
 data_path = Path('D:\\Mestrado\\new_data')
 dataset = SegmentationDataset(
     path_lung=data_path / 'lungs',
@@ -16,19 +22,38 @@ dataset = SegmentationDataset(
 )
 train, val = dataset.partition(val_size=0.2, tamanho=10)
 
-train_generator = SegDataGen(train[0],train[1],batch_size=1,dim=DIM)
-val_generator = SegDataGen(val[0],val[1],batch_size=1,dim=DIM)
+params = {'batch_size': BATCH_SIZE, 'dim': DIM}
+train_generator = SegDataGen(train[0],train[1],augmentation=True,**params)
+val_generator = SegDataGen(val[0],val[1],augmentation=True,**params)
 
-model.fit(
-    x=train_generator,
-    validation_data=val_generator,
-    epochs=2
-)
+# model.fit(
+#     x=train_generator,
+#     validation_data=val_generator,
+#     epochs=2
+# )
 
-model.save_weights('./peso.hdf5')
-model.load_weights('./peso.hdf5')
+# model.save_weights('D:\\Mestrado\\pesos\')
+model.load_weights('D:\\Mestrado\\pesos\\pesos.hdf5')
 
-model.summary()
+import matplotlib.pyplot as plt
+
+random_index = np.random.randint(10)
+
+predicts = model.predict(train_generator)
+
+# %%
+for i in range(8):
+    plt.imshow(train_generator[i][0][:][:][0].reshape(DIM,DIM),cmap='gray')
+    plt.axis('off')
+    plt.show()
+
+    plt.imshow(train_generator[i][1][:][:][0].reshape(DIM,DIM),cmap='gray')
+    plt.axis('off')
+    plt.show()
+
+    plt.imshow(predicts[i][:][:].reshape(DIM,DIM),cmap='gray')
+    plt.axis('off')
+    plt.show()
 
 # optimizer = Adam(learning_rate=1e-3)
 # loss = DiceError()
@@ -58,3 +83,5 @@ model.summary()
 #         if step % 100 == 0:
 #             print(f'step {step}: mean loss = {loss_metric.result():.4f}')
 
+
+# %%

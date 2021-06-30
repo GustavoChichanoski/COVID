@@ -1,6 +1,6 @@
 from tensorflow.python.keras.engine import input_spec
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
-from src.dataset.generator_seg import SegmentationDataGenerator as SegDataGen
+from src.dataset.generator_seg import SegmentationDatasetGenerator as SegDataGen
 from typing import Any, List, Optional, Tuple
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TerminateOnNaN
@@ -16,7 +16,6 @@ from tensorflow.python.keras.regularizers import l2
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras.metrics import Metric
 from tensorflow.python.keras.metrics import BinaryAccuracy
-from tensorflow.python.keras import regularizers
 from tensorflow.python.keras.models import Input
 from src.models.metrics.f1_score import F1score
 from src.models.losses.dice_loss import DiceError
