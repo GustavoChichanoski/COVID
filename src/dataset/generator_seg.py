@@ -14,6 +14,9 @@ class SegmentationDatasetGenerator(KerasGenerator):
         x_set: tfa.types.TensorLike,
         y_set: Optional[tfa.types.TensorLike],
         augmentation: bool = False,
+        flip_vertical: bool = False,
+        flip_horizontal: bool = False,
+        angle: float = 0.1,
         **params
     ) -> None:
         """[Initialize the Datagenerator]
@@ -28,8 +31,15 @@ class SegmentationDatasetGenerator(KerasGenerator):
         """
         super().__init__(x_set=x_set,y_set=y_set,**params)
         self.augmentation = augmentation
+        self.flip_horizontal = flip_horizontal
+        self.flip_vertical = flip_vertical
+        self.angle = angle
 
-    def step(self, batch: tfa.types.TensorLike, angle: float = 0) -> Tuple[Any,Any]:
+    def step(
+        self,
+        batch: tfa.types.TensorLike,
+        angle: float = 0
+    ) -> Tuple[Any,Any]:
         """
             Get th data of dataset with position initial in idx to idx plus batch_size.
 
@@ -44,7 +54,12 @@ class SegmentationDatasetGenerator(KerasGenerator):
         batch = read_step(batch, shape)
         batch = (batch / 255.0).astype(np.float32)
         if self.augmentation:
-            batch = augmentation_image(batch, angle)
+            batch = augmentation_image(
+                batch,
+                angle,
+                self.flip_horizontal,
+                self.flip_vertical
+            )
         total = 1
         for shape in list(batch.shape):
             total *= shape

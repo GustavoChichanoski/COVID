@@ -15,7 +15,10 @@ class KerasGenerator(Sequence):
         dim: int = 224,
         n_class: int = 1,
         channels: int = 1,
-        threshold: float = 0.45
+        threshold: float = 0.45,
+        angle: float = 5.0,
+        flip_horizontal: bool = True,
+        flip_vertical: bool = True
     ) -> None:
         """[Initialize the Datagenerator]
 
@@ -40,13 +43,21 @@ class KerasGenerator(Sequence):
         self.n_class = n_class
         self.channels = channels
         self.threshold = threshold
+        self.flip_vertical = flip_vertical
+        self.flip_horizontal = flip_horizontal
+        self.angle = angle
+
+    def generate_random_angle(self):
+        random_angle = -1 + 2*np.random.rand(self.batch_size)
+        random_angle *= self.angle
+        return random_angle
 
     def __len__(self) -> int:
         'Denotes the number of batches per epoch'
         return int(np.floor(len(self.x) / self.batch_size))
 
     def __getitem__(self, index: int) -> tfa.types.TensorLike:
-        angle = np.random.rand(self.batch_size)
+        angle = self.generate_random_angle()
         idi = index * self.batch_size
         idf = (index + 1) * self.batch_size
         batch_x = self.x[idi:idf]

@@ -1,3 +1,4 @@
+from gc import garbage
 from tensorflow.python.keras.engine import input_spec
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.dataset.generator_seg import SegmentationDatasetGenerator as SegDataGen
@@ -19,6 +20,7 @@ from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras.models import Input
 from src.models.metrics.f1_score import F1score
 from src.models.losses.dice_loss import DiceError
+from src.models.callbacks.clear_garbage import ClearGarbage
 import tensorflow as tf
 
 class Unet(Model):
@@ -30,7 +32,7 @@ class Unet(Model):
         n_class: int = 1,
         channels: int = 1,
         depth: int = 5,
-        final_activation: str = 'softmax',
+        final_activation: str = 'sigmoid',
         filter_root: int = 32,
         name: str = 'UNet',
         rate: float = 0.33,
@@ -143,9 +145,11 @@ class Unet(Model):
             # Metrica para a parada do treino
             early = EarlyStopping(
                 monitor='val_loss', mode='min',
-                restore_best_weights=True, patience=20
+                restore_best_weights=True, patience=10
             )
             terminate = TerminateOnNaN()
+            # Limpar o lixo do python
+            garbage = ClearGarbage()
             # Vetor a ser passado na função fit
             self._lazy_callbacks = [checkpoint, early, reduce_lr, terminate]
         return self._lazy_callbacks
@@ -242,7 +246,7 @@ class Unet(Model):
     def compile(
         self,
         optimizer: str = 'adamax',
-        loss: str = 'binary_crossentropy',
+        loss: str = 'log_cosh_dice',
         metrics: Optional[List[Metric]] = None,
         lr: float = 1e-5,
         rf: float = 1.0,

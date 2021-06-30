@@ -2,6 +2,7 @@ from typing import Any
 from tensorflow.python.keras.losses import Loss
 from tensorflow.python.keras import backend as K
 import tensorflow as tf
+import tensorflow_addons as tfa
 
 class LogCoshDiceError(Loss):
     
@@ -13,7 +14,11 @@ class LogCoshDiceError(Loss):
         super().__init__(name=name)
         self.regularization_factor = regularization_factor
 
-    def call(self, y_true: Any, y_pred: Any):
+    def call(
+        self,
+        y_true: tfa.types.TensorLike,
+        y_pred: tfa.types.TensorLike
+    ) -> tfa.types.TensorLike:
 
         class_num = y_true.shape[-1] if y_true.shape[-1] is not None else 1
         total_loss = 0
