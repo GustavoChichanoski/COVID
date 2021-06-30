@@ -56,9 +56,7 @@ def rotate_images(
     image: tfa.types.TensorLike,
     angle: float = 0.0
 ) -> tfa.types.TensorLike:
-    angle_radianos = np.array([angle * np.pi / 180]).astype(np.float32)
-    if angle_radianos.shape[0] == 1:
-        angle_radianos = angle_radianos[0][0]
+    angle_radianos = (angle * np.pi / 180).astype(np.float32)
     batch_x_rotate = tfa.image.rotate(image,tf.constant(angle_radianos))
     return batch_x_rotate
 
@@ -71,7 +69,6 @@ def augmentation_image(
 ) -> tfa.types.TensorLike:
     batch_augmentation = batch
     if angle is not None:
-        print('Inicio do angulo')
         batch_rotate = rotate_images(batch, angle)
         batch_augmentation = np.append(
             batch_augmentation,
@@ -79,7 +76,6 @@ def augmentation_image(
             axis=0
         )
     if flip_vertical:
-        print('Inicio do flip_vertical')
         batch_flip_vert = tf.image.flip_up_down(batch)
         batch_augmentation = np.append(
             batch_augmentation,
@@ -87,7 +83,6 @@ def augmentation_image(
             axis=0
         )
     if flip_horizontal:
-        print('Inicio do flip_horizontal')
         batch_flip_hort = tf.image.flip_left_right(batch)
         batch_augmentation = np.append(
             batch_augmentation,
@@ -95,7 +90,6 @@ def augmentation_image(
             axis=0
         )
     if sharpness:
-        print('Inicio do sharpness')
         batch_sharpness = tfa.image.sharpness(batch, 0.1)
         batch_augmentation = np.append(
             batch_augmentation,
