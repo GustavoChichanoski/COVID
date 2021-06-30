@@ -79,7 +79,7 @@ def augmentation_image(
             axis=0
         )
     if flip_vertical:
-        print('Inicio do angulo')
+        print('Inicio do flip_vertical')
         batch_flip_vert = tf.image.flip_up_down(batch)
         batch_augmentation = np.append(
             batch_augmentation,
@@ -87,7 +87,7 @@ def augmentation_image(
             axis=0
         )
     if flip_horizontal:
-        print('Inicio do angulo')
+        print('Inicio do flip_horizontal')
         batch_flip_hort = tf.image.flip_left_right(batch)
         batch_augmentation = np.append(
             batch_augmentation,
@@ -95,7 +95,7 @@ def augmentation_image(
             axis=0
         )
     if sharpness:
-        print('Inicio do angulo')
+        print('Inicio do sharpness')
         batch_sharpness = tfa.image.sharpness(batch, 0.1)
         batch_augmentation = np.append(
             batch_augmentation,
