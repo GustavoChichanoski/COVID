@@ -16,6 +16,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
         augmentation: bool = False,
         flip_vertical: bool = False,
         flip_horizontal: bool = False,
+        sharpness: bool = False,
         angle: float = 0.1,
         **params
     ) -> None:
@@ -33,6 +34,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
         self.augmentation = augmentation
         self.flip_horizontal = flip_horizontal
         self.flip_vertical = flip_vertical
+        self.sharpness = sharpness
         self.angle = angle
 
     def step(
@@ -58,7 +60,8 @@ class SegmentationDatasetGenerator(KerasGenerator):
                 batch,
                 angle,
                 self.flip_horizontal,
-                self.flip_vertical
+                self.flip_vertical,
+                self.sharpness
             )
         total = 1
         for shape in list(batch.shape):
