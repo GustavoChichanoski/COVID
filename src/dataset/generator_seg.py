@@ -63,10 +63,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
                 self.flip_vertical,
                 self.sharpness
             )
-        total = 1
-        for shape in list(batch.shape):
-            total *= shape
 
-        shape = (int(total / (self.dim * self.dim)),self.dim,self.dim,1)
+        shape = (int(batch.size / (self.dim * self.dim)),self.dim,self.dim,self.channels)
         batch = batch.reshape(shape)
         return batch

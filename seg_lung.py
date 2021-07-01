@@ -26,8 +26,9 @@ train, val = dataset.partition(val_size=0.2, tamanho=TAMANHO_DATASET)
 params = {
     'batch_size': BATCH_SIZE,
     'dim': DIM,
-    'flip_vertical':False,
-    'flip_horizontal':False,
+    'flip_vertical': False,
+    'flip_horizontal': False,
+    'sharpness': True
 }
 train_generator = SegDataGen(train[0],train[1],augmentation=True,**params)
 val_generator = SegDataGen(val[0],val[1],augmentation=True,**params)
