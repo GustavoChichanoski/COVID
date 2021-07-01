@@ -16,7 +16,6 @@ class SegmentationDatasetGenerator(KerasGenerator):
         augmentation: bool = False,
         flip_vertical: bool = False,
         flip_horizontal: bool = False,
-        sharpness: bool = False,
         mean_filter: bool = False,
         angle: float = 0.1,
         **params
@@ -40,6 +39,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
             **params
         )
         self.mean_filter = mean_filter
+        self.augmentation = augmentation
 
     def step(
         self,
