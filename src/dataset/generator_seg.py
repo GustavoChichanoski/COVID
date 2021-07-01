@@ -17,6 +17,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
         flip_vertical: bool = False,
         flip_horizontal: bool = False,
         sharpness: bool = False,
+        mean_filter: bool = False,
         angle: float = 0.1,
         **params
     ) -> None:
@@ -30,12 +31,15 @@ class SegmentationDatasetGenerator(KerasGenerator):
             dim (int, optional):
                 dimension of splits. Defaults to 224.
         """
-        super().__init__(x_set=x_set,y_set=y_set,**params)
-        self.augmentation = augmentation
-        self.flip_horizontal = flip_horizontal
-        self.flip_vertical = flip_vertical
-        self.sharpness = sharpness
-        self.angle = angle
+        super().__init__(
+            x_set=x_set,
+            y_set=y_set,
+            flip_vertical=flip_vertical,
+            flip_horizontal=flip_horizontal,
+            angle=angle,
+            **params
+        )
+        self.mean_filter = mean_filter
 
     def step(
         self,
@@ -57,11 +61,8 @@ class SegmentationDatasetGenerator(KerasGenerator):
         batch = (batch / 255.0).astype(np.float32)
         if self.augmentation:
             batch = augmentation_image(
-                batch,
-                angle,
-                self.flip_horizontal,
-                self.flip_vertical,
-                self.sharpness
+                batch, angle, self.flip_horizontal,
+                self.flip_vertical, self.mean_filter
             )
 
         shape = (int(batch.size / (self.dim * self.dim)),self.dim,self.dim,self.channels)

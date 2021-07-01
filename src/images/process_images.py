@@ -66,20 +66,8 @@ def augmentation_image(
     angle: Optional[float] = 5.0,
     flip_horizontal: bool = True,
     flip_vertical: bool = True,
-    filter_mean: bool = True
+    mean_filter: bool = True
 ) -> tfa.types.TensorLike:
-    """[summary]
-
-    Args:
-        batch (tfa.types.TensorLike):A tensor of shape (num_images, num_rows, num_columns, num_channels) (NHWC), or (num_rows, num_columns, num_channels) (HWC)
-        angle (Optional[float], optional): [description]. Defaults to 5.0.
-        flip_horizontal (bool, optional): [description]. Defaults to True.
-        flip_vertical (bool, optional): [description]. Defaults to True.
-        sharpness (bool, optional): [description]. Defaults to True.
-
-    Returns:
-        tfa.types.TensorLike: [description]
-    """
     batch_augmentation = batch
     if angle is not None:
         batch_rotate = random_rotate_image(batch, angle)
@@ -102,7 +90,7 @@ def augmentation_image(
             batch_flip_hort,
             axis=0
         )
-    if filter_mean:
+    if mean_filter:
         batch_mean_filter2d = tfa.image.mean_filter2d(batch,padding='SYMMETRIC')
         batch_augmentation = np.append(
             batch_augmentation,
