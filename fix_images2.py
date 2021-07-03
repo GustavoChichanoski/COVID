@@ -1,4 +1,6 @@
 # %%
+import matplotlib.pyplot as plt
+# %%
 from typing import List, Union
 from src.models.segmentacao.segmentacao_model import Unet
 from src.output_result.folders import get_all_files_in_folder
@@ -22,7 +24,7 @@ peso = 'D:\Mestrado\pesos\pesos.hdf5'
 
 model.load_weights(peso)
 
-paths =  paths[:10]
+paths =  paths[:4]
 params = {'batch_size': BATCH_SIZE, 'dim': 512}
 datas = SegmentationDatasetGenerator(paths,None, **params)
 

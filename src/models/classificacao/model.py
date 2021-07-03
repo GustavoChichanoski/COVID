@@ -1,12 +1,14 @@
 """
     Biblioteca contendo as informações referente ao modelo.
 """
+from tensorflow.python.keras.losses import Loss
+from tensorflow_addons.utils.types import Optimizer
 from src.prints.prints import print_info
-from typing import Any, List, Union
+from typing import Any, List, Optional, Tuple, Union
 from pathlib import Path
 
 from tensorflow.python.keras import Model
-from tensorflow.python.keras import Input
+from tensorflow.python.keras.models import Input
 from tensorflow.python.keras.layers import Dense
 from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import Dropout
@@ -26,13 +28,14 @@ from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3Small
 from src.plots.plots import plot_gradcam as plt_gradcam
 from src.models.metrics.f1_score import F1score
 from src.models.grad_cam_split import prob_grad_cam
-from src.images.process_images import split, split_images_n_times
+from src.images.process_images import split
 from src.images.read_image import read_images as ri
-from src.dataset.generator import DataGenerator
+from src.dataset.generator_cla import ClassificationDatasetGenerator
 from src.output_result.folders import pandas2csv
-
+from pathlib import Path
+import tensorflow_addons as tfa
+import tensorflow as tf
 import numpy as np
-
 class ModelCovid(Model):
     """[summary]"""
 
@@ -51,10 +54,8 @@ class ModelCovid(Model):
 
             Args:
             -----
-                input_size (tuple, optional): Tamanho da imagem de entrada.
-                                            Defaults to (224, 224, 3).
-                n_class (int, optional): Número de classes de saída.
-                                        Defaults to 3.
+                input_size (tuple, optional): Tamanho da imagem de entrada. Defaults to (224, 224, 3).
+                n_class (int, optional): Número de classes de saída. Defaults to 3.
 
             Returns:
             --------
@@ -63,7 +64,7 @@ class ModelCovid(Model):
         super(ModelCovid, self).__init__(name=f"Covid_{name}", **kwargs)
         self.split_dim = split_dim
         self.channels = channels
-        input_shape = (split_dim,split_dim,channels)
+        shape = (self.split_dim,self.split_dim,self.channels)
         n_class = len(labels)
 
         # Parametros do modelo
@@ -73,30 +74,26 @@ class ModelCovid(Model):
         self.split_dim = split_dim
 
         # Camadas do modelo
-        self.inputs = Input(shape=input_shape, name="entrada_modelo")
+        self.input_layer = Input(shape=shape, name="entrada_modelo")
         self.conv_1 = Conv2D(
             filters=3,
             kernel_size=(3, 3),
             padding="same",
             activation="relu",
-            name="conv_gray_rgb" )
+            name="conv_gray_rgb"
+        )
         self.drop_0 = Dropout(0.5, name="drop_0")
         self.dense_0 = Dense(units=256, name="dense_0")
         self.drop_1 = Dropout(0.5, name="drop_1")
-        self.dense_1 = Dense(
-            units=n_class,
-            name="classifier"
-        )
-        self.act_1 = Activation(
-            activation="softmax",
-            name="output"
-        )
+        self.dense_1 = Dense(units=n_class,name="classifier")
+        self.act_1 = Activation(activation="softmax",name="output")
 
         # Variaveis internas
         self._lazy_base = None
         self._lazy_callbacks = None
         self._lazy_classifier_layers = None
         self.last_conv_layer_name = None
+        self.output_layer = self.call(self.input_layer)
 
     # Propriedades do modelo
     @property
@@ -167,7 +164,7 @@ class ModelCovid(Model):
                 self._lazy_classifier_layers.insert(0, layer.name)
         return self._lazy_classifier_layers
 
-    def call(self, inputs) -> Model:
+    def call(self, inputs: Tuple[int,int,int] = (256,256,1)) -> Model:
         model = self.conv_1(inputs)
         model = self.base(model)
         model = self.drop_0(model)
@@ -202,8 +199,8 @@ class ModelCovid(Model):
 
     def fit(
         self,
-        x: DataGenerator,
-        validation_data: DataGenerator,
+        x: ClassificationDatasetGenerator,
+        validation_data: ClassificationDatasetGenerator,
         epochs: int = 100,
         batch_size: int = 32,
         shuffle: bool = True,
@@ -221,40 +218,42 @@ class ModelCovid(Model):
             **params,
         )
 
+    def build(self, inputs_shape: tf.Tensor) -> None:
+        is_tensor = tf.is_tensor(self.input_layer)
+        super(ModelCovid, self).build(
+            self.input_layer.shape if is_tensor else self.input_layer
+        )
+        self.call(self.input_layer)
+
     def compile(
         self,
-        optimizer=None,
-        loss: str = "categorical_crossentropy",
-        metrics: List[Metric] = None,
+        optimizer: Optional[Union[str,Optimizer]] = None,
+        loss: Union[str,Loss] = "categorical_crossentropy",
+        metrics: Optional[List[Metric]] = None,
         lr: float = 1e-5,
         **kwargs,
     ) -> None:
-        """ Compile the model with loss and metrics define by the user
+        """ Compile the model with loss and metrics define by the user.
 
             Args:
-                optimizer (optional):
-                    Optimizer of model.
-                    Defaults to None.
-                loss (str, optional):
-                    Loss of model.
-                    Defaults to "categorical_crossentropy".
-                metrics (List[Metric], optional):
-                    Metrics of systems. Defaults to None.
-                lr (float, optional):
-                    Learning rate of optimizer.
-                    Defaults to 1e-5.
+                optimizer (optional | Optimizer): Optimizer of model. Defaults to None.
+                loss (str | Loss, optional): Loss of model. Defaults to "categorical_crossentropy".
+                metrics (List[Metric], optional): Metrics of systems. Defaults to None.
+                lr (float, optional): Learning rate of optimizer. Defaults to 1e-5.
 
             Returns:
-                None: [description]
+                None: compile the model with hiperparameters
         """
         optimizer = Adamax(learning_rate=lr) if optimizer is None else optimizer
         metrics = ["accuracy", F1score()] if metrics is None else metrics
-        return super().compile(
-            optimizer=optimizer, loss=loss, metrics=metrics,
+        super().compile(
+            optimizer=optimizer,
+            loss=loss,
+            metrics=metrics,
             **kwargs
         )
 
-    def predict(self, x, **params):
+    def predict(self, x: ClassificationDatasetGenerator, **params):
         return super().predict(x, **params)
 
     def winner( self, votes: List[int] = [0, 0, 0] ) -> str:
@@ -274,21 +273,20 @@ class ModelCovid(Model):
 
     def make_grad_cam(
         self,
-        image,
+        image: Union[str, Path],
         n_splits: int = 100,
         threshold: float = 0.35,
         verbose: bool = True,
     ):
         params_splits = {
-            'verbose': verbose, 'dim': self.split_dim,
-            'channels': self.channels, 'threshold': threshold,
+            'verbose': verbose,
+            'dim': self.split_dim,
+            'channels': self.channels,
+            'threshold': threshold,
             'n_splits': n_splits
         }
-        cuts, positions = split(image, params_splits)
-        shape = (
-            n_splits, self.split_dim,
-            self.split_dim, self.channels
-        )
+        cuts, positions = split(image, **params_splits)
+        shape = (n_splits,self.split_dim,self.split_dim,self.channels)
         cuts = cuts.reshape(shape)
         imagemColor = ri(image, color=True)
         heatmap = prob_grad_cam(
@@ -297,8 +295,8 @@ class ModelCovid(Model):
             last_conv_layer_name=self.last_conv_layer_name,
             paths_start_positions=positions,
             model=self,
-            dim_orig=self.dim_orig,
-            winner_pos=self.labels.index(image.parts[-2])
+            dim_orig=self.orig_dim,
+            winner_pos=self.labels.index(image[0].parts[-2])
         )
         plt_gradcam(heatmap, imagemColor, True)
         votes = self.model.predict(cuts)

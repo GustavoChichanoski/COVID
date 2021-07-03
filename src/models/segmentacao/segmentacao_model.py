@@ -63,7 +63,6 @@ class Unet(Model):
 
         k = 0
 
-
         for i in range(depth):
             filters = (2 ** i) * filter_root
             for _ in range(2):
@@ -138,14 +137,14 @@ class Unet(Model):
             )
             # Metrica para a redução do valor de LR
             reduce_lr = ReduceLROnPlateau(
-                monitor='val_loss', factor=0.5, patience=5,
+                monitor='val_loss', factor=0.5, patience=2,
                 verbose=1, mode='min', min_delta=1e-2, cooldown=3,
                 min_lr=1e-8
             )
             # Metrica para a parada do treino
             early = EarlyStopping(
                 monitor='val_loss', mode='min',
-                restore_best_weights=True, patience=10
+                restore_best_weights=True, patience=5
             )
             terminate = TerminateOnNaN()
             # Limpar o lixo do python
@@ -163,7 +162,10 @@ class Unet(Model):
             ]
         return self._lazy_metrics
 
-    def call(self, inputs) -> Model:
+    def call(
+        self,
+        inputs: Tuple[int,int,int]
+    ) -> Model:
 
         store_layers = {}
         first_layer = inputs

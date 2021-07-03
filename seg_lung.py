@@ -7,11 +7,11 @@ from src.dataset.generator_seg import SegmentationDatasetGenerator as SegDataGen
 from src.dataset.dataset_seg import SegmentationDataset
 from src.models.segmentacao.segmentacao_model import Unet
 
-DIM = 512
+DIM = 128
 BATCH_SIZE = 1
 TAMANHO_DATASET = 4
 
-model = Unet(dim=DIM,rate=0.25,activation='relu', final_activation='sigmoid')
+model = Unet(dim=DIM,rate=0.5,activation='relu', final_activation='sigmoid')
 model.compile(loss='log_cosh_dice', rf=1)
 model.build()
 model.summary()
@@ -31,11 +31,11 @@ params = {
 train_generator = SegDataGen(train[0],train[1],augmentation=True,**params)
 val_generator = SegDataGen(val[0],val[1],augmentation=True,**params)
 
-model.fit(
-    x=train_generator,
-    validation_data=val_generator,
-    epochs=2
-)
+# model.fit(
+#     x=train_generator,
+#     validation_data=val_generator,
+#     epochs=2
+# )
 
 # model.save_weights('D:\\Mestrado\\pesos\')
 model.load_weights('D:\\Mestrado\\pesos\\pesos.hdf5')

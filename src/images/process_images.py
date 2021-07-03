@@ -21,27 +21,22 @@ def random_pixel(
         indo end menos a dimensão maxima do corte.
 
         Args:
-            start (tuple, optional): Pixel superior.
-                                    Defaults to (0,0).
-            end (tuple, optional): Pixel inferior.
-                                Defaults to (0,0).
-            dim_split (int, optional): Dimensão do corte.
-                                    Defaults to 224.
+            start (tuple, optional): Pixel superior. Defaults to (0,0).
+            end (tuple, optional): Pixel inferior. Defaults to (0,0).
+            dim_split (int, optional): Dimensão do corte. Defaults to 224.
 
         Returns:
             (tuple): pixel gerados aleatoriamente
     """
     x_i, y_i = start
     x_e, y_e = end
-    try:
-        pixel_x = np.random.randint(x_i, x_e - dim_split)
-        pixel_y = np.random.randint(y_i, y_e - dim_split)
-    except:
-        print(start)
-        print(end)
+    pixel_x = np.random.randint(x_i, x_e - dim_split)
+    pixel_y = np.random.randint(y_i, y_e - dim_split)
     return pixel_x, pixel_y
 
-def normalize_image(images):
+def normalize_image(
+    images: tfa.types.TensorLike
+) -> tfa.types.TensorLike:
     """
         Normaliza as imagens para que todos variem de 0 a 1.
 
@@ -51,15 +46,57 @@ def normalize_image(images):
         Returns:
             (np.array): Imagens normalizadas
     """
-    return images / 255
+    return images / 255.0
 
 def random_rotate_image(
     image: tfa.types.TensorLike,
     angle: float = 0.0
 ) -> tfa.types.TensorLike:
-    rotation = angle * math.pi / 180
-    image = tfa.image.rotate(image,rotation,interpolation='BILINEAR')
-    return image
+    """
+        Rotate `image` with tensorflow_addons, based in angle deggres in `angle`, image need be NHWC (number_images,height,width,channels) or HW(height,width)
+
+        Args:
+            image (tfa.types.TensorLike): image to be rotated
+            angle (float, optional): angle in deggre to rotate image. Defaults to 0.0.
+
+        Returns:
+            tfa.types.TensorLike: image rotated
+    """
+    valid_shape(image,2,4)
+    rotation = math.radians(angle)
+    rotate_image = tfa.image.rotate(image,rotation,interpolation='BILINEAR')
+    return rotate_image
+
+def valid_shape(
+    image: tfa.types.TensorLike,
+    shape_min: int = 2,
+    shape_max: int = 4
+) -> None:
+    """ Valid image to function
+
+        Args:
+            image (tfa.types.TensorLike): image to be valid.
+            shape_min (int, optional): min length shape of image. Defaults to 2.
+            shape_max (int, optional): max length shape of image. Defaults to 4.
+
+        Raises:
+            ValueError: if shape image is not valid
+    """
+    len_image_shape = len(image.shape)
+    if len_image_shape != shape_max and len_image_shape != shape_min:
+        raise ValueError(f'Image must be {shape_min} or {shape_max} shape, not {len_image_shape}: {image.shape}')
+
+def flip_horizontal_image(
+    image: tfa.types.TensorLike
+) -> tfa.types.TensorLike:
+    valid_shape(image,3,4)
+    return tf.image.flip_left_right(image)
+
+def flip_vertical_image(
+    image: tfa.types.TensorLike
+) -> tfa.types.TensorLike:
+    valid_shape(image,3,4)
+    return tf.image.flip_up_down(image)
 
 def augmentation_image(
     batch: tfa.types.TensorLike,
@@ -84,7 +121,7 @@ def augmentation_image(
             axis=0
         )
     if flip_horizontal:
-        batch_flip_hort = tf.image.flip_left_right(batch)
+        batch_flip_hort = flip_horizontal_image(batch)
         batch_augmentation = np.append(
             batch_augmentation,
             batch_flip_hort,
@@ -101,12 +138,12 @@ def augmentation_image(
 
 # @jit(parallel=True)
 def split_images_n_times(
-    image: Any,
+    image: tfa.types.TensorLike,
     n_split: int = 100,
     dim_split: int = 224,
     verbose: bool = True,
     threshold: float = 0.45
-) -> Any:
+) -> tfa.types.TensorLike:
     """
         Recorta a imagem em n_split vezes de tamanhos dim_split ignorando
         recortes totalmente pretos.
@@ -130,7 +167,8 @@ def split_images_n_times(
                              (np.max(y_nonzero), np.max(x_nonzero))
     shape_cut = (n_split,dim_split,dim_split,1)
     # Cria os n_splits cortes
-    pbar = tqdm(range(n_split)) if verbose else range(n_split)
+    iter_n_splits = range(n_split)
+    pbar = tqdm(iter_n_splits) if verbose else iter_n_splits
     for _ in pbar:
         # Recebe um corte da imagem não inteiramente preto
         cut, pos = create_non_black_cut(
@@ -148,12 +186,12 @@ def split_images_n_times(
 
 
 def create_non_black_cut(
-    image: Any,
+    image: tfa.types.TensorLike,
     start: Tuple[int,int] = (0, 0),
     end: Tuple[int,int] = (0, 0),
     dim: int = 224,
     threshold: float = 0.5
-) -> Any:
+) -> tfa.types.TensorLike:
     """
         Cria um recorte que não é totalmente preto
 
@@ -199,10 +237,10 @@ def create_non_black_cut(
 
 
 def create_recort(
-    image: Any,
+    image: tfa.types.TensorLike,
     pos_start: tuple = (0, 0),
     dim_split: int = 224
-) -> Any:
+) -> tfa.types.TensorLike:
     """
         Cria um recorte da imagem indo da posicao inicial até a
         dimensão do recorte
@@ -221,7 +259,7 @@ def create_recort(
     cut = image[pos_start[0] : pos_end[0], pos_start[1] : pos_end[1]]
     return cut
 
-def relu(image: Any) -> Any:
+def relu(image: tfa.types.TensorLike) -> tfa.types.TensorLike:
     """
         Retifica a imagem.
 
@@ -236,13 +274,13 @@ def relu(image: Any) -> Any:
     return np.clip(image, 0, None)
 
 def split(
-    path_images: List[Path],
+    path_images: Union[List[Path], Path],
     dim: int = 224,
     channels: int = 1,
     n_splits: int = 100,
     threshold: float = 0.35,
     verbose: bool = False,
-) -> Union[Any,Tuple[Any,Any]]:
+) -> Union[tfa.types.TensorLike,Tuple[tfa.types.TensorLike,tfa.types.TensorLike]]:
     """
         Return one split of each image in path images to entry in keras model
 
@@ -261,7 +299,7 @@ def split(
             shape = (batch_size, dim, dim, channels)
     """
     batch_size = len(path_images)
-    shape = (batch_size, dim, dim, channels)
+    shape = (batch_size, n_splits, dim, dim, channels)
     images = (read_images(path) for path in path_images)
     split_return = [
         split_images_n_times(
@@ -275,7 +313,7 @@ def split(
     splited_images = split_return[0][0]
     positions = split_return[0][1]
     positions = np.array(positions)
-    positions = positions.reshape((batch_size, 2))
+    positions = positions.reshape((batch_size,n_splits, 2))
     cuts = np.array(splited_images)
     cuts_reshape = cuts.reshape(shape)
     return cuts_reshape, positions

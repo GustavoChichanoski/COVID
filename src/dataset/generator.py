@@ -20,9 +20,11 @@ class KerasGenerator(Sequence):
         threshold: float = 0.45,
         angle: float = 5.0,
         flip_horizontal: bool = True,
-        flip_vertical: bool = True
+        flip_vertical: bool = True,
+        rotate_image: bool = True,
+        filter_mean: bool = True
     ) -> None:
-        """[Initialize the Datagenerator]
+        """ Based class to generate dataset of keras
 
         Args:
             x_set (np.array(Path)): list of paths content images paths
@@ -47,6 +49,8 @@ class KerasGenerator(Sequence):
         self.threshold = threshold
         self.flip_vertical = flip_vertical
         self.flip_horizontal = flip_horizontal
+        self.rotate_image = rotate_image
+        self.filter_mean = filter_mean
         self.angle = angle
 
     def generate_random_angle(self):

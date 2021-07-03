@@ -12,23 +12,26 @@ class SegmentationDatasetGenerator(KerasGenerator):
     def __init__(
         self,
         x_set: tfa.types.TensorLike,
-        y_set: Optional[tfa.types.TensorLike],
+        y_set: Optional[tfa.types.TensorLike] == None,
         augmentation: bool = False,
         flip_vertical: bool = False,
         flip_horizontal: bool = False,
+        rotate_image: bool = False,
         mean_filter: bool = False,
-        angle: float = 0.1,
+        angle: float = 5.0,
         **params
     ) -> None:
-        """[Initialize the Datagenerator]
+        """Generator to keras fit, it will change the input and output based in `x_set` and `y_set` for each step in train method, it can augmentation input based in atguments `flip_vertical`, to flip batch in vertical axis, `flip_horizontal`, to flip batch in horizontal axis, `rotate_image`, to rotate batch, mean filter, apply mean filter in batch, and `angle`, max angle rotate.
 
         Args:
-            x_set (np.array(Path)): list of paths content images paths
-            y_set (np.array(float)): outputs values of images
-            batch_size (int, optional):
-                batch size per get. Defaults to 64.
-            dim (int, optional):
-                dimension of splits. Defaults to 224.
+            x_set (tfa.types.TensorLike): numpy array contains that path or images of inputs.
+            y_set (tfa.types.TensorLike, optional): numpy array contains that path or images of output. Defaults to 0.1.
+            augmentation (bool, optional): if augmentation will be applied. Defaults to False.
+            flip_vertical (bool, optional): if flip image in vertical will be applied. Defaults to False.
+            flip_horizontal (bool, optional): if flip image in horizontal will be applied. Defaults to False.
+            rotate_image (bool, optional): if rotate image will be applied. Defaults to False.
+            mean_filter (bool, optional): if mean filter will be applied. Defaults to False.
+            angle (float, optional): max angle to rotate image. Defaults to 5.0.
         """
         super().__init__(
             x_set=x_set,

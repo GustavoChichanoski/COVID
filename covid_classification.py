@@ -58,7 +58,7 @@ labels = listdir(TRAIN_PATH)
 ds_train = Dataset(path_data=TRAIN_PATH, train=False)
 ds_test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {"tamanho": 0}
+part_param = {"tamanho": 4}
 train, validation = ds_train.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
 
@@ -112,12 +112,17 @@ for net, net_path in zip(NETS[1:], nets_path[1:]):
             metric="val_f1"
         )
         plot_history(history)
-
-    covid.model.summary()
+    covid.build()
+    covid.summary()
 
     name = path_figure / f"{model}_{K_SPLIT}"
     print(f"[INFO] Predição de uma imagem: {K_SPLIT}")
-    print(covid.make_grad_cam(image=TEST, n_splits=K_SPLIT,threshold=0.75,verbose=True))
+    print(covid.make_grad_cam(
+        image=[TEST],
+        n_splits=K_SPLIT,
+        threshold=0.75,
+        verbose=True
+    ))
 
     # matrix = covid.confusion_matrix(test_generator.x, 4)
     # plot_dataset(absolut=matrix, names=labels, n_images=1, path=path_figure)
