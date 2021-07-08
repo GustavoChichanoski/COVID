@@ -1,5 +1,5 @@
 from typing import Any, Optional, Tuple
-from src.images.read_image import read_step
+from src.images.read_image import read_images, read_step
 from src.images.process_images import augmentation_image
 from src.dataset.generator import KerasGenerator
 from src.dataset.dataset import Dataset
@@ -19,6 +19,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
         rotate_image: bool = False,
         mean_filter: bool = False,
         angle: float = 5.0,
+        load_image_in_ram: bool = False,
         **params
     ) -> None:
         """Generator to keras fit, it will change the input and output based in `x_set` and `y_set` for each step in train method, it can augmentation input based in atguments `flip_vertical`, to flip batch in vertical axis, `flip_horizontal`, to flip batch in horizontal axis, `rotate_image`, to rotate batch, mean filter, apply mean filter in batch, and `angle`, max angle rotate.
@@ -43,6 +44,10 @@ class SegmentationDatasetGenerator(KerasGenerator):
         )
         self.mean_filter = mean_filter
         self.augmentation = augmentation
+        self.load_image_in_ram = load_image_in_ram
+        if self.load_image_in_ram:
+            self.x = read_images(self.x,dim=self.dim)
+            self.y = read_images(self.y,dim=self.dim)
 
     def step(
         self,
@@ -60,7 +65,10 @@ class SegmentationDatasetGenerator(KerasGenerator):
                            the second term is y vlaues of dataset
         """
         shape = (len(batch), self.dim,self.dim,self.channels)
-        batch = read_step(batch, shape)
+        if self.load_image_in_ram:
+            batch = self.x
+        else:
+            batch = read_step(batch, shape)
         batch = (batch / 255.0).astype(np.float32)
         if self.augmentation:
             batch = augmentation_image(
