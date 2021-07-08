@@ -66,9 +66,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
                            the second term is y vlaues of dataset
         """
         shape = (len(batch), self.dim,self.dim,self.channels)
-        if self.load_image_in_ram:
-            batch = self.x
-        else:
+        if not self.load_image_in_ram:
             batch = read_step(batch, shape)
         batch = (batch / 255.0).astype(np.float32)
         if self.augmentation:
