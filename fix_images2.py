@@ -9,7 +9,7 @@ from pathlib import Path
 from tensorflow.python import keras as keras
 import matplotlib.pyplot as plt
 
-DIM = 512
+DIM = 256
 BATCH_SIZE = 1
 
 model = Unet(dim=DIM,final_activation='sigmoid')
@@ -24,11 +24,14 @@ peso = 'D:\Mestrado\pesos\pesos.hdf5'
 
 model.load_weights(peso)
 
-paths =  paths[:4]
-params = {'batch_size': BATCH_SIZE, 'dim': 512}
+paths = paths[:10]
+params = {'batch_size': BATCH_SIZE, 'dim': DIM}
 datas = SegmentationDatasetGenerator(paths,None, **params)
-
 predicts = model.predict(datas)
-for predict in predicts:
-    plt.imshow(predict,cmap='gray')
+# %%
+for predict, data in zip(predicts,datas):
+    fig, (ax1,ax2) = plt.subplots(1,2)
+    ax1.imshow(data[0],cmap='gray')
+    ax2.imshow(predict,cmap='gray')
     plt.show()
+# %%

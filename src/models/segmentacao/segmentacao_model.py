@@ -137,14 +137,14 @@ class Unet(Model):
             )
             # Metrica para a redução do valor de LR
             reduce_lr = ReduceLROnPlateau(
-                monitor='val_loss', factor=0.5, patience=2,
+                monitor='val_loss', factor=0.5, patience=5,
                 verbose=1, mode='min', min_delta=1e-2, cooldown=3,
                 min_lr=1e-8
             )
             # Metrica para a parada do treino
             early = EarlyStopping(
                 monitor='val_loss', mode='min',
-                restore_best_weights=True, patience=5
+                restore_best_weights=True, patience=10
             )
             terminate = TerminateOnNaN()
             # Limpar o lixo do python
