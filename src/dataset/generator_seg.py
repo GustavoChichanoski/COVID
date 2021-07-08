@@ -46,8 +46,9 @@ class SegmentationDatasetGenerator(KerasGenerator):
         self.augmentation = augmentation
         self.load_image_in_ram = load_image_in_ram
         if self.load_image_in_ram:
-            self.x = read_images(self.x,dim=self.dim)
-            self.y = read_images(self.y,dim=self.dim)
+            shape = (len(self.x),self.dim,self.dim,self.channels)
+            self.x = read_step(self.x,shape)
+            self.y = read_step(self.y,shape)
 
     def step(
         self,
@@ -75,7 +76,6 @@ class SegmentationDatasetGenerator(KerasGenerator):
                 batch, angle, self.flip_horizontal,
                 self.flip_vertical, self.mean_filter
             )
-
         shape = (int(batch.size / (self.dim * self.dim)),self.dim,self.dim,self.channels)
         batch = batch.reshape(shape)
         return batch

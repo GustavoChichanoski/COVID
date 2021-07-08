@@ -5,6 +5,7 @@
 from pathlib import Path
 from typing import List, Union, Any, Tuple
 import cv2 as cv
+import tensorflow_addons as tfa
 import numpy as np
 
 def read_random_image(
@@ -116,7 +117,7 @@ def adjust_gamma(image: Any, gamma: float = 1.0) -> Any:
     return cv.LUT(image, table)
 
 def read_step(
-    images: Any,
+    images: tfa.types.TensorLike,
     shape: Tuple[int,int,int,int]
 ) -> Any:
     dim = shape[1]

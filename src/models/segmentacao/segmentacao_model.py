@@ -1,5 +1,4 @@
 from gc import garbage
-from tensorflow.python.keras.engine import input_spec
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.dataset.generator_seg import SegmentationDatasetGenerator as SegDataGen
 from typing import Any, List, Optional, Tuple
@@ -137,7 +136,7 @@ class Unet(Model):
             )
             # Metrica para a redução do valor de LR
             reduce_lr = ReduceLROnPlateau(
-                monitor='val_loss', factor=0.5, patience=5,
+                monitor='val_loss', factor=0.2, patience=3,
                 verbose=1, mode='min', min_delta=1e-2, cooldown=3,
                 min_lr=1e-8
             )

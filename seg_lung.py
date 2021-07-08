@@ -12,7 +12,7 @@ BATCH_SIZE = 1
 TAMANHO_DATASET = 4
 
 model = Unet(dim=DIM,rate=0.5,activation='relu', final_activation='sigmoid')
-model.compile(loss='log_cosh_dice', rf=1)
+model.compile(loss='log_cosh_dice', rf=5)
 model.build()
 model.summary()
 
@@ -25,8 +25,10 @@ train, val = dataset.partition(val_size=0.2, tamanho=TAMANHO_DATASET)
 
 params = {
     'batch_size': BATCH_SIZE,
-    'dim': DIM, 'flip_vertical': False,
-    'flip_horizontal': False
+    'dim': DIM,
+    'flip_vertical': False,
+    'flip_horizontal': False,
+    'load_image_in_ram': True
 }
 train_generator = SegDataGen(train[0],train[1],augmentation=True,**params)
 val_generator = SegDataGen(val[0],val[1],augmentation=True,**params)
