@@ -9,7 +9,7 @@ from pathlib import Path
 from tensorflow.python import keras as keras
 import matplotlib.pyplot as plt
 
-DIM = 256
+DIM = 64
 BATCH_SIZE = 1
 
 model = Unet(dim=DIM,final_activation='sigmoid')

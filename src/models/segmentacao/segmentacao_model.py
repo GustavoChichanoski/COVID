@@ -106,7 +106,11 @@ class Unet(Model):
 
         # Unique layers
         self.last_conv = Conv2D(
-            n_class, (1,1), padding='same', activation=final_activation, name='output'
+            n_class, 
+            (1,1),
+            padding='same',
+            activation=final_activation,
+            name='output'
         )
 
         # Propriedades da classe

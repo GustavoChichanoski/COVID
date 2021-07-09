@@ -113,14 +113,12 @@ def resize_image(
     Args:
         image (tfa.types.TensorLike): image with shape (dim,dim)
         dim (int): dimension of output image
+        color (bool): flag to define if image have or not colors
 
     Returns:
         tfa.types.TensorLike: image resized
     """
-    channels = 1
-    if color:
-        channels = 3
-    else:
+    if not color:
         image = tf.expand_dims(image,axis=-1)
     image = tf.image.resize(image,size=[dim,dim])
     return image
