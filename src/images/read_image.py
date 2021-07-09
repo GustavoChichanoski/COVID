@@ -3,16 +3,17 @@
 """
 
 from pathlib import Path
-from typing import List, Union, Any, Tuple
+from typing import List, Union, Any, Tuple, Optional
 import cv2 as cv
 import tensorflow_addons as tfa
 import numpy as np
+import tensorflow as tf
 
 def read_random_image(
     paths: List[Path],
     id_start: List[int] = [0],
     **params
-) -> List[Any]:
+) -> tfa.types.TensorLike:
     """
         Lê as imagens dos ids contidos em id_start
 
@@ -22,7 +23,7 @@ def read_random_image(
                                        Defaults to [0,1].
 
         Returns:
-            list: lista das imagens lidas.
+            tfa.types.TensorLike: lista das imagens lidas.
     """
     images = []
     channel = 3 if params['color'] else 1
@@ -40,7 +41,7 @@ def read_sequencial_image(
     id_start: int = 0,
     id_end: int = 1,
     **params
-) -> List[Any]:
+) -> tfa.types.TensorLike:
     """
         Lê sequencialmente as imagens
 
@@ -68,7 +69,7 @@ def read_images(
     id_end: int = -1,
     color: bool = False,
     dim: int = 1024
-):
+) -> tfa.types.TensorLike:
     """
         Lê as imagens do listas de caminhos da imagem de start até end -1
 
@@ -98,32 +99,56 @@ def read_images(
         image = cv.imread(str(images_paths))
     else:
         image = cv.imread(str(images_paths), cv.IMREAD_GRAYSCALE)
-    if dim is not None:
-        image = cv.resize(image, shape, interpolation=cv.INTER_AREA)
+    image = resize_image(image,dim,color)
     return image
 
-def resize_image(image, dim: int):
-    image = cv.resize(image, (dim, dim))
+def resize_image(
+    image: tfa.types.TensorLike,
+    dim: int,
+    color:bool = False
+) -> tfa.types.TensorLike:
+    """ Resize image to (dim,dim) pass as parameter. The image need be 1 channel with shape:
+        - NHWC (num_images,height,width,channels)
+        - HW (height,width)
+    Args:
+        image (tfa.types.TensorLike): image with shape (dim,dim)
+        dim (int): dimension of output image
+
+    Returns:
+        tfa.types.TensorLike: image resized
+    """
+    channels = 1
+    if color:
+        channels = 3
+    else:
+        image = tf.expand_dims(image,axis=-1)
+    image = tf.image.resize(image,size=[dim,dim])
     return image
 
-def adjust_gamma(image: Any, gamma: float = 1.0) -> Any:
+def adjust_gamma(
+    image: tfa.types.TensorLike,
+    gamma: float = 0.5
+) -> tfa.types.TensorLike:
     # build a lookup table mapping the pixel values [0, 255] 
     # to their adjusted gamma values
-    invGamma = 1.0 / gamma
-    table = np.array(
-    	[((i / 255.0) ** invGamma) * 255
-        for i in np.arange(0, 256)]).astype("uint8")
-    # apply gamma correction using the lookup table
-    return cv.LUT(image, table)
+    image = tf.image.adjust_gamma(image,gamma=gamma)
+    return image
 
 def read_step(
     images: tfa.types.TensorLike,
-    shape: Tuple[int,int,int,int]
-) -> Any:
+    shape: Tuple[int,int,int,int],
+    gamma: Optional[float] = 0.5,
+    equalize: bool = True
+) -> tfa.types.TensorLike:
     dim = shape[1]
     color = shape[-1] != 1
-    return np.array([read_images(
-        image,
-        color=color,
-        dim=dim
-    ) for image in images]).reshape(shape)
+    image_out = np.array([])
+    for image in images:
+        image = read_images(image,color=color,dim=dim)
+        if gamma is not None:
+            image = adjust_gamma(image)
+        if equalize:
+            image = tfa.image.equalize(image)
+        image_out = np.append(image_out,image)
+    image_out = np.reshape(image_out,shape)
+    return image_out
