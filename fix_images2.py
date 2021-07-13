@@ -8,8 +8,9 @@ from src.dataset.generator_seg import SegmentationDatasetGenerator
 from pathlib import Path
 from tensorflow.python import keras as keras
 import matplotlib.pyplot as plt
+import tensorflow as tf
 
-DIM = 64
+DIM = 512
 BATCH_SIZE = 1
 
 model = Unet(dim=DIM,final_activation='sigmoid')
@@ -28,8 +29,12 @@ paths = paths[:10]
 params = {'batch_size': BATCH_SIZE, 'dim': DIM}
 datas = SegmentationDatasetGenerator(paths,None, **params)
 predicts = model.predict(datas)
+
 # %%
-for predict, data in zip(predicts,datas):
+i = 0
+for predict, data, path in zip(predicts,datas,paths):
+    seg_lung_image_path = new_data / '/'.join(path.parts[-3:-1]) / f'{i:04}.png'
+    i += 1
     fig, (ax1,ax2) = plt.subplots(1,2)
     ax1.imshow(data[0],cmap='gray')
     ax2.imshow(predict,cmap='gray')

@@ -16,13 +16,12 @@ class SegmentationDatasetGenerator(KerasGenerator):
         augmentation: bool = False,
         flip_vertical: bool = False,
         flip_horizontal: bool = False,
-        rotate_image: bool = False,
         mean_filter: bool = False,
         angle: float = 5.0,
         load_image_in_ram: bool = False,
         **params
     ) -> None:
-        """Generator to keras fit, it will change the input and output based in `x_set` and `y_set` for each step in train method, it can augmentation input based in atguments `flip_vertical`, to flip batch in vertical axis, `flip_horizontal`, to flip batch in horizontal axis, `rotate_image`, to rotate batch, mean filter, apply mean filter in batch, and `angle`, max angle rotate.
+        """Generator to keras fit, it will change the input and output based in `x_set` and `y_set` for each step in train method, it can augmentation input based in atguments `flip_vertical`, to flip batch in vertical axis, `flip_horizontal`, to flip batch in horizontal axis, and `angle`, max angle rotate.
 
         Args:
             x_set (tfa.types.TensorLike): numpy array contains that path or images of inputs.
@@ -30,7 +29,6 @@ class SegmentationDatasetGenerator(KerasGenerator):
             augmentation (bool, optional): if augmentation will be applied. Defaults to False.
             flip_vertical (bool, optional): if flip image in vertical will be applied. Defaults to False.
             flip_horizontal (bool, optional): if flip image in horizontal will be applied. Defaults to False.
-            rotate_image (bool, optional): if rotate image will be applied. Defaults to False.
             mean_filter (bool, optional): if mean filter will be applied. Defaults to False.
             angle (float, optional): max angle to rotate image. Defaults to 5.0.
         """
