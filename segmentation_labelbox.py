@@ -1,21 +1,26 @@
 from pathlib import Path
 from labelbox import Client, Project
-import requests
 from getpass import getpass
 from PIL import Image
-import pandas as pd
-import numpy as np
+from pathlib import Path
+from src.dataset.dataset_seg import SegmentationDataset
+from src.images.read_image import read_images
 from io import BytesIO
 from typing import Dict, Any
 from labelbox.schema.ontology import Tool, OntologyBuilder
+import pandas as pd
+import numpy as np
 import os
 import cv2
-
+import cv2 as cv
+import requests
+import numpy as np
 import matplotlib.pyplot as plt
 
 API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJja3Iwamw4djYzYzNiMHlkamJ1cHJjc2NjIiwib3JnYW5pemF0aW9uSWQiOiJja3Iwamw4cjMzYzNhMHlkajgxd3djZG83IiwiYXBpS2V5SWQiOiJja3IxMGd1Mjl1NGRiMHllNDhjbGczZmNxIiwic2VjcmV0IjoiODRmZGM4ODU5YTNjN2EyMzEzMzBiM2QzMjFkZGE2MDQiLCJpYXQiOjE2MjYxMTc2NTYsImV4cCI6MjI1NzI2OTY1Nn0.Wce-GvpS2scj1akCsNCq-lg8Y0MemPQwpz5gA-hdWKA"
 
 PROJECT_KEY = "ckr0lie4zapp00yar0311afu0"
+DIM = 1024
 
 def visualize_bbox(image: np.ndarray, tool: Dict[str, Any]) -> np.ndarray:
     """
@@ -88,18 +93,47 @@ print(export_url)
 
 exports = requests.get(export_url).json()
 length_exports = len(exports)
-j = 704
 
 path = Path("D:\\Mestrado\\new_data\\train")
 
+data_path = Path('D:\\Mestrado\\data\\Lung Segmentation')
+new_data_path = Path('D:\\Mestrado\\data_segmentation\\train')
+
+dataset = SegmentationDataset(
+    path_lung = data_path / 'CXR_png',
+    path_mask = data_path / 'masks'
+)
+
+new_data_path_lung = new_data_path / 'lungs'
+new_data_path_mask = new_data_path / 'masks'
+
+tamanho_dataset = len(dataset.x)
+
+j = 0
+
+for (path_lung, path_mask) in zip(dataset.x, dataset.y):
+    print(f"Imagem {j}")
+    lung = read_images(path_lung, dim=DIM)
+    mask = read_images(path_mask, dim=DIM)
+
+    lung = lung.numpy().astype(np.uint8)
+    mask = mask.numpy().astype(np.uint8)
+
+    cv2.imwrite(f'{new_data_path_lung}/{j:04}.png',lung)
+    cv2.imwrite(f'{new_data_path_mask}/{j:04}.png',mask)
+    j += 1
+
 for i in range(length_exports):
+
+    print(f"Imagem {j}")
+
     content = BytesIO(requests.get(exports[i]["Labeled Data"]).content)
     image = np.array(Image.open(content))
     if len(image.shape) > 2:
         image = np.array(Image.open(content))[:,:,0]
 
-    lung = cv2.resize(image,(1024,1024))
-    mask = np.zeros((1024,1024)).astype(np.uint8)
+    lung = cv2.resize(image,(DIM,DIM))
+    mask = np.zeros((DIM,DIM)).astype(np.uint8)
 
     for tool in exports[i]["Label"]["objects"]:
         # if "bbox" in tool:

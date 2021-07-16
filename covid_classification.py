@@ -68,9 +68,21 @@ params = {
     "n_class": len(labels),
     "channels": CHANNELS,
 }
-train_generator = ClaDataGen(x_set=train[0], y_set=train[1], **params)
-val_generator = ClaDataGen(x_set=validation[0], y_set=validation[1], **params)
-test_generator = ClaDataGen(x_set=test_values[0], y_set=test_values[1], **params)
+train_generator = ClaDataGen(
+    x_set=train[0],
+    y_set=train[1],
+    **params
+)
+val_generator = ClaDataGen(
+    x_set=validation[0],
+    y_set=validation[1],
+    **params
+)
+test_generator = ClaDataGen(
+    x_set=test_values[0],
+    y_set=test_values[1],
+    **params
+)
 # %% [code]
 for net, net_path in zip(NETS[1:], nets_path[1:]):
     

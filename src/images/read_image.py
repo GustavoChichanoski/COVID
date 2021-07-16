@@ -143,10 +143,10 @@ def read_step(
     image_out = np.array([])
     for image in images:
         image = read_images(image,color=color,dim=dim)
-        if gamma is not None:
-            image = adjust_gamma(image)
-        if equalize:
-            image = tfa.image.equalize(image)
+        # if gamma is not None:
+        #     image = adjust_gamma(image)
+        # if equalize:
+        #     image = tfa.image.equalize(image)
         image_out = np.append(image_out,image)
     image_out = np.reshape(image_out,shape)
     return image_out
