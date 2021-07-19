@@ -19,6 +19,8 @@ class SegmentationDatasetGenerator(KerasGenerator):
         mean_filter: bool = False,
         angle: float = 5.0,
         load_image_in_ram: bool = False,
+        max: float = 1.0,
+        min: float = 0.0,
         **params
     ) -> None:
         """Generator to keras fit, it will change the input and output based in `x_set` and `y_set` for each step in train method, it can augmentation input based in atguments `flip_vertical`, to flip batch in vertical axis, `flip_horizontal`, to flip batch in horizontal axis, and `angle`, max angle rotate.
@@ -47,6 +49,8 @@ class SegmentationDatasetGenerator(KerasGenerator):
             shape = (len(self.x),self.dim,self.dim,self.channels)
             self.x = read_step(self.x,shape)
             self.y = read_step(self.y,shape)
+        self.max = max
+        self.min = min
 
     def step(
         self,
@@ -67,6 +71,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
         if not self.load_image_in_ram:
             batch = read_step(batch, shape)
         batch = (batch / 255.0).astype(np.float32)
+        batch = (self.max - self.min) * batch + self.min
         if self.augmentation:
             batch = augmentation_image(
                 batch, angle, self.flip_horizontal,
