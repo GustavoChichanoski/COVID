@@ -1,4 +1,3 @@
-*.rar
 data
 build
 dist
@@ -6,8 +5,8 @@ images
 old_data
 outputs
 weights
-*.h5df
 log
+
 .model
 .vscode
 __pycache__
@@ -15,6 +14,9 @@ logs
 PlotNeuralNet
 fig
 test
+
+*.rar
+*.h5df
 *.code-workspace
 *.ini
 *.png
@@ -22,8 +24,9 @@ test
 *.hdf5
 *.h5
 *.zip
+
 .gitignore
+
 Segmentacao/cxr_reg_weights.best.hdf5
 Segmentacao/weight_val_acc_95.93.h5
 Segmentacao/model_5_32_acc_95.93.h5
-labelbox.py

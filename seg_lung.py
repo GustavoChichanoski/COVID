@@ -16,7 +16,7 @@ model.compile(loss='log_cosh_dice', rf=5)
 model.build()
 model.summary()
 
-data_path = Path('D:\\Mestrado\\new_data')
+data_path = Path('D:\\Mestrado\\data_segmentation')
 dataset = SegmentationDataset(
     path_lung=data_path / 'lungs',
     path_mask=data_path / 'masks'

@@ -67,13 +67,17 @@ class KerasGenerator(Sequence):
         idi = index * self.batch_size
         idf = (index + 1) * self.batch_size
         batch_x = self.x[idi:idf]
-        batch_x = self.step(batch_x, angle)
+        batch_x = self.step_x(batch_x, angle)
         if self.y is not None:
             batch_y = self.y[idi:idf]
-            batch_y = self.step(batch_y, angle)
+            batch_y = self.step_y(batch_y, angle)
             return batch_x, batch_y
         return batch_x
 
     @abstractmethod
-    def step(self, angle: float = 0.0) -> tfa.types.TensorLike:
+    def step_x(self, angle: float = 0.0) -> tfa.types.TensorLike:
+        raise NotImplementedError("Must override with correct step read")
+    
+    @abstractmethod
+    def step_y(self, angle: float = 0.0) -> tfa.types.TensorLike:
         raise NotImplementedError("Must override with correct step read")
