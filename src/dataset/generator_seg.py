@@ -117,6 +117,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
             batch = read_step(batch, shape)
         batch = (batch / 255.0).astype(np.float32)
         batch = (self.max - self.min) * batch + self.min
+        batch_out = batch
         if self.augmentation:
             batch_out = augmentation(
                 batch,
