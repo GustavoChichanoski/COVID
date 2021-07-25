@@ -172,17 +172,13 @@ class Unet(Model):
 
         store_layers = {}
         first_layer = inputs
-
         k = 0
-
         for i in range(self.depth):
-
             # Cria as duas convoluções da camada
             layer = self.unet_conv(first_layer, k)
             k += 1
             layer = self.unet_conv(layer, k)
             k += 1
-
             # Verifica se está na ultima camada
             if i < self.depth - 1:
                 # Armazena a layer no dicionario
@@ -190,21 +186,15 @@ class Unet(Model):
                 first_layer = self.max[i](layer)
             else:
                 first_layer = layer
-
         for i in range(self.depth-2,-1,-1):
-
             connection = store_layers[str(i)]
-
             layer = self.up[i](first_layer)
-            
             # self.cat[i].build(shape)
             layer = self.cat[i]([layer, connection])
-
             layer = self.unet_conv(layer, k)
             k += 1
             layer = self.unet_conv(layer, k)
             k += 1
-
             first_layer = layer
         layer = self.drop[-1](layer)
         return self.last_conv(layer)

@@ -1,5 +1,6 @@
 from typing import Any, Tuple
-from tensorflow.python.keras.utils.all_utils import Sequence
+
+import numpy as np
 from src.images.process_images import split
 from src.dataset.generator import KerasGenerator
 import tensorflow_addons as tfa
@@ -30,11 +31,8 @@ class ClassificationDatasetGenerator(KerasGenerator):
                 Defaults to 0.45.
         """
         super().__init__(x_set=x_set,y_set=y_set,**params)
-
-    def __getitem__(
-        self,
-        idx: int
-    ) -> Tuple[Any,Any]:
+    
+    def step_x(self, batch: tfa.types.TensorLike, angle: float = 0) -> tfa.types.TensorLike:
         """
             Get th data of dataset with position initial in idx to idx plus batch_size.
 
@@ -45,11 +43,6 @@ class ClassificationDatasetGenerator(KerasGenerator):
                 (Any,Any): the first term is x values of dataset
                            the second term is y vlaues of dataset
         """
-        idi = idx * self.batch_size
-        idf = (idx + 1) * self.batch_size
-        batch_x, batch_y = self.x[idi:idf], self.y[idi:idf]
-        y_shape = (self.batch_size, self.n_class)
-        batch_y = batch_y.reshape(y_shape)
         params_splits = {
             'verbose': False,
             'dim': self.dim,
@@ -57,5 +50,22 @@ class ClassificationDatasetGenerator(KerasGenerator):
             'threshold': self.threshold,
             'n_splits': 1
         }
-        batch_x, _positions = split(batch_x, **params_splits)
-        return batch_x, batch_y
+        batch_x, _positions = split(batch, **params_splits)
+        new_shape = (self.batch_size, self.dim, self.dim, self.channels)
+        batch_x = np.reshape(batch_x,new_shape)
+        return batch_x
+
+    def step_y(self, batch: tfa.types.TensorLike, angle: float = 0.0) -> tfa.types.TensorLike:
+        """
+            Get th data of dataset with position initial in idx to idx plus batch_size.
+
+            Args:
+                idx (int): initial position
+
+            Returns:
+                (Any,Any): the first term is x values of dataset
+                           the second term is y vlaues of dataset
+        """
+        y_shape = (self.batch_size, self.n_class)
+        batch_y = batch.reshape(y_shape)
+        return batch_y

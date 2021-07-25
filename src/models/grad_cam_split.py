@@ -13,6 +13,7 @@ from numba import jit
 from varname import nameof
 from tqdm import tqdm
 import cv2 as cv
+import tensorflow_addons as tfa
 
 def prob_grad_cam(
     cuts_images: Any,
@@ -22,7 +23,7 @@ def prob_grad_cam(
     model: Model,
     dim_orig: int = 1024,
     winner_pos: int = 0,
-) -> Any:
+) -> tfa.types.TensorLike:
     """Gera o grad cam a partir de pedaços da imagem original
         Args:
         -----
@@ -38,7 +39,7 @@ def prob_grad_cam(
         --------
             (np.array): Grad Cam dos recortes
     """
-    dimensao_imagem = model.input_shape[1]
+    dimensao_imagem = model.shape[1]
     dimensao_original = (dim_orig, dim_orig)
     # Inicializa a imagem final do grad cam com zeros
     grad_cam_prob = np.zeros(dimensao_original)
@@ -58,11 +59,11 @@ def prob_grad_cam(
         classifier
     )
     predicoes = model.predict(cuts_images)
-    entrada_modelo = model.input_shape
-    shape = (1, entrada_modelo[1], entrada_modelo[2], entrada_modelo[3])
-    for predicao, cut_image, position_pixel in tqdm(zip(
-        predicoes, cuts_images, paths_start_positions
-    )):
+    entrada_modelo = model.shape
+    shape = (1, entrada_modelo[0], entrada_modelo[1], entrada_modelo[2])
+    for predicao, cut_image, position_pixel in tqdm(
+        zip(predicoes, cuts_images, paths_start_positions[0])
+    ):
         # Os pacotes chegam com dimensões (None,224,224,3) e
         # precisam ser redimensionados para a (1,224,224,3)
         cut_image = cut_image.reshape(shape)
@@ -82,10 +83,10 @@ def prob_grad_cam(
         grad_cam_predicao = predicao_pacote * gradcam_pacote
         # Soma com a predicoes anteriores
         sum_grad_cam = sum_grads_cam(
-            grad_cam_prob,
-            grad_cam_predicao,
-            splits_per_pixel,
-            position_pixel
+            grad_cam_full=grad_cam_prob,
+            grad_cam_cut=grad_cam_predicao,
+            used_pixels=splits_per_pixel,
+            start=position_pixel
         )
         grad_cam_prob, splits_per_pixel = sum_grad_cam
     # Divide o gradcam total pelas vezes que passou por um pixel
@@ -102,14 +103,14 @@ def modelo_grad_cam(
     dim_image: int = 224
 ) -> Model:
     # Recebe o tamanho da imagem a ser inserida no modelo
-    resnet = find_base_model(modelo)
+    resnet = modelo.base
     # Nome da ultima camada de convolucao
     last_conv_layer = get_layer(resnet, last_conv_layer_name)
     # Cria um novo modelo com as camadas até a ultima convolução
     model_until_last_conv = Model(resnet.input, last_conv_layer.output)
-    grad_cam_input = (dim_image, dim_image, modelo.input_shape[3])
+    grad_cam_input = (dim_image, dim_image, 1)
     inputs = Input(shape=grad_cam_input)
-    new_model = modelo.layers[1](inputs)
+    new_model = modelo.get_layer('conv_gray_rgb')(inputs)
     new_model = model_until_last_conv(new_model)
     new_model = Model(inputs, new_model)
     return new_model, resnet
@@ -120,7 +121,7 @@ def get_layer(resnet: Model, last_conv_layer_name: str) -> Layer:
             return layer
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def sum_grads_cam(
     grad_cam_full: Any,
     grad_cam_cut: Any,
@@ -160,9 +161,9 @@ def sum_grads_cam(
     dimension_cut = grad_cam_cut.shape[0]
     # Create the matriz of ones to sum to grad cam full
     ones = np.ones((dimension_cut, dimension_cut))
-    final = [start[0] + dimension_cut, start[1] + dimension_cut]
-    grad_cam_full[start[0]:final[0], start[1]:final[1]] += grad_cam_cut
-    used_pixels[start[0]:final[0], start[1]:final[1]] += ones
+    final = [int(start[0] + dimension_cut), int(start[1] + dimension_cut)]
+    grad_cam_full[int(start[0]):final[0], int(start[1]):final[1]] += grad_cam_cut
+    used_pixels[int(start[0]):final[0], int(start[1]):final[1]] += ones
     return (grad_cam_full, used_pixels)
 
 

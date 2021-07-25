@@ -86,7 +86,6 @@ def read_images(
         Returns:
             (np.array or list): retorna uma lista np.array das imagens lidas
     """
-    shape = (dim, dim)
     image = None
     params = {'color': color, 'dim': dim}
     if isinstance(images_paths, list):

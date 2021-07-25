@@ -162,7 +162,7 @@ def split_images_n_times(
     cut_pos = np.array([]) # lista de posicoes do corte
 
     # Define os pixels em que a imgem começa
-    y_nonzero, x_nonzero = np.nonzero(image)
+    y_nonzero, x_nonzero = np.nonzero(image[:,:,0])
     pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), \
                              (np.max(y_nonzero), np.max(x_nonzero))
     shape_cut = (n_split,dim_split,dim_split,1)

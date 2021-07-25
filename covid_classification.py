@@ -39,7 +39,7 @@ else:
 del system
 
 # %% [code] Paths
-DATA = __SYS / "data"
+DATA = Path('D:\\Mestrado') / "new_data"
 TRAIN_PATH = DATA / "train"
 TEST_PATH = DATA / "test"
 TEST = TEST_PATH / "Covid/0000.png"
@@ -118,14 +118,15 @@ for net, net_path in zip(NETS[1:], nets_path[1:]):
             validation_data=val_generator,
             **fit_params
         )
-        file_model, file_weights, file_history = covid.save_weights(
-            file_path=net_path,
+        covid.save_weights(
+            modelname=model,
+            parent=net_path,
             history=history,
             metric="val_f1"
         )
-        plot_history(history)
-    covid.build()
-    covid.summary()
+        # plot_history(history)
+    covid.build(input_shape=(BATCH_SIZE,DIM_SPLIT,DIM_SPLIT,CHANNELS))
+    # covid.summary()
 
     name = path_figure / f"{model}_{K_SPLIT}"
     print(f"[INFO] Predição de uma imagem: {K_SPLIT}")

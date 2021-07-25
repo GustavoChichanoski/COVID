@@ -54,7 +54,7 @@ def plot_gradcam(
     jet_heatmap = img_to_array(jet_heatmap)
 
     superimposed_image = jet_heatmap * alpha + image
-    superimposed_image = array_to_img(superimposed_image)
+    superimposed_image = array_to_img(superimposed_image[0])
 
     fig = plt.figure()
     plt.imshow(superimposed_image)

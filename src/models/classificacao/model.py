@@ -62,9 +62,14 @@ class ModelCovid(Model):
                 (keras.Model) : Modelo do keras
         """
         super(ModelCovid, self).__init__(name=f"Covid_{name}", **kwargs)
+        # Variaveis internas
+        self._lazy_base = None
+        self._lazy_callbacks = None
+        self._lazy_classifier_layers = None
+        self.last_conv_layer_name = None
         self.split_dim = split_dim
         self.channels = channels
-        shape = (self.split_dim,self.split_dim,self.channels)
+        self.shape = (self.split_dim,self.split_dim,self.channels)
         n_class = len(labels)
 
         # Parametros do modelo
@@ -74,7 +79,7 @@ class ModelCovid(Model):
         self.split_dim = split_dim
 
         # Camadas do modelo
-        self.input_layer = Input(shape=shape, name="entrada_modelo")
+        self.input_layer = Input(shape=self.shape, name="entrada_modelo")
         self.conv_1 = Conv2D(
             filters=3,
             kernel_size=(3, 3),
@@ -85,14 +90,10 @@ class ModelCovid(Model):
         self.drop_0 = Dropout(0.5, name="drop_0")
         self.dense_0 = Dense(units=256, name="dense_0")
         self.drop_1 = Dropout(0.5, name="drop_1")
+        self.act_0 = Activation(activation="softmax",name="act_0")
         self.dense_1 = Dense(units=n_class,name="classifier")
         self.act_1 = Activation(activation="softmax",name="output")
 
-        # Variaveis internas
-        self._lazy_base = None
-        self._lazy_callbacks = None
-        self._lazy_classifier_layers = None
-        self.last_conv_layer_name = None
         self.output_layer = self.call(self.input_layer)
 
     # Propriedades do modelo
@@ -154,14 +155,20 @@ class ModelCovid(Model):
 
     @property
     def classifier_layers_names(self) -> List[str]:
-        if self._lazy_classifier_layers:
-            self._lazy_classifier_layers = []
-            for layer in reversed(self.model.layers):
-                if type(self) == type(layer):
+        if self._lazy_classifier_layers is None:
+            self._lazy_classifier_layers = [
+                self.drop_0.name,
+                self.dense_0.name,
+                self.act_0.name,
+                self.drop_1.name,
+                self.dense_1.name,
+                self.act_1.name
+            ]
+            for layer in reversed(self.layers):
+                if type(self.base) == type(layer):
                     self._lazy_classifier_layers.insert(0, layer.layers[-1].name)
                     self.last_conv_layer_name = layer.layers[-2].name
                     break
-                self._lazy_classifier_layers.insert(0, layer.name)
         return self._lazy_classifier_layers
 
     def call(self, inputs: Tuple[int,int,int] = (256,256,1)) -> Model:
@@ -218,7 +225,7 @@ class ModelCovid(Model):
             **params,
         )
 
-    def build(self, inputs_shape: tf.Tensor) -> None:
+    def build(self, input_shape: tfa.types.TensorLike = None) -> None:
         is_tensor = tf.is_tensor(self.input_layer)
         super(ModelCovid, self).build(
             self.input_layer.shape if is_tensor else self.input_layer
@@ -253,10 +260,14 @@ class ModelCovid(Model):
             **kwargs
         )
 
-    def predict(self, x: ClassificationDatasetGenerator, **params):
+    def predict(
+        self,
+        x: ClassificationDatasetGenerator,
+        **params
+    ) -> tfa.types.TensorLike:
         return super().predict(x, **params)
 
-    def winner( self, votes: List[int] = [0, 0, 0] ) -> str:
+    def winner(self,votes: List[int] = [0, 0, 0]) -> str:
         """
             Retorna o label da doenca escolhido
             Args:
@@ -289,9 +300,10 @@ class ModelCovid(Model):
         shape = (n_splits,self.split_dim,self.split_dim,self.channels)
         cuts = cuts.reshape(shape)
         imagemColor = ri(image, color=True)
+        class_names = list(self.classifier_layers_names)
         heatmap = prob_grad_cam(
             cuts_images=cuts,
-            classifier=self.classifier_layers_names,
+            classifier=class_names,
             last_conv_layer_name=self.last_conv_layer_name,
             paths_start_positions=positions,
             model=self,
@@ -299,6 +311,6 @@ class ModelCovid(Model):
             winner_pos=self.labels.index(image[0].parts[-2])
         )
         plt_gradcam(heatmap, imagemColor, True)
-        votes = self.model.predict(cuts)
+        votes = self.predict(cuts)
         elect = self.winner(votes=votes)
         return elect

@@ -60,7 +60,8 @@ class KerasGenerator(Sequence):
 
     def __len__(self) -> int:
         'Denotes the number of batches per epoch'
-        return int(np.floor(len(self.x) / self.batch_size))
+        length = int(np.floor(len(self.x) / self.batch_size))
+        return length
 
     def __getitem__(self, index: int) -> tfa.types.TensorLike:
         angle = self.generate_random_angle()
