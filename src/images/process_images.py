@@ -301,6 +301,8 @@ def split(
     batch_size = len(path_images)
     shape = (batch_size, n_splits, dim, dim, channels)
     images = (read_images(path) for path in path_images)
+    pos = np.array([])
+    cuts = np.array([])
     split_return = [
         split_images_n_times(
             image,
@@ -310,10 +312,11 @@ def split(
             threshold=threshold
         ) for image in images
     ]
-    splited_images = split_return[0][0]
-    positions = split_return[0][1]
-    positions = np.array(positions)
-    positions = positions.reshape((batch_size,n_splits, 2))
-    cuts = np.array(splited_images)
+    for split in split_return:
+        splited_images, positions = split
+        pos = np.append(pos,positions)
+        cuts = np.append(cuts,splited_images)
+    positions = pos.reshape((batch_size,n_splits, 2))
     cuts_reshape = cuts.reshape(shape)
+        
     return cuts_reshape, positions
