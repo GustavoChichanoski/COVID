@@ -10,7 +10,6 @@ from tensorflow.python.keras import Input
 from tensorflow.python.keras import backend as K
 from src.images.process_images import relu as relu_img
 from numba import jit
-from varname import nameof
 from tqdm import tqdm
 import cv2 as cv
 import tensorflow_addons as tfa
