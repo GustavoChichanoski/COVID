@@ -1,11 +1,13 @@
 """
     Gera o dataset.
 """
-from typing import Any, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 from dataclasses import dataclass
+
+import tensorflow_addons
 
 
 @dataclass
@@ -30,7 +32,7 @@ class Dataset:
     _lazy_number_files_in_folders: Optional[List[str]] = None
 
     @property
-    def files_in_folder(self):
+    def files_in_folder(self) -> List[int]:
         """
             Retorna o nomes dos arquivos contidos nas pastas.
                 Returns:
@@ -43,7 +45,7 @@ class Dataset:
         return self._lazy_files_in_folder
 
     @property
-    def number_files_in_folders(self):
+    def number_files_in_folders(self) -> List[Union[List[int],int]]:
         """ The number of files in each folders.
 
             Examples:
@@ -83,7 +85,7 @@ class Dataset:
         return self._lazy_label_names
 
     @property
-    def y(self) -> Any:
+    def y(self) -> tensorflow_addons.types.TensorLike:
         """
             Generate the y values of inputs images based in your class
 
