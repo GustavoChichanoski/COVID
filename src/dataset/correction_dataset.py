@@ -9,7 +9,6 @@ def correct_dataset(
     output_folder: Path,
     size: int = 1024,
     rename: bool = True,
-    
     extension: str = 'png'
 ) -> None:
 

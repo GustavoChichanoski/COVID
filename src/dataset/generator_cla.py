@@ -11,6 +11,7 @@ class ClassificationDatasetGenerator(KerasGenerator):
         self,
         x_set: tfa.types.TensorLike,
         y_set: tfa.types.TensorLike,
+        threshold: float = 0.45,
         **params
     ) -> None:
         """[Initialize the Datagenerator]
@@ -31,6 +32,7 @@ class ClassificationDatasetGenerator(KerasGenerator):
                 Defaults to 0.45.
         """
         super().__init__(x_set=x_set,y_set=y_set,**params)
+        self.threshold = threshold
     
     def step_x(self, batch: tfa.types.TensorLike, angle: float = 0) -> tfa.types.TensorLike:
         """

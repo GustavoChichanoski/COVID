@@ -14,6 +14,7 @@ from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers import Dropout
 from tensorflow.python.keras.layers import Activation
 from tensorflow.python.keras.metrics import Metric
+from tensorflow.python.keras.callbacks import History
 from tensorflow.python.keras.callbacks import Callback
 from tensorflow.python.keras.callbacks import ModelCheckpoint
 from tensorflow.python.keras.callbacks import TerminateOnNaN
@@ -137,8 +138,10 @@ class ModelCovid(Model):
         if self._lazy_base is None:
             shape = (self.split_dim, self.split_dim, 3)
             params = {
-                "include_top": False, "weights": "imagenet",
-                "pooling": "avg", "input_shape": shape,
+                "include_top": False,
+                "weights": "imagenet",
+                "pooling": "avg",
+                "input_shape": shape,
             }
             if self.name == "VGG19":
                 self._lazy_base = VGG19(**params)
@@ -183,7 +186,7 @@ class ModelCovid(Model):
     def save_weights(
         self,
         modelname: str,
-        history: Any = None,
+        history: History = None,
         parent: Path = None,
         history_path: Path = None,
         overwrite: bool = True,
@@ -213,7 +216,7 @@ class ModelCovid(Model):
         shuffle: bool = True,
         callbacks: List[Callback] = None,
         **params,
-    ) -> Any:
+    ) -> History:
         callbacks = self.callbacks if callbacks is None else callbacks
         return super().fit(
             x=x,

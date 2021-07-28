@@ -1,15 +1,15 @@
 """
     Biblioteca referente ao processamento das imagens
 """
+import math
+import numpy as np
+import tensorflow as tf
+import tensorflow_addons as tfa
 from src.images.read_image import read_images
 from typing import Optional, Tuple
 from tqdm import tqdm
 from pathlib import Path
-from typing import Any, List, Union
-import tensorflow_addons as tfa
-import tensorflow as tf
-import numpy as np
-import math
+from typing import List, Union
 
 def random_pixel(
     start: Tuple[int,int] = (0, 0),
@@ -47,94 +47,6 @@ def normalize_image(
             (np.array): Imagens normalizadas
     """
     return images / 255.0
-
-def random_rotate_image(
-    image: tfa.types.TensorLike,
-    angle: float = 0.0
-) -> tfa.types.TensorLike:
-    """
-        Rotate `image` with tensorflow_addons, based in angle deggres in `angle`, image need be NHWC (number_images,height,width,channels) or HW(height,width)
-
-        Args:
-            image (tfa.types.TensorLike): image to be rotated
-            angle (float, optional): angle in deggre to rotate image. Defaults to 0.0.
-
-        Returns:
-            tfa.types.TensorLike: image rotated
-    """
-    valid_shape(image,2,4)
-    rotation = math.radians(angle)
-    rotate_image = tfa.image.rotate(image,rotation,interpolation='BILINEAR')
-    return rotate_image
-
-def valid_shape(
-    image: tfa.types.TensorLike,
-    shape_min: int = 2,
-    shape_max: int = 4
-) -> None:
-    """ Valid image to function
-
-        Args:
-            image (tfa.types.TensorLike): image to be valid.
-            shape_min (int, optional): min length shape of image. Defaults to 2.
-            shape_max (int, optional): max length shape of image. Defaults to 4.
-
-        Raises:
-            ValueError: if shape image is not valid
-    """
-    len_image_shape = len(image.shape)
-    if len_image_shape != shape_max and len_image_shape != shape_min:
-        raise ValueError(f'Image must be {shape_min} or {shape_max} shape, not {len_image_shape}: {image.shape}')
-
-def flip_horizontal_image(
-    image: tfa.types.TensorLike
-) -> tfa.types.TensorLike:
-    valid_shape(image,3,4)
-    return tf.image.flip_left_right(image)
-
-def flip_vertical_image(
-    image: tfa.types.TensorLike
-) -> tfa.types.TensorLike:
-    valid_shape(image,3,4)
-    return tf.image.flip_up_down(image)
-
-def augmentation_image(
-    batch: tfa.types.TensorLike,
-    angle: Optional[float] = 5.0,
-    flip_horizontal: bool = True,
-    flip_vertical: bool = True,
-    mean_filter: bool = True
-) -> tfa.types.TensorLike:
-    batch_augmentation = batch
-    if angle is not None:
-        batch_rotate = random_rotate_image(batch, angle)
-        batch_augmentation = np.append(
-            batch_augmentation,
-            batch_rotate,
-            axis=0
-        )
-    if flip_vertical:
-        batch_flip_vert = tf.image.flip_up_down(batch)
-        batch_augmentation = np.append(
-            batch_augmentation,
-            batch_flip_vert,
-            axis=0
-        )
-    if flip_horizontal:
-        batch_flip_hort = flip_horizontal_image(batch)
-        batch_augmentation = np.append(
-            batch_augmentation,
-            batch_flip_hort,
-            axis=0
-        )
-    if mean_filter:
-        batch_mean_filter2d = tfa.image.mean_filter2d(batch,padding='SYMMETRIC')
-        batch_augmentation = np.append(
-            batch_augmentation,
-            batch_mean_filter2d,
-            axis=0
-        )
-    return batch_augmentation
 
 # @jit(parallel=True)
 def split_images_n_times(

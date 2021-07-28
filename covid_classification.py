@@ -58,7 +58,7 @@ labels = listdir(TRAIN_PATH)
 ds_train = Dataset(path_data=TRAIN_PATH, train=False)
 ds_test = Dataset(path_data=TEST_PATH, train=False)
 
-part_param = {"tamanho": 4}
+part_param = {"tamanho": 20}
 train, validation = ds_train.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
 
@@ -67,6 +67,7 @@ params = {
     "batch_size": BATCH_SIZE,
     "n_class": len(labels),
     "channels": CHANNELS,
+    "threshold": 0.1
 }
 train_generator = ClaDataGen(
     x_set=train[0],
