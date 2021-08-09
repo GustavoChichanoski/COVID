@@ -3,9 +3,9 @@ from pathlib import Path
 
 import numpy as np
 
-from src.dataset.generator_seg import SegmentationDatasetGenerator as SegDataGen
-from src.dataset.dataset_seg import SegmentationDataset
-from src.models.segmentacao.segmentacao_model import Unet
+from src.dataset.segmentation.generator_seg import SegmentationDatasetGenerator as SegDataGen
+from src.dataset.segmentation.dataset_seg import SegmentationDataset
+from src.models.segmentation.unet import Unet
 
 DIM = 128
 BATCH_SIZE = 1

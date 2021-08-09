@@ -30,3 +30,5 @@ test
 Segmentacao/cxr_reg_weights.best.hdf5
 Segmentacao/weight_val_acc_95.93.h5
 Segmentacao/model_5_32_acc_95.93.h5
+
+block_segmentation.py

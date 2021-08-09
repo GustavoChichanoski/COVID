@@ -29,27 +29,31 @@ class DiceError(Loss):
             y_true_f = K.flatten(y_true[:,:,:,class_now])
             y_pred_f = K.flatten(y_pred[:,:,:,class_now])
 
-            # Correção da equação de erro
-            correction_factor = tf.constant(1.0, dtype=tf.float64)
-            # Smooth - Evita que o denominador fique muito pequeno
-            smooth = K.constant(1e-6, dtype=tf.float64)
-            # Calculo o erro entre eles
-            constant = K.constant(2.0, dtype=tf.float64)
+            loss = dice_loss(y_true_f, y_pred_f)
 
-            # Calcula o numero de vezes que
-            # y_true(positve) é igual y_pred(positive) (tp)
-            intersection = K.sum(y_true_f * y_pred_f)
-            # Soma o número de vezes que ambos foram positivos
-            union = K.sum(y_true_f) + K.sum(y_pred_f)
-            num = tf.math.multiply(constant,intersection) + correction_factor
-            den = union + smooth + correction_factor
-            loss = num / den
+            total_loss = total_loss + loss
 
-            if class_now == 0:
-                total_loss = loss
-            else:
-                total_loss = total_loss + loss
-
-            total_loss = total_loss / class_num
+        total_loss = total_loss / class_num
 
         return (1 - total_loss) * self.regularization_factor
+
+def dice_loss(
+    y_true_f: tfa.types.TensorLike,
+    y_pred_f: tfa.types.TensorLike
+) -> tfa.types.TensorLike:
+    # Correção da equação de erro
+    correction_factor = tf.constant(1.0, dtype=tf.float64)
+    # Smooth - Evita que o denominador fique muito pequeno
+    smooth = K.constant(1e-6, dtype=tf.float64)
+    # Calculo o erro entre eles
+    constant = K.constant(2.0, dtype=tf.float64)
+
+    # Calcula o numero de vezes que
+    # y_true(positve) é igual y_pred(positive) (tp)
+    intersection = K.sum(y_true_f * y_pred_f)
+    # Soma o número de vezes que ambos foram positivos
+    union = K.sum(y_true_f) + K.sum(y_pred_f)
+    num = tf.math.multiply(constant,intersection) + correction_factor
+    den = union + smooth + correction_factor
+    loss = num / den
+    return loss

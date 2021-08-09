@@ -1,9 +1,10 @@
 from pathlib import Path
 from src.dataset.generator import DataGenerator
 from src.plots.history import plot_history
-from src.dataset.dataset import Dataset
+from src.plots.graph import plot_dataset
+from src.dataset.classification.cla_dataset import Dataset
 from src.output_result.folders import create_folders, last_file
-from src.model.model import ModelCovid
+from src.models.classificacao.model import ModelCovid
 from varname import varname
 import sys
 

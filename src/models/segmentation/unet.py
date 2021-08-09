@@ -1,7 +1,6 @@
 from gc import garbage
-from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
-from src.dataset.generator_seg import SegmentationDatasetGenerator as SegDataGen
 from typing import Any, List, Optional, Tuple
+
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, ModelCheckpoint, ReduceLROnPlateau, TerminateOnNaN
 from tensorflow.python.keras.engine.base_layer import Layer
@@ -17,6 +16,9 @@ from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras.metrics import Metric
 from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras.models import Input
+
+from src.dataset.generator import KerasGenerator
+from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.models.metrics.f1_score import F1score
 from src.models.losses.dice_loss import DiceError
 from src.models.callbacks.clear_garbage import ClearGarbage
@@ -212,8 +214,8 @@ class Unet(Model):
 
     def fit(
         self,
-        x: SegDataGen,
-        validation_data: SegDataGen,
+        x: KerasGenerator,
+        validation_data: KerasGenerator,
         callbacks: Optional[List[Callback]] = None,
         batch_size: Optional[int] = None,
         epochs: int = 100,
@@ -270,5 +272,5 @@ class Unet(Model):
     def load_weights(self, filepath: str, **params) -> None:
         super().load_weights(filepath, **params)
 
-    def predict(self, x: SegDataGen, **params) -> Any:
+    def predict(self, x: KerasGenerator, **params) -> Any:
         return super().predict(x, **params)

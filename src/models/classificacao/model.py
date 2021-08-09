@@ -31,8 +31,9 @@ from src.models.metrics.f1_score import F1score
 from src.models.grad_cam_split import prob_grad_cam
 from src.images.process_images import split
 from src.images.read_image import read_images as ri
-from src.dataset.generator_cla import ClassificationDatasetGenerator
+from src.dataset.classification.cla_generator import ClassificationDatasetGenerator
 from src.output_result.folders import pandas2csv
+
 from pathlib import Path
 import tensorflow_addons as tfa
 import tensorflow as tf
@@ -291,7 +292,7 @@ class ModelCovid(Model):
         n_splits: int = 100,
         threshold: float = 0.35,
         verbose: bool = True,
-    ):
+    ) -> str:
         params_splits = {
             'verbose': verbose,
             'dim': self.split_dim,

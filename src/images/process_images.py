@@ -147,7 +147,6 @@ def create_non_black_cut(
         valores_validos = np.sum(recort > 0)
     return recort, pos
 
-
 def create_recort(
     image: tfa.types.TensorLike,
     pos_start: tuple = (0, 0),

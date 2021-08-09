@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from typing import List, Union
 from src.models.segmentacao.segmentacao_model import Unet
 from src.output_result.folders import get_all_files_in_folder
-from src.dataset.generator_seg import SegmentationDatasetGenerator
+from src.dataset.classification.cla_generator import SegmentationDatasetGenerator
 from pathlib import Path
 from tensorflow.python import keras as keras
 import matplotlib.pyplot as plt
