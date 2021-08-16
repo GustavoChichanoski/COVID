@@ -25,4 +25,4 @@ class LogCoshDiceError(DiceError):
         dice_loss = super().call(y_true=y_true,y_pred=y_pred)
         total_loss = tf.math.log(tf.math.cosh(dice_loss))
         total_loss = total_loss * self.regularization_factor
-        return total_loss.numpy()
+        return total_loss
