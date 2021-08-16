@@ -52,7 +52,7 @@ class DiceError(Loss):
 
         total_loss = total_loss / class_num
         total_loss = (1 - total_loss) * self.regularization_factor
-        return total_loss.numpy()
+        return total_loss
 
 def dice_loss(
     y_true_f: tfa.types.TensorLike,
