@@ -79,8 +79,10 @@ for net, net_path in zip(NETS[1:], nets_path[1:]):
     net_path = net_path
 
     model_params = {
-        'labels': labels, 'name': model,
-        'orig_dim': DIM_ORIGINAL, 'split_dim': DIM_SPLIT,
+        'labels': labels,
+        'name': model,
+        'orig_dim': DIM_ORIGINAL,
+        'split_dim': DIM_SPLIT,
         'trainable': True,
     }
     covid = ModelCovid(**model_params)

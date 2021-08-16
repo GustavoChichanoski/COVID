@@ -16,6 +16,7 @@ from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras.metrics import Metric
 from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras.models import Input
+from tensorflow.python.keras.utils.data_utils import Sequence
 
 from src.dataset.generator import KerasGenerator
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
@@ -214,8 +215,8 @@ class Unet(Model):
 
     def fit(
         self,
-        x: KerasGenerator,
-        validation_data: KerasGenerator,
+        x: Sequence,
+        validation_data: Sequence,
         callbacks: Optional[List[Callback]] = None,
         batch_size: Optional[int] = None,
         epochs: int = 100,

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from typing import Any, Tuple
-from tensorflow.python.keras.utils.all_utils import Sequence
+from tensorflow.python.keras.utils.data_utils import Sequence
 from src.images.process_images import split
 import numpy as np
 import tensorflow_addons as tfa

@@ -23,8 +23,8 @@ def conv_plus_plus(
 
     kernel = (kernel_size, kernel_size)
 
-    layer = BatchNormalization(name=bn_name)(layer)
     layer = Conv2D(filters, kernel_size=kernel, padding="same", name=cv_name)(layer)
+    layer = BatchNormalization(name=bn_name)(layer)
     layer = Activation(activation=activation, name=act_name)(layer)
 
     return layer
