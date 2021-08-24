@@ -1,4 +1,3 @@
-import enum
 from pathlib import Path
 from re import split
 from tensorflow.python.keras.engine.base_layer import Layer
@@ -10,10 +9,8 @@ from src.images.read_image import read_images
 from src.dataset.classification.cla_generator import ClassificationDatasetGenerator
 from src.output_result.folders import pandas2csv
 from src.prints.prints import print_info
-from typing import List, Tuple, Union
+from typing import List, Union
 from tensorflow.python.keras import Model
-from tensorflow.python.keras import layers
-from tensorflow.python.keras.engine.sequential import Sequential
 from tensorflow.python.keras.layers import Conv2D, Activation
 from tensorflow.python.keras import Input
 from tensorflow.python.keras.layers.core import Dense, Dropout, Flatten
@@ -34,11 +31,6 @@ from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3
 import tensorflow_addons as tfa
 import numpy as np
 
-class ModelName(enum.Enumm):
-    VGG19 = 'VGG19'
-    INCEPTION = 'InceptionResNetV2'
-    RESNET = 'ResNet50V2'
-    MOBILENET = 'MobileNetV3'
 
 def get_callbacks() -> List[Callback]:
     """
@@ -148,8 +140,27 @@ def classification_model(
     return model
 
 
+def last_conv_layer(model: Model) -> str:
+    """Find last conv layer in the model.
+
+    Args:
+        model (Model): model to analyse.
+
+    Returns:
+        str: name of last convolution layer.
+    """
+    for layer in reversed(model.layers):
+        if isinstance(layer, Model):
+            for in_layer in reversed(layer.layers):
+                if isinstance(layer, Conv):
+                    return in_layer.name
+        if isinstance(layer, Conv):
+            return layer.name
+    return ""
+
+
 def names_classification_layers(model: Model) -> List[str]:
-    """ Search in all model for find a Conv2D layer in reversed order,
+    """Search in all model for find a Conv2D layer in reversed order,
     saving all the names in the track.
 
     Args:
@@ -213,28 +224,33 @@ def fit(
         validation_data=validation_data,
         shuffle=shuffle,
         callbacks=callbacks,
-        **params
+        **params,
     )
 
-def winner(labels: List[str] = ['Covid','Normal','Pneumonia'],
-           votes: List[int] = [0,0,0]
+
+def winner(
+    labels: List[str] = ["Covid", "Normal", "Pneumonia"], votes: List[int] = [0, 0, 0]
 ) -> str:
     """
-        Retorna o label da doenca escolhido
-        Args:
-        -----
-            labels (list): nomes das classes
-            votes (list): predicao das imagens
-        Returns:
-        --------
-            elect (str): label escolhido pelo modelo
+    Retorna o label da doenca escolhido
+    Args:
+    -----
+        labels (list): nomes das classes
+        votes (list): predicao das imagens
+    Returns:
+    --------
+        elect (str): label escolhido pelo modelo
     """
     poll = np.sum(votes, axis=0)
     elect = labels[np.argmax(poll)]
     return elect
 
-def predict(model: Model, x: ClassificationDatasetGenerator, **params) -> tfa.types.TensorLike:
+
+def predict(
+    model: Model, x: ClassificationDatasetGenerator, **params
+) -> tfa.types.TensorLike:
     return model.predict(x, **params)
+
 
 def get_classifier_layer_names(model: Model) -> List[str]:
     classifier_layers_names = []
@@ -249,6 +265,7 @@ def get_classifier_layer_names(model: Model) -> List[str]:
         classifier_layers_names.append(inner_layer.name)
     return classifier_layers_names
 
+
 def get_last_conv_layer_name(model) -> Layer:
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
@@ -258,39 +275,41 @@ def get_last_conv_layer_name(model) -> Layer:
         if isinstance(layer, Conv):
             return layer.name
 
+
 def make_grad_cam(
-        model: Model,
-        image: Union[str, Path],
-        n_splits: int = 100,
-        threshold: float = 0.35,
-        verbose: bool = True,
-        split_dim: int = 224,
-        orig_dim: int = 1024,
-        channels: int = 3,
-        labels: List[str] = ['Covid', 'Normal', 'Pneumonia']
+    model: Model,
+    image: Union[str, Path],
+    n_splits: int = 100,
+    threshold: float = 0.35,
+    verbose: bool = True,
+    split_dim: int = 224,
+    orig_dim: int = 1024,
+    channels: int = 3,
+    labels: List[str] = ["Covid", "Normal", "Pneumonia"],
 ) -> str:
     params_splits = {
-        'verbose': verbose,
-        'dim': split_dim,
-        'channels': channels,
-        'threshold': threshold,
-        'n_splits': n_splits
+        "verbose": verbose,
+        "dim": split_dim,
+        "channels": channels,
+        "threshold": threshold,
+        "n_splits": n_splits,
     }
     cuts, positions = split(image, **params_splits)
-    shape = (n_splits,split_dim,split_dim,channels)
+    shape = (n_splits, split_dim, split_dim, channels)
     cuts = cuts.reshape(shape)
     imagemColor = read_images(image, color=True)
     class_names = get_classifier_layer_names(model)
+    last_conv_layer_name = get_last_conv_layer_name(model)
     heatmap = prob_grad_cam(
         cuts_images=cuts,
         classifier=class_names,
-        last_conv_layer_name=get_last_conv_layer_name(model),
+        last_conv_layer_name=last_conv_layer_name,
         paths_start_positions=positions,
         model=model,
         dim_orig=orig_dim,
-        winner_pos=labels.index(image[0].parts[-2])
+        winner_pos=labels.index(image[0].parts[-2]),
     )
     plot_gradcam(heatmap, imagemColor, True)
-    votes = predict(model,cuts)
+    votes = predict(model, cuts)
     elect = winner(labels=labels, votes=votes)
     return elect
