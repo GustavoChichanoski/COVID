@@ -15,10 +15,10 @@ import cv2 as cv
 import tensorflow_addons as tfa
 
 def prob_grad_cam(
-    cuts_images: Any,
+    cuts_images: tfa.types.TensorLike,
     classifier: List[str],
     last_conv_layer_name: str,
-    paths_start_positions: Any,
+    paths_start_positions: tfa.types.TensorLike,
     model: Model,
     dim_orig: int = 1024,
     winner_pos: int = 0,
@@ -122,11 +122,11 @@ def get_layer(resnet: Model, last_conv_layer_name: str) -> Layer:
 
 # @jit(nopython=True)
 def sum_grads_cam(
-    grad_cam_full: Any,
-    grad_cam_cut: Any,
-    used_pixels: Any,
+    grad_cam_full: tfa.types.TensorLike,
+    grad_cam_cut: tfa.types.TensorLike,
+    used_pixels: tfa.types.TensorLike,
     start: Tuple[int,int] = (0, 0),
-) -> Any:
+) -> tfa.types.TensorLike:
     """
         Realiza a soma do GradCam completo com o GradCam do recorte.
         Para isso é necessário conhecer os valores atuais da GradCam,
@@ -158,36 +158,45 @@ def sum_grads_cam(
     """
     # Get the dimension of cut grad_cam
     dimension_cut = grad_cam_cut.shape[0]
+    # Get original dimension
+    dim_orig = grad_cam_full.shape[1]
     # Create the matriz of ones to sum to grad cam full
     ones = np.ones((dimension_cut, dimension_cut))
-    final = [int(start[0] + dimension_cut), int(start[1] + dimension_cut)]
-    grad_cam_full[int(start[0]):final[0], int(start[1]):final[1]] += grad_cam_cut
-    used_pixels[int(start[0]):final[0], int(start[1]):final[1]] += ones
+    final_x = int(start[0] + dimension_cut)
+    final_y = int(start[1] + dimension_cut)
+    
+    final_x = final_x if final_x < dim_orig else dim_orig
+    final_y = final_y if final_y < dim_orig else dim_orig
+    
+    grad_cam_full[int(start[0]):final_x, int(start[1]):final_y] += grad_cam_cut
+    used_pixels[int(start[0]):final_x, int(start[1]):final_y] += ones
     return (grad_cam_full, used_pixels)
 
 
-@jit(nopython=True)
+# @jit(nopython=True)
 def div_cuts_per_pixel(
-    splits_per_pixel: List[int],
-    grad_cam_prob: List[int]
-) -> Any:
+    splits_per_pixel: tfa.types.TensorLike,
+    grad_cam_prob: tfa.types.TensorLike
+) -> tfa.types.TensorLike:
     """ Divide os numeros de pacotes de pixeis pela
         grad cam do pacote gerado pela função para
         gerar o grad cam probabilistico.
         Args:
         -----
-            pacotes_por_pixel (np.array):
+            pacotes_por_pixel (tfa.types.TensorLike):
                 Numero dos pacotes passados em cada pixel.
-            grad_cam_prob (np.array):
+            grad_cam_prob (tfa.types.TensorLike):
                 GradCam do recorte da imagem.
         Returns:
         --------
             (np.array): GradCam Probabilistico
     """
+    # Percorre a matrix
     for pixel_y, _ in enumerate(grad_cam_prob):
         for pixel_x, _ in enumerate(grad_cam_prob[0]):
             spltis = splits_per_pixel[pixel_y][pixel_x]
             if spltis > 0:
+                # Divide cada pixel pelo numero de vezes de pacotes que utilizou esse pixel
                 grad_cam_prob[pixel_y][pixel_x] /= spltis
     return grad_cam_prob
 
@@ -199,11 +208,11 @@ def find_base_model(model: Model) -> Model:
 
 
 def grad_cam(
-    image: Any,
+    image: tfa.types.TensorLike,
     model: Model,
     classifier_layer_names: List[str],
     last_conv_layer_name: str = "avg_pool",
-) -> Any:
+) -> tfa.types.TensorLike:
     """ Gera o mapa de processamento da CNN.
         Args:
             image (np.array): Recorte da imagem
@@ -217,14 +226,22 @@ def grad_cam(
     image_reshape = image.reshape(dimensao_modelo)
     # Recebe o tamanho da imagem a ser inserida no modelo
     resnet = find_base_model(model)
-    # Nome da ultima camada de convolucao
-    last_conv_layer = resnet.get_layer(last_conv_layer_name)
-    # Cria um novo modelo com as camadas até a ultima convolução
-    model_until_last_conv = Model(resnet.input, last_conv_layer.output)
+    if resnet is not None:
+        # Nome da ultima camada de convolucao
+        last_conv_layer = resnet.get_layer(last_conv_layer_name)
+        # Cria um novo modelo com as camadas até a ultima convolução
+        model_until_last_conv = Model(resnet.input, last_conv_layer.output)
+    else:
+        # Nome da ultima camada de convolucao
+        last_conv_layer = model.get_layer(last_conv_layer_name)
+        # Cria um novo modelo com as camadas até a ultima convolucao
+        model_until_last_conv = Model(model.input, last_conv_layer.output)
+    
     inputs = Input(shape=(dim_image, dim_image, model.input_shape[3]))
     new_model = model.layers[1](inputs)
     new_model = model_until_last_conv(new_model)
     new_model = Model(inputs, new_model)
+    
     # Cria o modelo com as camadas após a ultima convolução
     model_after_last_conv = model_after(
         new_model,
@@ -232,6 +249,7 @@ def grad_cam(
         model,
         classifier_layer_names
     )
+    # Gera a 
     last_conv_layer_output = generate_grads_image(
         new_model,
         image_reshape,
@@ -243,9 +261,9 @@ def grad_cam(
 
 def generate_grads_image(
     model_until_last_conv: Model,
-    image: Any,
+    image: tfa.types.TensorLike,
     classifier_model: Model
-):
+) -> tfa.types.TensorLike:
     """
         Compute the gradient of the top predicted
         class for our input image with respect
@@ -276,7 +294,7 @@ def generate_grads_image(
         # Recebe todas as predições da predicao ganhadora
         top_class_channel = preds[:, top_pred_index]
 
-    heatmap = grads_calc(tape, last_cnn_output, top_class_channel)
+        heatmap = grads_calc(tape, last_cnn_output, top_class_channel)
     return heatmap
 
 
@@ -284,16 +302,16 @@ def grads_calc(
     tape: tf.GradientTape,
     last_cnn_output: Model,
     top_class_channel: List[List[int]]
-) -> Any:
+) -> tfa.types.TensorLike:
     """"""
     # Calcula o gradiente do modelo para saída máxima (pesos)
     grads = tape.gradient(top_class_channel, last_cnn_output)
     # Retira pela media dos pixel (global average pooling)
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
     last_conv_layer_output = last_cnn_output[0]
+    # Multiplicação matricias entre os dois elementos
     heatmap = last_conv_layer_output @ pooled_grads[..., tf.newaxis]
     return tf.squeeze(heatmap)
-
 
 def model_after(
     last_conv_layer: Layer,
@@ -323,14 +341,14 @@ def model_after(
     classifier_model = Model(classifier_input, layer)
     return classifier_model
 
-def resize(image: Any, dim: int) -> Any:
+def resize(image: tfa.types.TensorLike, dim: int) -> tfa.types.TensorLike:
     image = cv.resize(image, (dim, dim))
     return image
 
 def create_heatmap(
     last_conv_layer_output: Layer,
     dim_split: int = 224
-) -> Any:
+) -> tfa.types.TensorLike:
     """Cria o heatmap do recorte da imagem gerada
     Args:
     -----

@@ -270,17 +270,25 @@ def predict(
     return model.predict(x, **params)
 
 
-def get_classifier_layer_names(model: Model) -> List[str]:
+def get_classifier_layer_names(model: Model, layer_name: str) -> List[str]:
+    """Return list string of classifier layer names
+
+    Args:
+        model (Model): model to analyse
+
+    Returns:
+        List[str]: list of classifier layers
+    """
     classifier_layers_names = []
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
             for inner_layer in layer.layers:
-                if isinstance(layer, Conv):
-                    break
+                if inner_layer.name == layer_name:
+                    return classifier_layers_names
                 classifier_layers_names.append(inner_layer.name)
-        if isinstance(layer, Conv):
-            break
-        classifier_layers_names.append(inner_layer.name)
+        if layer.name == layer_name:
+            return classifier_layers_names
+        classifier_layers_names.append(layer.name)
     return classifier_layers_names
 
 
