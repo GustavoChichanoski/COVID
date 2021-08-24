@@ -149,14 +149,32 @@ def last_conv_layer(model: Model) -> str:
     Returns:
         str: name of last convolution layer.
     """
+    conv_layer = None
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
-            for in_layer in reversed(layer.layers):
-                if isinstance(layer, Conv):
-                    return in_layer.name
+            return last_conv_layer(layer)
         if isinstance(layer, Conv):
             return layer.name
     return ""
+
+
+def last_act_after_conv_layer(model: Model) -> str:
+    """Act after conv layer.
+
+    Args:
+        model (Model): model to find a layer
+    Returns:
+        str: activation layer name
+    """
+    conv_layer = last_conv_layer(model)
+    after_conv = False
+    for layer in reversed(model.layers):
+        if isinstance(layer, Model):
+            return last_act_after_conv_layer(layer)
+        if layer.name == conv_layer:
+            after_conv = True
+        if isinstance(layer, Activation) and after_conv:
+            return layer.name
 
 
 def names_classification_layers(model: Model) -> List[str]:
