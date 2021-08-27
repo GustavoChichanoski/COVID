@@ -13,7 +13,6 @@ __pycache__
 logs
 PlotNeuralNet
 fig
-test
 
 *.rar
 *.h5df
