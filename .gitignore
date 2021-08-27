@@ -1,7 +1,6 @@
 data
 build
 dist
-images
 old_data
 outputs
 weights
@@ -14,15 +13,16 @@ logs
 PlotNeuralNet
 fig
 
+*.jpg
 *.rar
 *.h5df
 *.code-workspace
-*.ini
 *.png
-.pytest_cach
+*.pytest_cache
 *.hdf5
 *.h5
 *.zip
+./desktop.ini
 
 .gitignore
 
