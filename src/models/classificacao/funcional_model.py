@@ -166,15 +166,14 @@ def last_act_after_conv_layer(model: Model) -> str:
     Returns:
         str: activation layer name
     """
-    conv_layer = last_conv_layer(model)
-    after_conv = False
+    act_conv_layer = ""
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
             return last_act_after_conv_layer(layer)
-        if layer.name == conv_layer:
-            after_conv = True
-        if isinstance(layer, Activation) and after_conv:
-            return layer.name
+        if isinstance(layer, Conv):
+            return act_conv_layer
+        if isinstance(layer, Activation):
+            act_conv_layer = layer.name
 
 
 def names_classification_layers(model: Model) -> List[str]:
@@ -285,10 +284,10 @@ def get_classifier_layer_names(model: Model, layer_name: str) -> List[str]:
             for inner_layer in layer.layers:
                 if inner_layer.name == layer_name:
                     return classifier_layers_names
-                classifier_layers_names.append(inner_layer.name)
+                classifier_layers_names.insert(0,inner_layer.name)
         if layer.name == layer_name:
             return classifier_layers_names
-        classifier_layers_names.append(layer.name)
+        classifier_layers_names.insert(0,layer.name)
     return classifier_layers_names
 
 
