@@ -3,6 +3,7 @@ from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback
 from src.models.classificacao.funcional_model import (
     base,
+    classification_model,
     get_callbacks,
     get_classifier_layer_names,
     last_act_after_conv_layer,
@@ -46,7 +47,7 @@ class TestFuncionalModel(unittest.TestCase):
 
         self.assertEqual(last_conv_layer_name, classification_layers_names)
 
-    def test_classifier_layer_names(self):
+    def test_classifier_layer_names(self) -> None:
 
         model_builder = keras.applications.xception.Xception
 
@@ -61,6 +62,10 @@ class TestFuncionalModel(unittest.TestCase):
         )
 
         self.assertEqual(["avg_pool", "predictions"], classification_layers_names)
+
+    def teste_model(self) -> None:
+        model = classification_model()
+        model.compile()
 
     def test_grad_cam(self) -> None:
 

@@ -1,15 +1,19 @@
 from pathlib import Path
 from re import split
+from tensorflow.python.eager.monitoring import Metric
 from tensorflow.python.keras.engine.base_layer import Layer
 
 from tensorflow.python.keras.layers.convolutional import Conv
+from tensorflow.python.keras.losses import Loss
+from tensorflow_addons.utils.types import Optimizer
+from src.models.metrics.f1_score import F1score
 from src.plots.plots import plot_gradcam
 from src.models.grad_cam_split import prob_grad_cam
 from src.images.read_image import read_images
 from src.dataset.classification.cla_generator import ClassificationDatasetGenerator
 from src.output_result.folders import pandas2csv
 from src.prints.prints import print_info
-from typing import List, Union
+from typing import List, Optional, Union
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.layers import Conv2D, Activation
 from tensorflow.python.keras import Input
@@ -23,6 +27,7 @@ from tensorflow.python.keras.callbacks import (
     ReduceLROnPlateau,
     TerminateOnNaN,
 )
+from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras.applications.vgg19 import VGG19
 from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
 from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2
@@ -70,9 +75,37 @@ def get_callbacks() -> List[Callback]:
     callbacks = [checkpoint, reduce_lr, terminate]
     return callbacks
 
+def compile(
+        model: Model,
+        optimizer: Optional[Union[str,Optimizer]] = None,
+        loss: Union[str,Loss] = "categorical_crossentropy",
+        metrics: Optional[List[Metric]] = None,
+        lr: float = 1e-5,
+        **kwargs,
+    ) -> None:
+        """ Compile the model with loss and metrics define by the user.
+
+            Args:
+                optimizer (optional | Optimizer): Optimizer of model. Defaults to None.
+                loss (str | Loss, optional): Loss of model. Defaults to "categorical_crossentropy".
+                metrics (List[Metric], optional): Metrics of systems. Defaults to None.
+                lr (float, optional): Learning rate of optimizer. Defaults to 1e-5.
+
+            Returns:
+                None: compile the model with hiperparameters
+        """
+        optimizer = Adamax(learning_rate=lr) if optimizer is None else optimizer
+        metrics = ["accuracy", F1score()] if metrics is None else metrics
+        model.compile(
+            optimizer=optimizer,
+            loss=loss,
+            metrics=metrics,
+            **kwargs
+        )
 
 def base(model_name: str = "ResNet50V2", split_dim: int = 224) -> Model:
-    """Retorna a função intermediaria para a rede utilizada.
+    """
+    Retorna a função intermediaria para a rede utilizada.
 
     Args:
         model_name (str, optional): Nome do modelo intermediario. Defaults to "ResNet50V2".
@@ -111,7 +144,8 @@ def classification_model(
     drop_rate: float = 0.2,
     model_name: str = "ResNet50V2",
 ) -> Model:
-    """Função de criação do modelo de classificao da doença presente no pulmão.
+    """
+    Função de criação do modelo de classificao da doença presente no pulmão.
 
     Args:
         dim (int, optional): Dimensão da imagem de entrada `[0...]`. Defaults to `256`.
@@ -141,7 +175,8 @@ def classification_model(
 
 
 def last_conv_layer(model: Model) -> str:
-    """Find last conv layer in the model.
+    """
+    Find last conv layer in the model.
 
     Args:
         model (Model): model to analyse.
@@ -149,7 +184,6 @@ def last_conv_layer(model: Model) -> str:
     Returns:
         str: name of last convolution layer.
     """
-    conv_layer = None
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
             return last_conv_layer(layer)
@@ -159,7 +193,8 @@ def last_conv_layer(model: Model) -> str:
 
 
 def last_act_after_conv_layer(model: Model) -> str:
-    """Act after conv layer.
+    """
+    Act after conv layer.
 
     Args:
         model (Model): model to find a layer
@@ -249,7 +284,7 @@ def winner(
     labels: List[str] = ["Covid", "Normal", "Pneumonia"], votes: List[int] = [0, 0, 0]
 ) -> str:
     """
-    Retorna o label da doenca escolhido
+    Retorna o label da doença escolhido
     Args:
     -----
         labels (list): nomes das classes
@@ -284,10 +319,10 @@ def get_classifier_layer_names(model: Model, layer_name: str) -> List[str]:
             for inner_layer in layer.layers:
                 if inner_layer.name == layer_name:
                     return classifier_layers_names
-                classifier_layers_names.insert(0,inner_layer.name)
+                classifier_layers_names.insert(0, inner_layer.name)
         if layer.name == layer_name:
             return classifier_layers_names
-        classifier_layers_names.insert(0,layer.name)
+        classifier_layers_names.insert(0, layer.name)
     return classifier_layers_names
 
 
