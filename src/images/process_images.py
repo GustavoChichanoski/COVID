@@ -78,11 +78,14 @@ def split_images_n_times(
     pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), \
                              (np.max(y_nonzero), np.max(x_nonzero))
     shape_cut = (n_split,dim_split,dim_split,1)
+    shape_pos = (n_split,2)
     # Cria os n_splits cortes
     iter_n_splits = range(n_split)
     pbar = tqdm(iter_n_splits) if verbose else iter_n_splits
+    i = 0
     for _ in pbar:
         # Recebe um corte da imagem não inteiramente preto
+        i += 1
         cut, pos = create_non_black_cut(
             image=image,
             start=pixel_start,
@@ -94,6 +97,7 @@ def split_images_n_times(
         cut_img = np.append(cut_img, cut_norm) # Armazena o corte
         cut_pos = np.append(cut_pos, pos) # Armaxena o pixel inicial do corte
     cut_img = cut_img.reshape(shape_cut)
+    cut_pos = cut_pos.reshape(shape_pos)
     return cut_img, cut_pos
 
 
@@ -191,7 +195,7 @@ def split(
     n_splits: int = 100,
     threshold: float = 0.35,
     verbose: bool = False,
-) -> Union[tfa.types.TensorLike,Tuple[tfa.types.TensorLike,tfa.types.TensorLike]]:
+) -> Tuple[tfa.types.TensorLike,tfa.types.TensorLike]:
     """
         Return one split of each image in path images to entry in keras model
 
@@ -209,24 +213,33 @@ def split(
             
             shape = (batch_size, dim, dim, channels)
     """
-    batch_size = len(path_images)
+    batch_size = 1
+    if isinstance(path_images, list):
+        batch_size = len(path_images)
     shape = (batch_size, n_splits, dim, dim, channels)
-    images = (read_images(path) for path in path_images)
+    if isinstance(path_images, list):
+        images = [read_images(path) for path in path_images]
+    else:
+        images = [read_images(path_images)]
     pos = np.array([])
     cuts = np.array([])
-    split_return = [
-        split_images_n_times(
+    if verbose:
+        pbar = tqdm(total=len(images))
+    for image in images:
+        splits = split_images_n_times(
             image,
             n_split=n_splits,
             dim_split=dim,
             verbose=verbose,
             threshold=threshold
-        ) for image in images
-    ]
-    for split in split_return:
-        splited_images, positions = split
+        )
+        splited_images, positions = splits
         pos = np.append(pos,positions)
         cuts = np.append(cuts,splited_images)
+        if verbose:
+            pbar.update()
+    if verbose:
+        pbar.close()
     positions = pos.reshape((batch_size,n_splits, 2))
     cuts_reshape = cuts.reshape(shape)
         

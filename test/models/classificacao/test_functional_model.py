@@ -1,12 +1,18 @@
-from src.models.grad_cam_split import grad_cam, create_heatmap
+from pathlib import Path
+from src.dataset.classification.cla_dataset import Dataset
+from src.dataset.classification.cla_generator import (
+    ClassificationDatasetGenerator as ClaDataGen,
+)
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback
+from src.models.grad_cam_split import grad_cam, last_act_after_conv_layer
 from src.models.classificacao.funcional_model import (
     base,
     classification_model,
     get_callbacks,
     get_classifier_layer_names,
-    last_act_after_conv_layer,
+    make_grad_cam,
+    model_compile,
 )
 from tensorflow.python import keras
 import unittest
@@ -14,6 +20,7 @@ import unittest
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.python.keras.utils.vis_utils import plot_model
 
 # Display
 from IPython.display import Image, display
@@ -64,8 +71,55 @@ class TestFuncionalModel(unittest.TestCase):
         self.assertEqual(["avg_pool", "predictions"], classification_layers_names)
 
     def teste_model(self) -> None:
-        model = classification_model()
-        model.compile()
+
+        DIM_ORIGINAL = 1024
+        DIM_SPLIT = 224
+        CHANNELS = 1
+        SHAPE = (DIM_SPLIT, DIM_SPLIT, CHANNELS)
+        K_SPLIT = 100
+        BATCH_SIZE = 2
+        EPOCHS = 2
+
+        DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
+        TRAIN_PATH = DATA / "train"
+        TEST_PATH = DATA / "test"
+        LABELS = ["Covid", "Normal", "Pneumonia"]
+
+        ds_train = Dataset(path_data=TRAIN_PATH, train=False)
+        ds_test = Dataset(path_data=TEST_PATH, train=False)
+
+        part_param = {"tamanho": 8}
+        train, validation = ds_train.partition(val_size=0.2, **part_param)
+        test_values, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
+
+        model = classification_model(DIM_SPLIT, channels=1, classes=len(LABELS))
+        model_compile(model)
+        model.summary()
+
+        params = {
+            "dim": DIM_SPLIT,
+            "batch_size": BATCH_SIZE,
+            "n_class": len(LABELS),
+            "channels": CHANNELS,
+            "threshold": 0.25,
+        }
+        train_generator = ClaDataGen(train[0], train[1], **params)
+        val_generator = ClaDataGen(validation[0], validation[1], **params)
+        test_generator = ClaDataGen(test_values[0], test_values[1], **params)
+
+        callbacks = get_callbacks()
+
+        model.fit(
+            x=train_generator,
+            validation_data=val_generator,
+            epochs=EPOCHS,
+            batch_size=1,
+            callbacks=callbacks
+        )
+
+        print("Make Grad Cam")
+
+        make_grad_cam(model, test_generator.x[0], K_SPLIT, threshold=0.1)
 
     def test_grad_cam(self) -> None:
 

@@ -1,19 +1,21 @@
 from pathlib import Path
-from re import split
+from typing import List, Optional, Union
+
 from tensorflow.python.eager.monitoring import Metric
 from tensorflow.python.keras.engine.base_layer import Layer
-
 from tensorflow.python.keras.layers.convolutional import Conv
 from tensorflow.python.keras.losses import Loss
+
 from tensorflow_addons.utils.types import Optimizer
-from src.models.metrics.f1_score import F1score
-from src.plots.plots import plot_gradcam
-from src.models.grad_cam_split import prob_grad_cam
-from src.images.read_image import read_images
+
+from src.images.process_images import split
 from src.dataset.classification.cla_generator import ClassificationDatasetGenerator
+from src.images.read_image import read_images
+from src.models.grad_cam_split import last_act_after_conv_layer, prob_grad_cam
 from src.output_result.folders import pandas2csv
 from src.prints.prints import print_info
-from typing import List, Optional, Union
+from src.plots.plots import plot_gradcam
+
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.layers import Conv2D, Activation
 from tensorflow.python.keras import Input
@@ -56,7 +58,7 @@ def get_callbacks() -> List[Callback]:
         "save_best_only": True,
         "save_weights_only": True,
     }
-    checkpoint = ModelCheckpoint("./model/best.weights.hdf5", **check_params)
+    checkpoint = ModelCheckpoint(".\\.model\\best.weights.hdf5", **check_params)
 
     # Reduz o valor de LR caso o monitor nao diminuia
     reduce_params = {
@@ -68,40 +70,38 @@ def get_callbacks() -> List[Callback]:
         "cooldown": 2,
         "min_lr": 1e-8,
     }
-    reduce_lr = ReduceLROnPlateau(monitor="val_f1", **reduce_params)
+    reduce_lr = ReduceLROnPlateau(monitor="val_loss", **reduce_params)
 
     # Termina se um peso for NaN (not a number)
     terminate = TerminateOnNaN()
     callbacks = [checkpoint, reduce_lr, terminate]
     return callbacks
 
-def compile(
-        model: Model,
-        optimizer: Optional[Union[str,Optimizer]] = None,
-        loss: Union[str,Loss] = "categorical_crossentropy",
-        metrics: Optional[List[Metric]] = None,
-        lr: float = 1e-5,
-        **kwargs,
-    ) -> None:
-        """ Compile the model with loss and metrics define by the user.
 
-            Args:
-                optimizer (optional | Optimizer): Optimizer of model. Defaults to None.
-                loss (str | Loss, optional): Loss of model. Defaults to "categorical_crossentropy".
-                metrics (List[Metric], optional): Metrics of systems. Defaults to None.
-                lr (float, optional): Learning rate of optimizer. Defaults to 1e-5.
+def model_compile(
+    model: Model,
+    optimizer: Optional[Union[str, Optimizer]] = None,
+    loss: Union[str, Loss] = "categorical_crossentropy",
+    metrics: Optional[List[Metric]] = None,
+    lr: float = 1e-5,
+    **kwargs,
+) -> None:
+    """
+    Compile the model with loss and metrics define by the user.
 
-            Returns:
-                None: compile the model with hiperparameters
-        """
-        optimizer = Adamax(learning_rate=lr) if optimizer is None else optimizer
-        metrics = ["accuracy", F1score()] if metrics is None else metrics
-        model.compile(
-            optimizer=optimizer,
-            loss=loss,
-            metrics=metrics,
-            **kwargs
-        )
+    Args:
+        optimizer (optional | Optimizer): Optimizer of model. Defaults to None.
+        loss (str | Loss, optional): Loss of model. Defaults to "categorical_crossentropy".
+        metrics (List[Metric], optional): Metrics of systems. Defaults to None.
+        lr (float, optional): Learning rate of optimizer. Defaults to 1e-5.
+
+    Returns:
+        None: compile the model with hiperparameters
+    """
+    optimizer = Adamax(learning_rate=lr) if optimizer is None else optimizer
+    metrics = ["accuracy"] if metrics is None else metrics
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics, **kwargs)
+
 
 def base(model_name: str = "ResNet50V2", split_dim: int = 224) -> Model:
     """
@@ -162,7 +162,7 @@ def classification_model(
     input_shape = (dim, dim, channels)
     inputs = Input(shape=input_shape)
     layers = BatchNormalization()(inputs)
-    layers = Conv2D(filters=3, kernel_size=(3, 3))(layers)
+    layers = Conv2D(filters=3, kernel_size=(3, 3), padding="same")(layers)
     layers = Activation(activation=activation)(layers)
     layers = Dropout(rate=drop_rate)(layers)
     layers = base(model_name=model_name, split_dim=224)(layers)
@@ -190,25 +190,6 @@ def last_conv_layer(model: Model) -> str:
         if isinstance(layer, Conv):
             return layer.name
     return ""
-
-
-def last_act_after_conv_layer(model: Model) -> str:
-    """
-    Act after conv layer.
-
-    Args:
-        model (Model): model to find a layer
-    Returns:
-        str: activation layer name
-    """
-    act_conv_layer = ""
-    for layer in reversed(model.layers):
-        if isinstance(layer, Model):
-            return last_act_after_conv_layer(layer)
-        if isinstance(layer, Conv):
-            return act_conv_layer
-        if isinstance(layer, Activation):
-            act_conv_layer = layer.name
 
 
 def names_classification_layers(model: Model) -> List[str]:
@@ -258,28 +239,6 @@ def save_weights(
     return model.save_weights(filename, overwrite=overwrite, **params)
 
 
-def fit(
-    model: Model,
-    x: ClassificationDatasetGenerator,
-    validation_data: ClassificationDatasetGenerator,
-    epochs: int = 100,
-    batch_size: int = 32,
-    shuffle: bool = True,
-    callbacks: List[Callback] = None,
-    **params,
-) -> History:
-    callbacks = get_callbacks()
-    return model.fit(
-        x=x,
-        batch_size=batch_size,
-        epochs=epochs,
-        validation_data=validation_data,
-        shuffle=shuffle,
-        callbacks=callbacks,
-        **params,
-    )
-
-
 def winner(
     labels: List[str] = ["Covid", "Normal", "Pneumonia"], votes: List[int] = [0, 0, 0]
 ) -> str:
@@ -316,7 +275,7 @@ def get_classifier_layer_names(model: Model, layer_name: str) -> List[str]:
     classifier_layers_names = []
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
-            for inner_layer in layer.layers:
+            for inner_layer in reversed(layer.layers):
                 if inner_layer.name == layer_name:
                     return classifier_layers_names
                 classifier_layers_names.insert(0, inner_layer.name)
@@ -326,15 +285,19 @@ def get_classifier_layer_names(model: Model, layer_name: str) -> List[str]:
     return classifier_layers_names
 
 
-def get_last_conv_layer_name(model) -> Layer:
+def get_last_conv_layer_name(model: Model) -> Layer:
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
             for inner_layer in reversed(layer.layers):
-                if isinstance(layer, Conv):
+                if isinstance(inner_layer, Conv):
                     return inner_layer.name
         if isinstance(layer, Conv):
             return layer.name
 
+def find_base(model: Model) -> Model:
+    for layer in reversed(model.layers):
+        if isinstance(layer, Model):
+            return layer
 
 def make_grad_cam(
     model: Model,
@@ -344,7 +307,7 @@ def make_grad_cam(
     verbose: bool = True,
     split_dim: int = 224,
     orig_dim: int = 1024,
-    channels: int = 3,
+    channels: int = 1,
     labels: List[str] = ["Covid", "Normal", "Pneumonia"],
 ) -> str:
     params_splits = {
@@ -355,11 +318,21 @@ def make_grad_cam(
         "n_splits": n_splits,
     }
     cuts, positions = split(image, **params_splits)
-    shape = (n_splits, split_dim, split_dim, channels)
+    print("Pacotes Gerados")
+    shape = (1, n_splits, split_dim, split_dim, channels)
+    if isinstance(image,list):
+        shape = (len(image), n_splits, split_dim, split_dim, channels)
     cuts = cuts.reshape(shape)
     imagemColor = read_images(image, color=True)
-    class_names = get_classifier_layer_names(model)
-    last_conv_layer_name = get_last_conv_layer_name(model)
+    last_conv_layer_name = last_act_after_conv_layer(model).name
+    class_names = get_classifier_layer_names(model, last_conv_layer_name)
+    print(class_names)
+
+    if isinstance(image, list):
+        winner_label = labels.index(image[0].parts[-2])
+    else:
+        winner_label = labels.index(image.parts[-2])
+
     heatmap = prob_grad_cam(
         cuts_images=cuts,
         classifier=class_names,
@@ -367,7 +340,7 @@ def make_grad_cam(
         paths_start_positions=positions,
         model=model,
         dim_orig=orig_dim,
-        winner_pos=labels.index(image[0].parts[-2]),
+        winner_pos=winner_label,
     )
     plot_gradcam(heatmap, imagemColor, True)
     votes = predict(model, cuts)

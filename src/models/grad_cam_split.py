@@ -1,18 +1,38 @@
 """
     $Module GradCam
 """
-from typing import Any, List, Tuple
+from typing import List, Tuple
 import numpy as np
 import tensorflow as tf
 from tensorflow.python.keras.engine.base_layer import Layer
+from tensorflow.python.keras.layers.convolutional import Conv
+from tensorflow.python.keras.layers.core import Activation
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras import Input
 from tensorflow.python.keras import backend as K
 from src.images.process_images import relu as relu_img
-from numba import jit
 from tqdm import tqdm
 import cv2 as cv
 import tensorflow_addons as tfa
+
+
+def last_act_after_conv_layer(model: Model) -> Layer:
+    """
+    Activation after convolution layer.
+
+    Args:
+        model (Model): model to find a layer
+    Returns:
+        str: activation layer name
+    """
+    act_conv_layer = ""
+    for layer in reversed(model.layers):
+        if isinstance(layer, Model):
+            return last_act_after_conv_layer(layer)
+        if isinstance(layer, Conv):
+            return act_conv_layer
+        if isinstance(layer, Activation):
+            act_conv_layer = layer
 
 
 def prob_grad_cam(
@@ -39,21 +59,28 @@ def prob_grad_cam(
     --------
         (np.array): Grad Cam dos recortes
     """
-    dimensao_imagem = model.shape[1]
+    dimensao_imagem = model.input_shape[1]
     dimensao_original = (dim_orig, dim_orig)
     # Inicializa a imagem final do grad cam com zeros
     grad_cam_prob = np.zeros(dimensao_original)
     # Armazena o numero de pacotes que passaram por um pixel
     splits_per_pixel = np.zeros(dimensao_original)
+    last_conv_layer = last_act_after_conv_layer(model)
     # Recebe o tamanho da imagem a ser inserida no modelo
-    grad_cam, resnet = modelo_grad_cam(model, last_conv_layer_name, dimensao_imagem)
+    grad_cam = modelo_grad_cam(
+        modelo=model,
+        last_conv_layer_name=last_conv_layer.name,
+        dim_image=dimensao_imagem,
+    )
     # Cria o modelo com as camadas após a ultima convolução
-    model_after_last_conv = model_after(grad_cam, resnet, model, classifier)
-    predicoes = model.predict(cuts_images)
-    entrada_modelo = model.shape
-    shape = (1, entrada_modelo[0], entrada_modelo[1], entrada_modelo[2])
+    model_after_last_conv = model_after(
+        model=model, classifier_layer_names=classifier, last_conv_layer=last_conv_layer
+    )
+    predicoes = model.predict(cuts_images[0])
+    entrada_modelo = model.input_shape
+    shape = (1, entrada_modelo[1], entrada_modelo[2], entrada_modelo[3])
     for predicao, cut_image, position_pixel in tqdm(
-        zip(predicoes, cuts_images, paths_start_positions[0])
+        zip(predicoes, cuts_images[0], paths_start_positions[0])
     ):
         # Os pacotes chegam com dimensões (None,224,224,3) e
         # precisam ser redimensionados para a (1,224,224,3)
@@ -84,22 +111,24 @@ def prob_grad_cam(
 def modelo_grad_cam(
     modelo: Model, last_conv_layer_name: str, dim_image: int = 224
 ) -> Model:
-    # Recebe o tamanho da imagem a ser inserida no modelo
-    resnet = modelo.base
-    # Nome da ultima camada de convolucao
-    last_conv_layer = get_layer(resnet, last_conv_layer_name)
-    # Cria um novo modelo com as camadas até a ultima convolução
-    model_until_last_conv = Model(resnet.input, last_conv_layer.output)
-    grad_cam_input = (dim_image, dim_image, 1)
-    inputs = Input(shape=grad_cam_input)
-    new_model = modelo.get_layer("conv_gray_rgb")(inputs)
-    new_model = model_until_last_conv(new_model)
-    new_model = Model(inputs, new_model)
-    return new_model, resnet
+    input_layer = Input((dim_image, dim_image, 1))
+    new_model = input_layer
+    inner_model = None
+    for layer in modelo.layers:
+        if isinstance(layer, Model):
+            layer = Model([layer.inputs], [layer.get_layer(last_conv_layer_name).output, layer.output])
+            new_model = layer(new_model)
+            break
+        else:
+            new_model = layer(new_model)
+    new_model = Model(input_layer, new_model)
+    return new_model
 
 
-def get_layer(resnet: Model, last_conv_layer_name: str) -> Layer:
-    for layer in reversed(resnet.layers):
+def get_layer(model: Model, last_conv_layer_name: str) -> Layer:
+    for layer in reversed(model.layers):
+        if isinstance(model, Model):
+            return get_layer(layer)
         if layer.name == last_conv_layer_name:
             return layer
 
@@ -228,7 +257,6 @@ def grad_cam(
     # Cria o modelo com as camadas após a ultima convolução
     model_after_last_conv = model_after(
         last_conv_layer=new_model,
-        resnet_model=resnet,
         model=model,
         classifier_layer_names=classifier_layer_names,
     )
@@ -265,7 +293,7 @@ def generate_grads_image(
     with tf.GradientTape() as tape:
         # Recebe a saída do modelo até a ultima cadada
         # tendo como entrada a imagem
-        last_cnn_output = model_until_last_conv(image)
+        last_cnn_output, preds = model_until_last_conv(image)
         # Define o modelo que o tape tem que assistir
         tape.watch(last_cnn_output)
         # Calcula a predicao da camada de saída
@@ -297,11 +325,15 @@ def grads_calc(
     return tf.squeeze(heatmap)
 
 
+def print_model(model: Model) -> None:
+    for layer in model.layers:
+        print(layer.name)
+
+
 def model_after(
     last_conv_layer: Layer,
     model: Model,
     classifier_layer_names: List[str],
-    resnet_model: Model = None,
 ) -> Model:
     """
     Cria apenas o modelo de classificação do modelo passado pelo usuario
@@ -315,18 +347,39 @@ def model_after(
     Exemplo:
     --------
     """
+    class_names = classifier_layer_names
     classifier_input = Input(shape=last_conv_layer.output.shape[1:])
-    layer = classifier_input
-    for layer_name in classifier_layer_names:
-        if resnet_model is not None:
+    new_model = classifier_input
+    classifier_layers = []
+    for layer in reversed(model.layers):
+        if isinstance(layer, Model):
+            for inner_layer in reversed(layer.layers):
+                if inner_layer.name in class_names:
+                    classifier_layers.insert(0, inner_layer)
+                    try :
+                        class_names.remove(inner_layer.name)
+                    except:
+                        pass
+                    if len(class_names) < 1:
+                        return class_model(new_model, classifier_layers, classifier_input)
+        if layer.name in class_names:
+            classifier_layers.insert(0, layer)
             try:
-                layer = resnet_model.get_layer(layer_name)(layer)
-            except ValueError:
-                layer = model.get_layer(layer_name)(layer)
-        else:
-            layer = model.get_layer(layer_name)(layer)
-    classifier_model = Model(classifier_input, layer)
+                class_names.remove(layer.name)
+            except:
+                pass
+            if len(class_names) < 1:
+                    return class_model(new_model, classifier_layers, classifier_input)
+    
+
+def class_model(new_model, classifier_layers, classifier_input):
+    for layer in classifier_layers:
+        new_model = layer(new_model)
+    classifier_model = Model(classifier_input, new_model)
     return classifier_model
+
+
+
 
 
 def resize(image: tfa.types.TensorLike, dim: int) -> tfa.types.TensorLike:
@@ -357,8 +410,8 @@ def create_heatmap(
 
 
 def normalize(x):
-    x_max = np.max(x)
-    x_min = np.min(x)
+    x_max = np.amax(x)
+    x_min = np.amin(x)
     if x_max == 0 and x_min == 0:
         return x
     x_new = (x - x_min) / (x_max - x_min)

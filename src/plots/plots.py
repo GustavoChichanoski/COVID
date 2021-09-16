@@ -9,6 +9,7 @@ import cv2 as cv
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import img_to_array
 from tensorflow.python.keras import Model
+import tensorflow_addons as tfa
 
 def plot_model(path: Path, model: Model) -> str:
     for layers in model.layers:
@@ -29,8 +30,8 @@ def plot_images(images, cmap:str ='gray'):
         plt.show()
 
 def plot_gradcam(
-    heatmap,
-    image,
+    heatmap: tfa.types.TensorLike,
+    image: tfa.types.TensorLike,
     grad: bool = True,
     name: str = None,
     dim: int = 1024,
@@ -49,20 +50,20 @@ def plot_gradcam(
     jet_color = jet(np.arange(256))[:, :3]
     jet_heatmap = jet_color[heatmap]
 
-    jet_heatmap = array_to_img(jet_heatmap)
-    jet_heatmap = jet_heatmap.resize((dim, dim))
-    jet_heatmap = img_to_array(jet_heatmap)
+    jet_heatmap0 = array_to_img(jet_heatmap)
+    jet_heatmap1 = jet_heatmap0.resize((dim, dim))
+    jet_heatmap2 = img_to_array(jet_heatmap1)
 
-    superimposed_image = jet_heatmap * alpha + image
-    superimposed_image = array_to_img(superimposed_image[0])
+    superimposed_image = jet_heatmap2 * alpha + image
+    superimposed_image = array_to_img(superimposed_image)
 
     fig = plt.figure()
-    plt.imshow(superimposed_image)
-    plt.show()
+    plt.imshow(superimposed_image, cmap='gray')
     # Salvar imagem
     path = ''
     if name is not None:
         path = '{}.png'.format(name)
         plt.savefig(path,dpi=fig.dpi)
-    if grad: plt.show()
+    if grad:
+        plt.show()
     return path
