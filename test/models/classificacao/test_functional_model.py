@@ -1,4 +1,6 @@
 from pathlib import Path
+
+from numpy.testing._private.utils import assert_equal
 from src.dataset.classification.cla_dataset import Dataset
 from src.dataset.classification.cla_generator import (
     ClassificationDatasetGenerator as ClaDataGen,
@@ -76,7 +78,7 @@ class TestFuncionalModel(unittest.TestCase):
         DIM_SPLIT = 224
         CHANNELS = 1
         SHAPE = (DIM_SPLIT, DIM_SPLIT, CHANNELS)
-        K_SPLIT = 100
+        K_SPLIT = 10
         BATCH_SIZE = 2
         EPOCHS = 2
 
@@ -119,7 +121,9 @@ class TestFuncionalModel(unittest.TestCase):
 
         print("Make Grad Cam")
 
-        make_grad_cam(model, test_generator.x[0], K_SPLIT, threshold=0.1)
+        winner = make_grad_cam(model, test_generator.x[0], K_SPLIT, threshold=0.1)
+
+        assert_equal(winner, 'Covid')
 
     def test_grad_cam(self) -> None:
 

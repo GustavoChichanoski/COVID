@@ -256,7 +256,6 @@ def winner(
     elect = labels[np.argmax(poll)]
     return elect
 
-
 def predict(
     model: Model, x: ClassificationDatasetGenerator, **params
 ) -> tfa.types.TensorLike:
@@ -343,6 +342,10 @@ def make_grad_cam(
         winner_pos=winner_label,
     )
     plot_gradcam(heatmap, imagemColor, True)
-    votes = predict(model, cuts)
+    predict_params = {
+        'verbose': 1
+    }
+    cuts = np.reshape(cuts, (n_splits, split_dim, split_dim, channels))
+    votes = predict(model, cuts, **predict_params)
     elect = winner(labels=labels, votes=votes)
     return elect
