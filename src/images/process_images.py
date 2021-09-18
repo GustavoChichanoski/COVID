@@ -51,10 +51,7 @@ def normalize_image(
             new_images.append(new_images, normalize_image(image))
         new_images = np.reshape(new_images,images.shape)
         return new_images
-    ar = np.array(images).astype(np.float32)
-    mn = np.min(ar)
-    mx = np.max(ar)
-    norm = (ar - mn) * (1.0 / (mx - mn))
+    norm = images / 2555
     return norm
 
 # @jit(parallel=True)
@@ -155,7 +152,7 @@ def create_non_black_cut(
     valores_validos = np.sum(recort > 0)
     minimo_valores_validos = int(dim * dim * threshold)
     n = 0
-    while valores_validos < minimo_valores_validos:
+    while valores_validos < minimo_valores_validos and n < 500:
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
         valores_validos = np.sum(recort > 0)
