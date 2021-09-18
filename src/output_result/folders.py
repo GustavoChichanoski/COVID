@@ -1,5 +1,7 @@
 from os.path import getctime
 from pathlib import Path
+
+from tensorflow.python.keras.callbacks import History
 from src.prints.prints import print_info
 from typing import Any, List, Tuple, Union
 from zipfile import ZipFile
@@ -85,7 +87,7 @@ def zip_folder(
     print('[ERRO] Error when zipped files')
     return None
 
-def pandas2csv(history: Any, history_path: Path) -> None:
+def pandas2csv(history: History, history_path: str = './history') -> None:
     """ Arquivo para salvar o treinamento do modelo em um csv.
 
         Args:
@@ -97,13 +99,11 @@ def pandas2csv(history: Any, history_path: Path) -> None:
 
         Returns:
             None : função sem retorno
-    """    
+    """
     file_history = f"{history_path}.csv"
-    hist_df = pd.DataFrame(history)
+    hist_df = pd.DataFrame(history.history)
     with open(file_history, mode="w") as f:
         hist_df.to_csv(f)
         f.close()
-    if file_history.exists():
-        raise ValueError('Arquivo corrompido')
     print_info(f'Historico salvo em {file_history}')
     return None

@@ -1,12 +1,21 @@
 from pathlib import Path
+from src.output_result.folders import remove_folder, zip_folder
 
 from numpy.testing._private.utils import assert_equal
+import unittest
+
+import numpy as np
+import tensorflow as tf
+from tensorflow.python.keras.optimizer_v2.adamax import Adamax
+from tensorflow.python.keras import Model
+from tensorflow.python.keras.callbacks import Callback
+from tensorflow.python import keras
+from tensorflow import keras
+
 from src.dataset.classification.cla_dataset import Dataset
 from src.dataset.classification.cla_generator import (
     ClassificationDatasetGenerator as ClaDataGen,
 )
-from tensorflow.python.keras import Model
-from tensorflow.python.keras.callbacks import Callback
 from src.models.grad_cam_split import grad_cam, last_act_after_conv_layer
 from src.models.classificacao.funcional_model import (
     base,
@@ -14,15 +23,8 @@ from src.models.classificacao.funcional_model import (
     get_callbacks,
     get_classifier_layer_names,
     make_grad_cam,
-    model_compile,
+    save_weights,
 )
-from tensorflow.python import keras
-import unittest
-
-import numpy as np
-import tensorflow as tf
-from tensorflow import keras
-from tensorflow.python.keras.utils.vis_utils import plot_model
 
 # Display
 from IPython.display import Image, display
@@ -74,12 +76,12 @@ class TestFuncionalModel(unittest.TestCase):
 
     def teste_model(self) -> None:
 
+        np.random.seed(20)
         DIM_ORIGINAL = 1024
         DIM_SPLIT = 224
         CHANNELS = 1
-        SHAPE = (DIM_SPLIT, DIM_SPLIT, CHANNELS)
         K_SPLIT = 10
-        BATCH_SIZE = 2
+        BATCH_SIZE = 1
         EPOCHS = 2
 
         DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
@@ -90,12 +92,12 @@ class TestFuncionalModel(unittest.TestCase):
         ds_train = Dataset(path_data=TRAIN_PATH, train=False)
         ds_test = Dataset(path_data=TEST_PATH, train=False)
 
-        part_param = {"tamanho": 8}
+        part_param = {"tamanho": 10, "shuffle": False}
         train, validation = ds_train.partition(val_size=0.2, **part_param)
-        test_values, _test_val_v = ds_test.partition(val_size=1e-5, **part_param)
+        test_values, _test_val_v = ds_test.partition(val_size=1e-3, **part_param)
 
         model = classification_model(DIM_SPLIT, channels=1, classes=len(LABELS))
-        model_compile(model)
+        model.compile(loss="categorical_crossentropy", optimizer=Adamax(learning_rate=1e-5), metrics="accuracy")
         model.summary()
 
         params = {
@@ -111,18 +113,34 @@ class TestFuncionalModel(unittest.TestCase):
 
         callbacks = get_callbacks()
 
-        model.fit(
+        history = model.fit(
             x=train_generator,
             validation_data=val_generator,
             epochs=EPOCHS,
-            batch_size=1,
+            batch_size=BATCH_SIZE,
             callbacks=callbacks
         )
 
+        save_weights(
+            modelname='resnet',
+            model=model,
+            history=history,
+        )
+
+        zip_folder(Path.cwd())
+
+        remove_folder('./Covid')
+
         print("Make Grad Cam")
 
-        winner = make_grad_cam(model, test_generator.x[0], K_SPLIT, threshold=0.1)
-
+        winner = make_grad_cam(
+            model=model,
+            image=test_generator.x[0],
+            n_splits=K_SPLIT,
+            threshold=0.1,
+            orig_dim=DIM_ORIGINAL
+        )
+        
         assert_equal(winner, 'Covid')
 
     def test_grad_cam(self) -> None:

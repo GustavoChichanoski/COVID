@@ -256,6 +256,7 @@ def winner(
     elect = labels[np.argmax(poll)]
     return elect
 
+
 def predict(
     model: Model, x: ClassificationDatasetGenerator, **params
 ) -> tfa.types.TensorLike:
@@ -293,10 +294,35 @@ def get_last_conv_layer_name(model: Model) -> Layer:
         if isinstance(layer, Conv):
             return layer.name
 
+
 def find_base(model: Model) -> Model:
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
             return layer
+
+
+def save_weights(
+    modelname: str,
+    model: Model,
+    history: History = None,
+    parent: Path = None,
+    history_path: Path = Path.cwd(),
+    overwrite: bool = True,
+    metric: str = "val_loss",
+    **params,
+):
+    filename = modelname
+    if history is not None:
+        metric_value = history.history[metric][-1]
+        filename = f"{filename}_{metric}_{metric_value:0.2f}"
+        if history_path is not None:
+            history_path = f"{history_path}{filename}"
+            pandas2csv(history=history, history_path=history_path)
+    filename = parent / filename if parent is not None else filename
+    filename = f"{filename}.hdf5"
+    print_info(f"Pesos salvos em: {filename}")
+    return model.save_weights(filename, overwrite=overwrite, **params)
+
 
 def make_grad_cam(
     model: Model,
@@ -319,7 +345,7 @@ def make_grad_cam(
     cuts, positions = split(image, **params_splits)
     print("Pacotes Gerados")
     shape = (1, n_splits, split_dim, split_dim, channels)
-    if isinstance(image,list):
+    if isinstance(image, list):
         shape = (len(image), n_splits, split_dim, split_dim, channels)
     cuts = cuts.reshape(shape)
     imagemColor = read_images(image, color=True)
@@ -342,9 +368,7 @@ def make_grad_cam(
         winner_pos=winner_label,
     )
     plot_gradcam(heatmap, imagemColor, True)
-    predict_params = {
-        'verbose': 1
-    }
+    predict_params = {"verbose": 1}
     cuts = np.reshape(cuts, (n_splits, split_dim, split_dim, channels))
     votes = predict(model, cuts, **predict_params)
     elect = winner(labels=labels, votes=votes)
