@@ -127,10 +127,6 @@ class TestFuncionalModel(unittest.TestCase):
             history=history,
         )
 
-        zip_folder(Path.cwd())
-
-        remove_folder('./Covid')
-
         print("Make Grad Cam")
 
         winner = make_grad_cam(
@@ -141,6 +137,10 @@ class TestFuncionalModel(unittest.TestCase):
             orig_dim=DIM_ORIGINAL
         )
         
+        # zip_folder(Path.cwd())
+
+        # remove_folder('./Covid')
+
         assert_equal(winner, 'Covid')
 
     def test_grad_cam(self) -> None:

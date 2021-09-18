@@ -1,7 +1,6 @@
 """
     Biblioteca referente ao processamento das imagens
 """
-import math
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -46,7 +45,17 @@ def normalize_image(
         Returns:
             (np.array): Imagens normalizadas
     """
-    return images / 255.0
+    if len(images.shape) > 3:
+        new_images = np.array([])
+        for image in images:
+            new_images.append(new_images, normalize_image(image))
+        new_images = np.reshape(new_images,images.shape)
+        return new_images
+    ar = np.array(images).astype(np.float32)
+    mn = np.min(ar)
+    mx = np.max(ar)
+    norm = (ar - mn) * (1.0 / (mx - mn))
+    return norm
 
 # @jit(parallel=True)
 def split_images_n_times(
