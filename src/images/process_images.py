@@ -154,10 +154,12 @@ def create_non_black_cut(
     recort = create_recort(image, pos, dim)
     valores_validos = np.sum(recort > 0)
     minimo_valores_validos = int(dim * dim * threshold)
-    while valores_validos < minimo_valores_validos:
+    n = 0
+    while valores_validos < minimo_valores_validos and n < 100:
         pos = random_pixel(start, end, dim)
         recort = create_recort(image, pos, dim)
         valores_validos = np.sum(recort > 0)
+        n += 1
     return recort, pos
 
 def create_recort(
