@@ -51,7 +51,7 @@ def normalize_image(
             new_images.append(new_images, normalize_image(image))
         new_images = np.reshape(new_images,images.shape)
         return new_images
-    norm = images / 2555
+    norm = images / 255
     return norm
 
 # @jit(parallel=True)
