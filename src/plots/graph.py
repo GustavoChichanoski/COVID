@@ -1,13 +1,19 @@
-from pathlib import Path
-from typing import Any, List, Tuple
 import os
 import numpy as np
 import matplotlib as mlp
+import tensorflow_addons as tfa
 import matplotlib.pyplot as plt
+
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
+from matplotlib.colorbar import Colorbar
+from matplotlib.image import AxesImage
+
+from pathlib import Path
+from typing import List, Tuple
 from seaborn.matrix import heatmap
 
-
-def normalize_confusion_matrix(matrix):
+def normalize_confusion_matrix(matrix: tfa.types.TensorLike) -> tfa.types.TensorLike:
     norm = np.array([])
     if len(matrix.shape) > 2:
         for split in matrix:
@@ -22,11 +28,11 @@ def normalize_confusion_matrix(matrix):
 
 
 def dist_dataset(
-    matrix: Any,
-    porc: Any,
+    matrix: tfa.types.TensorLike,
+    porc: tfa.types.TensorLike,
     category_names: List[str],
-    n_splits: int = 1
-) -> str:
+    n_splits: int = 1,
+) -> Tuple[Figure, Axes]:
 
     results = {category_names[i]: porc[i][:] for i in range(len(category_names))}
     labels = list(results.keys())
@@ -71,12 +77,12 @@ def dist_dataset(
 
 
 def plot_dataset(
-    absolut: Any = None,
+    absolut: tfa.types.TensorLike = None,
     n_images: List[int] = [1, 2, 3, 4],
     names: List[int] = ["COVID-19", "Normal", "Pneumonia"],
     path: Path = None,
     overwrite: bool = True,
-):
+) -> None:
 
     perc = normalize_confusion_matrix(absolut)
     if isinstance(n_images, list):
@@ -86,24 +92,22 @@ def plot_dataset(
         dist_dataset(absolut, perc, names, n_images)
     plt.show()
 
-    # fig, ax = plt.subplots()
-    # im = ax.imshow(absolut)
-    # ax.set_xticks(np.arange(len(names)))
-    # ax.set_yticks(np.arange(len(names)))
-    # ax.set_xticklabels(names)
-    # ax.set_yticklabels(names)
+    fig, ax = plt.subplots()
+    im = ax.imshow(absolut)
+    ax.set_xticks(np.arange(len(names)))
+    ax.set_yticks(np.arange(len(names)))
+    ax.set_xticklabels(names)
+    ax.set_yticklabels(names)
 
-    # plt.setp(ax.get_xticklabels(), rotation=45,
-    #          ha='right', rotation_mode='anchor')
+    plt.setp(ax.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
 
-    # for i in range(len(names)):
-    #     for j in range(len(names)):
-    #         text = ax.text(j, i, absolut[i][j],
-    #                        ha='center', va='center', color='w')
+    for i in range(len(names)):
+        for j in range(len(names)):
+            text = ax.text(j, i, absolut[i][j], ha="center", va="center", color="w")
 
-    # ax.set_title('Matriz Confusao')
-    # fig.tight_layout()
-    # plt.show()
+    ax.set_title("Matriz Confusao")
+    fig.tight_layout()
+    plt.show()
 
     fig, ax = plt.subplots()
     im, cbar = heatmap(
@@ -126,6 +130,8 @@ def plot_dataset(
     #             i += 1
     #     plt.savefig(fig_path,dpi=fig.dpi)
     plt.show()
+    if not isinstance(path,Path):
+        path = Path(path)
     mc_path = path / f"mc_{n_images}_pacotes.png"
     if mc_path.exists():
         if overwrite:
@@ -142,27 +148,35 @@ def plot_dataset(
     plt.savefig(mc_path, dpi=fig.dpi)
 
 
-def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **kwargs):
+def heatmap(
+    data: tfa.types.TensorLike,
+    row_labels: tfa.types.TensorLike,
+    col_labels: tfa.types.TensorLike,
+    ax: mlp.axes.Axes = None,
+    cbar_kw: dict = {},
+    cbarlabel: str = "",
+    **kwargs,
+) -> Tuple[AxesImage, Colorbar]:
     """
-        Create a heatmap from a numpy array and two lists of labels.
+    Create a heatmap from a numpy array and two lists of labels.
 
-        Parameters
-        ----------
-        data
-            A 2D numpy array of shape (N, M).
-        row_labels
-            A list or array of length N with the labels for the rows.
-        col_labels
-            A list or array of length M with the labels for the columns.
-        ax
-            A `matplotlib.axes.Axes` instance to which the heatmap is plotted.  If
-            not provided, use current axes or create a new one.  Optional.
-        cbar_kw
-            A dictionary with arguments to `matplotlib.Figure.colorbar`.  Optional.
-        cbarlabel
-            The label for the colorbar.  Optional.
-        **kwargs
-            All other arguments are forwarded to `imshow`.
+    Parameters
+    ----------
+    data
+        A 2D numpy array of shape (N, M).
+    row_labels
+        A list or array of length N with the labels for the rows.
+    col_labels
+        A list or array of length M with the labels for the columns.
+    ax
+        A `matplotlib.axes.Axes` instance to which the heatmap is plotted.  If
+        not provided, use current axes or create a new one.  Optional.
+    cbar_kw
+        A dictionary with arguments to `matplotlib.Figure.colorbar`.  Optional.
+    cbarlabel
+        The label for the colorbar.  Optional.
+    **kwargs
+        All other arguments are forwarded to `imshow`.
     """
     if not ax:
         ax = plt.gca()
@@ -200,18 +214,18 @@ def heatmap(data, row_labels, col_labels, ax=None, cbar_kw={}, cbarlabel="", **k
 
 
 def annotate_heatmap(
-    im: Any,
-    data: Any = None,
-    valfmt: str ="{x:.2f}",
-    textcolors: Tuple[str,str] = ("black", "white"),
+    im: AxesImage,
+    data: tfa.types.TensorLike = None,
+    valfmt: str = "{x:.2f}",
+    textcolors: Tuple[str, str] = ("black", "white"),
     threshold=None,
     **textkw,
-):
+) -> List[str]:
     """
     A function to annotate a heatmap.
 
-    Parameters
-    ----------
+    Parameters:
+    -
     im
         The AxesImage to be labeled.
     data
@@ -262,7 +276,7 @@ def annotate_heatmap(
     return texts
 
 
-def test():
+def test() -> None:
     matrix1 = [[246, 8, 28], [8, 501, 41], [14, 26, 835]]
     matrix2 = [[264, 6, 12], [3, 518, 29], [4, 26, 845]]
     matrix3 = [[266, 4, 12], [5, 523, 22], [4, 24, 847]]

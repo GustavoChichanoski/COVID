@@ -35,8 +35,10 @@ from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionRe
 from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2
 from tensorflow.python.keras.applications.densenet import DenseNet121
 from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3
+
 import tensorflow_addons as tfa
 import numpy as np
+from tqdm import tqdm
 
 
 def get_callbacks() -> List[Callback]:
@@ -156,7 +158,7 @@ def classification_model(
         drop_rate (float, optional): Taxa de Dropout. Defaults to `0.2`.
 
     Returns:
-        Model: MOdelo de rede neural a ser treinada pelo sistema, contendo camdas
+        Model: Modelo de rede neural a ser treinada pelo sistema, contendo camdas
         convolucionais e densas, cujo o meio pode alterar conforme o nomde de enetrada
     """
     input_shape = (dim, dim, channels)
@@ -172,6 +174,46 @@ def classification_model(
     outputs = Dropout(rate=drop_rate)(layers)
     model = Model(inputs=inputs, outputs=outputs)
     return model
+
+
+def confusion_matrix(
+    model: Model,
+    x: ClassificationDatasetGenerator,
+    n_splits: int = 1,
+    labels: List[str] = ["Covid", "Normal", "Pneumonia"],
+) -> tfa.types.TensorLike:
+    """
+    Metódo utilizado para avaliar o desempenho de uma rede de classificação.
+    A diagonal principal contem os valores preditos corretamente, enquantos os demais
+    valores são as predições incorretas realizadas pelo modelo.
+    >>> modelo.confusion_matrix(teste.x,n_splits=2)
+    Esse código gerará uma matriz de confução para as imagens teste.x usando
+    `2` recortes por imagens, explicitado em `n_splits`.
+    Args:
+        x (DataGenerator):
+            Gerador contendo os caminhos das imagens a serem preditas.
+        n_splits (int, optional):
+            Numero de recortes randomicos utilizados para gerar a predição.
+            Defaults to 1.
+    Returns:
+        (np.array):
+            [Matriz contendo os valores da matriz de confusão]
+    """
+    n_labels = len(labels)
+    matriz = np.zeros((n_labels, n_labels))
+    DIM_SPLIT = 224
+    for path in tqdm(x.x):
+        elect = make_grad_cam(
+            model=model,
+            image=path,
+            n_splits=n_splits,
+            verbose=False,
+            split_dim=DIM_SPLIT
+        )
+        true_index = labels.index(path.parts[-2])
+        index = labels.index(elect)
+        matriz[true_index][index] += 1
+    return matriz
 
 
 def last_conv_layer(model: Model) -> str:
@@ -324,6 +366,13 @@ def save_weights(
     return model.save_weights(filename, overwrite=overwrite, **params)
 
 
+# def cut_and_predict(
+#     model:Model,
+#     n_splits: int = 100,
+#     threshold: float = 0.1,
+# ) -> str:
+
+
 def make_grad_cam(
     model: Model,
     image: Union[str, Path],
@@ -343,32 +392,32 @@ def make_grad_cam(
         "n_splits": n_splits,
     }
     cuts, positions = split(image, **params_splits)
-    print("Pacotes Gerados")
     shape = (1, n_splits, split_dim, split_dim, channels)
     if isinstance(image, list):
         shape = (len(image), n_splits, split_dim, split_dim, channels)
     cuts = cuts.reshape(shape)
     imagemColor = read_images(image, color=True)
-    last_conv_layer_name = last_act_after_conv_layer(model).name
-    class_names = get_classifier_layer_names(model, last_conv_layer_name)
-    print(class_names)
+    if verbose:
+        last_conv_layer_name = last_act_after_conv_layer(model).name
+        class_names = get_classifier_layer_names(model, last_conv_layer_name)
+        print(class_names)
 
-    if isinstance(image, list):
-        winner_label = labels.index(image[0].parts[-2])
-    else:
-        winner_label = labels.index(image.parts[-2])
+        if isinstance(image, list):
+            winner_label = labels.index(image[0].parts[-2])
+        else:
+            winner_label = labels.index(image.parts[-2])
 
-    heatmap = prob_grad_cam(
-        cuts_images=cuts,
-        classifier=class_names,
-        last_conv_layer_name=last_conv_layer_name,
-        paths_start_positions=positions,
-        model=model,
-        dim_orig=orig_dim,
-        winner_pos=winner_label,
-    )
-    plot_gradcam(heatmap, imagemColor, True)
-    predict_params = {"verbose": 1}
+        heatmap = prob_grad_cam(
+            cuts_images=cuts,
+            classifier=class_names,
+            last_conv_layer_name=last_conv_layer_name,
+            paths_start_positions=positions,
+            model=model,
+            dim_orig=orig_dim,
+            winner_pos=winner_label,
+        )
+        plot_gradcam(heatmap, imagemColor, True)
+    predict_params = {"verbose": 0}
     cuts = np.reshape(cuts, (n_splits, split_dim, split_dim, channels))
     votes = predict(model, cuts, **predict_params)
     elect = winner(labels=labels, votes=votes)

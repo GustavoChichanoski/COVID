@@ -1,4 +1,5 @@
 from pathlib import Path
+from src.plots.graph import plot_dataset
 from src.output_result.folders import remove_folder, zip_folder
 
 from numpy.testing._private.utils import assert_equal
@@ -20,6 +21,7 @@ from src.models.grad_cam_split import grad_cam, last_act_after_conv_layer
 from src.models.classificacao.funcional_model import (
     base,
     classification_model,
+    confusion_matrix,
     get_callbacks,
     get_classifier_layer_names,
     make_grad_cam,
@@ -80,9 +82,10 @@ class TestFuncionalModel(unittest.TestCase):
         DIM_ORIGINAL = 1024
         DIM_SPLIT = 224
         CHANNELS = 1
-        K_SPLIT = 10
+        K_SPLIT = 100
         BATCH_SIZE = 1
         EPOCHS = 2
+        TAMANHO = 0
 
         DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
         TRAIN_PATH = DATA / "train"
@@ -92,12 +95,16 @@ class TestFuncionalModel(unittest.TestCase):
         ds_train = Dataset(path_data=TRAIN_PATH, train=False)
         ds_test = Dataset(path_data=TEST_PATH, train=False)
 
-        part_param = {"tamanho": 10, "shuffle": False}
+        part_param = {"tamanho": TAMANHO, "shuffle": False}
         train, validation = ds_train.partition(val_size=0.2, **part_param)
         test_values, _test_val_v = ds_test.partition(val_size=1e-3, **part_param)
 
         model = classification_model(DIM_SPLIT, channels=1, classes=len(LABELS))
-        model.compile(loss="categorical_crossentropy", optimizer=Adamax(learning_rate=1e-5), metrics="accuracy")
+        model.compile(
+            loss="binary_crossentropy",
+            optimizer=Adamax(learning_rate=1e-5),
+            metrics="accuracy",
+        )
         model.summary()
 
         params = {
@@ -113,35 +120,40 @@ class TestFuncionalModel(unittest.TestCase):
 
         callbacks = get_callbacks()
 
-        history = model.fit(
-            x=train_generator,
-            validation_data=val_generator,
-            epochs=EPOCHS,
-            batch_size=BATCH_SIZE,
-            callbacks=callbacks
-        )
+        # history = model.fit(
+        #     x=train_generator,
+        #     validation_data=val_generator,
+        #     epochs=EPOCHS,
+        #     batch_size=BATCH_SIZE,
+        #     callbacks=callbacks,
+        # )
 
-        save_weights(
-            modelname='resnet',
-            model=model,
-            history=history,
-        )
+        # save_weights(
+        #     modelname="resnet",
+        #     model=model,
+        #     history=history,
+        # )
 
-        print("Make Grad Cam")
+        # print("Make Grad Cam")
 
-        winner = make_grad_cam(
-            model=model,
-            image=test_generator.x[0],
-            n_splits=K_SPLIT,
-            threshold=0.1,
-            orig_dim=DIM_ORIGINAL
-        )
-        
+        # winner = make_grad_cam(
+        #     model=model,
+        #     image=test_generator.x[0],
+        #     n_splits=K_SPLIT,
+        #     threshold=0.1,
+        #     orig_dim=DIM_ORIGINAL,
+        # )
+
+        model.load_weights("outputs\\ResNet50V2\\weights\\best.weights.hdf5")
+
+        matriz = confusion_matrix(model,test_generator,K_SPLIT)
+        plot_dataset(matriz,K_SPLIT,path="outputs\\ResNet50V2\\figures")
+
         # zip_folder(Path.cwd())
 
         # remove_folder('./Covid')
 
-        assert_equal(winner, 'Covid')
+        # assert_equal(winner, "Covid")
 
     def test_grad_cam(self) -> None:
 
