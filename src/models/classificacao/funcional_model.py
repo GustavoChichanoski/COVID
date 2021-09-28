@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import List, Optional, Union
+from matplotlib import cm, pyplot as plt
 
 from tensorflow.python.eager.monitoring import Metric
 from tensorflow.python.keras.engine.base_layer import Layer
@@ -14,7 +15,6 @@ from src.images.read_image import read_images
 from src.models.grad_cam_split import last_act_after_conv_layer, prob_grad_cam
 from src.output_result.folders import pandas2csv
 from src.prints.prints import print_info
-from src.plots.plots import plot_gradcam
 
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.layers import Conv2D, Activation
@@ -40,6 +40,8 @@ import tensorflow_addons as tfa
 import numpy as np
 from tqdm import tqdm
 
+from tensorflow.python.keras.preprocessing.image import array_to_img
+from tensorflow.python.keras.preprocessing.image import img_to_array
 
 def get_callbacks() -> List[Callback]:
     """
@@ -422,3 +424,42 @@ def make_grad_cam(
     votes = predict(model, cuts, **predict_params)
     elect = winner(labels=labels, votes=votes)
     return elect
+
+def plot_gradcam(
+    heatmap: tfa.types.TensorLike,
+    image: tfa.types.TensorLike,
+    grad: bool = True,
+    name: str = None,
+    dim: int = 1024,
+    alpha = 0.4
+) -> str:
+    """ Plota o gradCam probabilstico recebendo como parametro o
+        mapa de calor e a imagem original. Ambos de mesmo tamanho.
+
+        Args:
+        -----
+            heatmap (np.array): Mapa de calor
+            image (np.array): Imagem original
+    """
+    heatmap = np.uint8(255 * heatmap)
+    jet = cm.get_cmap("jet")
+    jet_color = jet(np.arange(256))[:, :3]
+    jet_heatmap = jet_color[heatmap]
+
+    jet_heatmap0 = array_to_img(jet_heatmap)
+    jet_heatmap1 = jet_heatmap0.resize((dim, dim))
+    jet_heatmap2 = img_to_array(jet_heatmap1)
+
+    superimposed_image = jet_heatmap2 * alpha + image
+    superimposed_image = array_to_img(superimposed_image)
+
+    fig = plt.figure()
+    plt.imshow(superimposed_image, cmap='gray')
+    # Salvar imagem
+    path = ''
+    if name is not None:
+        path = '{}.png'.format(name)
+        plt.savefig(path,dpi=fig.dpi)
+    if grad:
+        plt.show()
+    return path

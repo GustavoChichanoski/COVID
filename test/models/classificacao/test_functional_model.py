@@ -82,7 +82,7 @@ class TestFuncionalModel(unittest.TestCase):
         DIM_ORIGINAL = 1024
         DIM_SPLIT = 224
         CHANNELS = 1
-        K_SPLIT = 100
+        K_SPLIT = 1
         BATCH_SIZE = 1
         EPOCHS = 2
         TAMANHO = 0
@@ -148,6 +148,8 @@ class TestFuncionalModel(unittest.TestCase):
 
         matriz = confusion_matrix(model,test_generator,K_SPLIT)
         plot_dataset(matriz,K_SPLIT,path="outputs\\ResNet50V2\\figures")
+
+        parar = True
 
         # zip_folder(Path.cwd())
 
