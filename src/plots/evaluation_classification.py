@@ -98,10 +98,18 @@ def plot_mc_in_csv(
         "pneumonia_sensibility",
     ]
     for cuts in n_imagens:
-        matriz = confusion_matrix(model, test_generator, cuts)
+        matriz0 = confusion_matrix(model, test_generator, cuts)
+        matriz1 = confusion_matrix(model, test_generator, cuts)
+        matriz2 = confusion_matrix(model, test_generator, cuts)
         linha = np.array(cuts)
         for label in range(3):
-          linha = np.append(calculate_parameters_evaluation(cuts, matriz, label), linha)
+            p0 = calculate_parameters_evaluation(matriz0, label)
+            p1 = calculate_parameters_evaluation(matriz1, label)
+            p2 = calculate_parameters_evaluation(matriz2, label)
+            parameters = np.zeros((len(p0)))
+            for i in range(len(p0)):
+                parameters[i] = (p0[i] + p1[i] + p2[i]) / 3
+            linha = np.append(parameters, linha)
         colunas = np.append(linha, colunas)
     colunas = np.reshape(colunas, (len(n_imagens), len(colums_name)))
     df = pd.DataFrame(data=colunas, columns=colums_name)
@@ -109,7 +117,8 @@ def plot_mc_in_csv(
 
 
 def calculate_parameters_evaluation(
-    n_cuts: int, matriz: tfa.types.TensorLike, label: int
+    matriz: tfa.types.TensorLike,
+    label: int
 ) -> tfa.types.TensorLike:
     linha = np.array([])
     tp = true_positive(matriz, label)
