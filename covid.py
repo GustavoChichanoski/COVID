@@ -34,10 +34,10 @@ np.random.seed(20)
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 CHANNELS = 1
-K_SPLIT = 100
+K_SPLIT = 1
 BATCH_SIZE = 1
 EPOCHS = 2
-TAMANHO = 0
+TAMANHO = 2
 
 DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
 TRAIN_PATH = DATA / "train"
@@ -102,24 +102,24 @@ output = Path("outputs") / NET
 
 model.load_weights(output / "weights\\best.weights.hdf5")
 
-winner = make_grad_cam(
-    model=model,
-    image=test_generator.x[0],
-    n_splits=K_SPLIT,
-    threshold=0.1,
-    orig_dim=DIM_ORIGINAL,
-)
+# winner = make_grad_cam(
+#     model=model,
+#     image=test_generator.x[0],
+#     n_splits=K_SPLIT,
+#     threshold=0.1,
+#     orig_dim=DIM_ORIGINAL,
+# )
 
 # matriz = confusion_matrix(model,test_generator,K_SPLIT)
 
 # plot_dataset(matriz,K_SPLIT,path=output / "figures")
 
-# plot_mc_in_csv(
-#     model=model,
-#     test_generator=test_generator,
-#     path_to_save=output / 'parametros.csv',
-#     n_imagens=[1]
-# )
+plot_mc_in_csv(
+    model=model,
+    test_generator=test_generator,
+    path_to_save=output / 'parametros.csv',
+    n_imagens=[1]
+)
 
 parar = True
 

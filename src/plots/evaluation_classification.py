@@ -68,11 +68,10 @@ def plot_mc_in_csv(
 ) -> None:
     colunas = np.array([])
     colums_name = [
-        "n_cuts",
         "covid_true_positive",
         "covid_true_negative",
-        "covid_negative_positive",
-        "covid_negative_negative",
+        "covid_false_positive",
+        "covid_false_negative",
         "covid_precision",
         "covid_accuraccy",
         "covid_recall",
@@ -80,8 +79,8 @@ def plot_mc_in_csv(
         "covid_sensibility",
         "normal_true_positive",
         "normal_true_negative",
-        "normal_negative_positive",
-        "normal_negative_negative",
+        "normal_false_positive",
+        "normal_false_negative",
         "normal_precision",
         "normal_accuraccy",
         "normal_recall",
@@ -89,13 +88,14 @@ def plot_mc_in_csv(
         "normal_sensibility",
         "pneumonia_true_positive",
         "pneumonia_true_negative",
-        "pneumonia_negative_positive",
-        "pneumonia_negative_negative",
+        "pneumonia_false_positive",
+        "pneumonia_false_negative",
         "pneumonia_precision",
         "pneumonia_accuraccy",
         "pneumonia_recall",
         "pneumonia_especifity",
         "pneumonia_sensibility",
+        "n_cuts",
     ]
     for cuts in n_imagens:
         matriz0 = confusion_matrix(model, test_generator, cuts)
@@ -113,7 +113,8 @@ def plot_mc_in_csv(
         colunas = np.append(linha, colunas)
     colunas = np.reshape(colunas, (len(n_imagens), len(colums_name)))
     df = pd.DataFrame(data=colunas, columns=colums_name)
-    df.to_csv(path_to_save,index=False)
+    df.index.name='index'
+    df.to_csv(path_to_save,index=True, index_label='Index')
 
 
 def calculate_parameters_evaluation(
