@@ -7,6 +7,9 @@ import pandas as pd
 
 from pathlib import Path
 
+from pandas.core.arrays import boolean
+from pandas.io.parquet import read_parquet
+
 def legenda_correta_parametros(parameter:str, label: str) -> str:
   if parameter == 'n_cuts':
     return 'Número de Pacotes'
@@ -46,27 +49,51 @@ def trueFalse(parameter: str, output: str) -> str:
       output += ' Falsos '
     return output
 
-def plot_parameter( df: pd.DataFrame,x: str, parameter: str) -> None:
-  labels = ['covid', 'normal', 'pneumonia']
-  LABELS = ['Covid','Normal','Pneumonia']
-  x = df[x]
-  y0 = df[f"{labels[0]}_{parameter}"]
-  y0 = df[f"{labels[1]}_{parameter}"]
-  y0 = df[f"{labels[2]}_{parameter}"]
-
+def plot_parameter(
+  rede: str,
+  x: List[float],
+  covid: pd.Series,
+  normal: pd.Series,
+  pneumonia: pd.Series,
+  parameter: str
+) -> None:
+  N_IMAGENS = [1,2,3,4,5,10,20,30,50,60,70,100];
   plt.figure(rede)
-  plt.ylabel(parameter)
+  plt.ylabel(f"{parameter} [%]")
   plt.xlabel('Número de Cortes')
-  plt.plot(x.values,y.values*100)
-  plt.plot(x.values,y2.values*100)
-  plt.plot(x.values,y3.values*100)
-  plt.legend(LABELS)
+  plt.plot(x.values,covid.values*100)
+  plt.plot(x.values,normal.values*100)
+  plt.plot(x.values,pneumonia.values*100)
+  plt.legend(['Covid','Normal','Pneumonia'])
   plt.xticks(ticks=N_IMAGENS, fontsize=10, alpha=.7)
   plt.yticks(ticks=np.arange(87,101,1), fontsize=10, alpha=.7)
   plt.grid(True)
   plt.xscale('log')
-  # plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
-  plt.show()
+  plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
+  # plt.show()
+  return None
+
+def plot_history(
+  rede: str,
+  df: pd.DataFrame,
+  parameter: str,
+  path: Path,
+  real_parameter: str,
+  pgf: bool = False
+) -> None:
+  plt.figure(rede)
+  plt.ylabel(f"{real_parameter}")
+  plt.xlabel('Epócas')
+  treino = df[parameter]
+  validacao = df[f'val_{parameter}']
+  plt.plot(treino.values)
+  plt.plot(validacao.values)
+  plt.legend(['Treino', 'Validação'])
+  plt.grid(True)
+  if pgf:
+    plt.savefig(path / 'figures' / f'{rede}_history.pgf', backend='pgf')
+  else:
+    plt.show()
   return None
 
 # matplotlib.use("pgf")
@@ -78,105 +105,37 @@ def plot_parameter( df: pd.DataFrame,x: str, parameter: str) -> None:
 # })
 
 REDES = ["ResNet50V2", "InceptionResNetV2", "VGG19", "DenseNet121"]
-N_IMAGENS = [1,2,3,4,5,10,20,30,50,60,70,100]
 
-rede = REDES[1]
+rede = REDES[0]
 output = Path('outputs') / rede
 
-csv_path = output / 'parametros.csv'
+history = output / 'history' / 'history.csv'
 
-df = pd.read_csv(csv_path)
+df = pd.read_csv(history)
 
-x = df["n_cuts"]
-y = df['covid_precision']
-y2 = df['normal_precision']
-y3 = df['pneumonia_precision']
+plot_history(rede, df, path=output, parameter='accuracy', real_parameter='Acurácia', pgf=True)
+# csv_path = output / 'parametros.csv'
 
-plt.figure(rede)
-plt.ylabel('Precisão')
-plt.xlabel('Número de Cortes')
-plt.plot(x.values,y.values*100)
-plt.plot(x.values,y2.values*100)
-plt.plot(x.values,y3.values*100)
-plt.legend(['Covid','Normal','Pneumonia'])
-plt.xticks(ticks=N_IMAGENS, fontsize=10, alpha=.7)
-plt.yticks(ticks=np.arange(87,101,1), fontsize=10, alpha=.7)
-plt.grid(True)
-plt.xscale('log')
-# plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
-plt.show()
+# df = pd.read_csv(csv_path)
 
-x = df["n_cuts"]
-y = df['covid_true_positives']
-y2 = df['normal_true_positives']
-y3 = df['pneumonia_true_positives']
+# x = df["n_cuts"]
 
-plt.figure(rede)
-plt.ylabel('Verdadeiros Positivos')
-plt.xlabel('Número de Cortes')
-plt.plot(x.values,y.values*100)
-plt.plot(x.values,y2.values*100)
-plt.plot(x.values,y3.values*100)
-plt.legend(['Covid','Normal','Pneumonia'])
-plt.xticks(ticks=N_IMAGENS, fontsize=10, alpha=.7)
-plt.yticks(ticks=np.arange(87,101,1), fontsize=10, alpha=.7)
-plt.grid(True)
-plt.xscale('log')
-# plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
-plt.show()
+# def idontcare(parameter: str, real_name: str, rede: str, df: pd.DataFrame, x: pd.Series) -> None:
+#   covid = df[f'covid_{parameter}']
+#   normal = df[f'normal_{parameter}']
+#   pneumonia = df[f'pneumonia_{parameter}']
 
-y = df['covid_accuraccy']
-y2 = df['normal_accuraccy']
-y3 = df['pneumonia_accuraccy']
+#   plot_parameter(
+#     rede=rede,
+#     x=x,
+#     covid=covid,
+#     normal=normal,
+#     pneumonia=pneumonia,
+#     parameter=real_name
+#   )
 
-plt.figure()
-plt.ylabel('Acuracia')
-plt.xlabel('Número de Cortes')
-plt.plot(x.values,y.values*100)
-plt.plot(x.values,y2.values*100)
-plt.plot(x.values,y3.values*100)
-plt.legend(['Covid','Normal','Pneumonia'])
-# plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
-plt.show()
-
-y = df['covid_recall']
-y2 = df['normal_recall']
-y3 = df['pneumonia_recall']
-
-plt.figure()
-plt.ylabel('Revocação')
-plt.xlabel('Número de Cortes')
-plt.plot(x.values,y.values*100)
-plt.plot(x.values,y2.values*100)
-plt.plot(x.values,y3.values*100)
-plt.legend(['Covid','Normal','Pneumonia'])
-# plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
-plt.show()
-
-y = df['covid_especifity']
-y2 = df['normal_especifity']
-y3 = df['pneumonia_especifity']
-
-plt.figure()
-plt.ylabel('Especificade')
-plt.xlabel('Número de Cortes')
-plt.plot(x.values,y.values*100)
-plt.plot(x.values,y2.values*100)
-plt.plot(x.values,y3.values*100)
-plt.legend(['Covid','Normal','Pneumonia'])
-# plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
-plt.show()
-
-y = df['covid_sensibility']
-y2 = df['normal_sensibility']
-y3 = df['pneumonia_sensibility']
-
-plt.figure()
-plt.ylabel('Sensibilidade')
-plt.xlabel('Número de Cortes')
-plt.plot(x.values,y.values*100)
-plt.plot(x.values,y2.values*100)
-plt.plot(x.values,y3.values*100)
-plt.legend(['Covid','Normal','Pneumonia'])
-# plt.savefig(output / 'figures' / f'{rede}_parametros.pgf')
-plt.show()
+# idontcare('precision', 'Precisão', rede, df, x)
+# idontcare('accuraccy', 'Acurácia', rede, df, x)
+# idontcare('recall', 'Revocação', rede, df, x)
+# idontcare('especifity', 'Especifidade', rede, df, x)
+# idontcare('sensibility', 'Sensibilidade', rede, df, x)

@@ -43,15 +43,14 @@ from tqdm import tqdm
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import img_to_array
 
+
 def get_callbacks() -> List[Callback]:
     """
     Retorna a lista callbacks do modelo
-    Args:
-    -----
-        weight_path: Caminho para salvar os checkpoints
+    
     Returns:
     --------
-        (list of keras.callbacks): lista dos callbacks
+        (List[Callback]): lista dos callbacks
     """
     # Salva os pesos dos modelo para serem carregados
     # caso o monitor não diminua
@@ -151,6 +150,8 @@ def classification_model(
     """
     Função de criação do modelo de classificao da doença presente no pulmão.
 
+    >>> model = classification_model(256, 1, 3, 'softmax', 'relu', 0.2, 'ResNet50V2')
+
     Args:
         dim (int, optional): Dimensão da imagem de entrada `[0...]`. Defaults to `256`.
         channels (int, optional): Numero de canais da imagem de entrada `[0...3]`. Defaults to `1`.
@@ -210,11 +211,11 @@ def confusion_matrix(
             image=path,
             n_splits=n_splits,
             verbose=False,
-            split_dim=DIM_SPLIT
+            split_dim=DIM_SPLIT,
         )
         true_index = labels.index(path.parts[-2])
         index = labels.index(elect)
-        matriz[true_index][index] += 1
+        matriz[index][true_index] += 1
     return matriz
 
 
@@ -241,7 +242,7 @@ def names_classification_layers(model: Model) -> List[str]:
     saving all the names in the track.
 
     Args:
-        model (Model): Mdoe
+        model (Model): model to analyse classification layers.
 
     Returns:
         List[str]: layers names of classification model.
@@ -271,6 +272,21 @@ def save_weights(
     metric: str = "val_f1",
     **params,
 ) -> None:
+    """
+    Save wights of model in `parent` folder with name of `model_name`,
+    if `history` is not `None` the name of save file will be add the
+    last `metric` value of model to file name. With `history_path`
+    is passed to the history is save in csv file.
+
+    Args:
+        model (Model): model of weights to save.
+        model_name (str): file name of weights.
+        history (History, optional): history of model train. Defaults to None.
+        parent (Path, optional): parent file where the files to save will be storeage. Defaults to None.
+        history_path (Path, optional): path to save `history` in csv. Defaults to None.
+        overwrite (bool, optional): `overwrite` file if already exists. Defaults to True.
+        metric (str, optional): metrics to analyse the weights. Defaults to "val_f1".
+    """
     filename = model_name
     if history is not None:
         metric_value = history.history[metric][-1]
@@ -284,17 +300,18 @@ def save_weights(
 
 
 def winner(
-    labels: List[str] = ["Covid", "Normal", "Pneumonia"], votes: List[int] = [0, 0, 0]
+    labels: List[str] = ["Covid", "Normal", "Pneumonia"],
+    votes: List[int] = [0, 0, 0]
 ) -> str:
     """
-    Retorna o label da doença escolhido
+    Return label of disease winner.
     Args:
     -----
-        labels (list): nomes das classes
-        votes (list): predicao das imagens
+        labels (list): labels.
+        votes (list): predictions.
     Returns:
     --------
-        elect (str): label escolhido pelo modelo
+        elect (str): winner label
     """
     poll = np.sum(votes, axis=0)
     elect = labels[np.argmax(poll)]
@@ -302,8 +319,19 @@ def winner(
 
 
 def predict(
-    model: Model, x: ClassificationDatasetGenerator, **params
+    model: Model,
+    x: ClassificationDatasetGenerator,
+    **params
 ) -> tfa.types.TensorLike:
+    """Predict images from generator.
+
+    Args:
+        model (Model):
+        x (ClassificationDatasetGenerator): generator who contains image to analyse.
+
+    Returns:
+        tfa.types.TensorLike: predictions.
+    """
     return model.predict(x, **params)
 
 
@@ -330,6 +358,14 @@ def get_classifier_layer_names(model: Model, layer_name: str) -> List[str]:
 
 
 def get_last_conv_layer_name(model: Model) -> Layer:
+    """Get a layer in model with submodels.
+
+    Args:
+        model (Model): model to search for layer
+
+    Returns:
+        Layer: layer wanted.
+    """
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
             for inner_layer in reversed(layer.layers):
@@ -340,39 +376,17 @@ def get_last_conv_layer_name(model: Model) -> Layer:
 
 
 def find_base(model: Model) -> Model:
+    """Get first submodel in a model.
+
+    Args:
+        model (Model): model to analyse.
+
+    Returns:
+        Model: first submodel in the model.
+    """
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
             return layer
-
-
-def save_weights(
-    modelname: str,
-    model: Model,
-    history: History = None,
-    parent: Path = None,
-    history_path: Path = Path.cwd(),
-    overwrite: bool = True,
-    metric: str = "val_loss",
-    **params,
-):
-    filename = modelname
-    if history is not None:
-        metric_value = history.history[metric][-1]
-        filename = f"{filename}_{metric}_{metric_value:0.2f}"
-        if history_path is not None:
-            history_path = history_path / f"{filename}"
-            pandas2csv(history=history, history_path=history_path)
-    filename = parent / filename if parent is not None else filename
-    filename = f"{filename}.hdf5"
-    print_info(f"Pesos salvos em: {filename}")
-    return model.save_weights(filename, overwrite=overwrite, **params)
-
-
-# def cut_and_predict(
-#     model:Model,
-#     n_splits: int = 100,
-#     threshold: float = 0.1,
-# ) -> str:
 
 
 def make_grad_cam(
@@ -402,7 +416,6 @@ def make_grad_cam(
     if verbose:
         last_conv_layer_name = last_act_after_conv_layer(model).name
         class_names = get_classifier_layer_names(model, last_conv_layer_name)
-        print(class_names)
 
         if isinstance(image, list):
             winner_label = labels.index(image[0].parts[-2])
@@ -425,21 +438,29 @@ def make_grad_cam(
     elect = winner(labels=labels, votes=votes)
     return elect
 
+
 def plot_gradcam(
     heatmap: tfa.types.TensorLike,
     image: tfa.types.TensorLike,
     grad: bool = True,
     name: str = None,
     dim: int = 1024,
-    alpha = 0.4
+    alpha=0.4,
 ) -> str:
-    """ Plota o gradCam probabilstico recebendo como parametro o
-        mapa de calor e a imagem original. Ambos de mesmo tamanho.
+    """Function to merge `heatmap` to `image` with original `dim` size with `alpha`
+    opacity, if `grad` is `True` then plot grad cam probabilistic, if name is not
+    `None` then save figure in the name file.
 
-        Args:
-        -----
-            heatmap (np.array): Mapa de calor
-            image (np.array): Imagem original
+    Args:
+        heatmap (tfa.types.TensorLike): heatmap to merge in image.
+        image (tfa.types.TensorLike): image of input
+        grad (bool, optional): flag to plot grad cam. Defaults to True.
+        name (str, optional): name of png output file. Defaults to None.
+        dim (int, optional): original dimension of image. Defaults to 1024.
+        alpha (float, optional): opacity value. Defaults to 0.4.
+
+    Returns:
+        str: path where save png
     """
     heatmap = np.uint8(255 * heatmap)
     jet = cm.get_cmap("jet")
@@ -454,12 +475,12 @@ def plot_gradcam(
     superimposed_image = array_to_img(superimposed_image)
 
     fig = plt.figure()
-    plt.imshow(superimposed_image, cmap='gray')
+    plt.imshow(superimposed_image, cmap="gray")
     # Salvar imagem
-    path = ''
+    path = ""
     if name is not None:
-        path = '{}.png'.format(name)
-        plt.savefig(path,dpi=fig.dpi)
+        path = "{}.png".format(name)
+        plt.savefig(path, dpi=fig.dpi)
     if grad:
         plt.show()
     return path

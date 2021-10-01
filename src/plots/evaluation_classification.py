@@ -1,3 +1,4 @@
+from src.dataset import generator
 from typing import List
 import tensorflow_addons as tfa
 from tensorflow.python.keras import Model
@@ -10,11 +11,11 @@ from src.dataset.classification.cla_generator import ClassificationDatasetGenera
 from src.models.classificacao.funcional_model import confusion_matrix
 
 
-def true_positive(matriz, label: int):
+def true_positive(matriz: tfa.types.TensorLike, label: int) -> tfa.types.TensorLike:
     return matriz[label][label]
 
 
-def true_negative(matriz, label):
+def true_negative(matriz: tfa.types.TensorLike, label: int) -> tfa.types.TensorLike:
     soma: int = 0
     for row in range(matriz.shape[0]):
         for column in range(matriz.shape[1]):
@@ -23,7 +24,7 @@ def true_negative(matriz, label):
     return soma
 
 
-def false_positive(matriz, label: int):
+def false_positive(matriz: tfa.types.TensorLike, label: int) -> tfa.types.TensorLike:
     soma: int = 0
     for column in range(matriz.shape[1]):
         if column != label:
@@ -31,7 +32,7 @@ def false_positive(matriz, label: int):
     return soma
 
 
-def false_negative(matriz, label: int):
+def false_negative(matriz: tfa.types.TensorLike, label: int) -> tfa.types.TensorLike:
     soma: int = 0
     for row in range(matriz.shape[0]):
         if row != label:

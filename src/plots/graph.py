@@ -82,6 +82,7 @@ def plot_dataset(
     names: List[int] = ["COVID-19", "Normal", "Pneumonia"],
     path: Path = None,
     overwrite: bool = True,
+    pgf=False
 ) -> None:
 
     perc = normalize_confusion_matrix(absolut)
@@ -90,8 +91,12 @@ def plot_dataset(
             dist_dataset(absolut[i], perc, names, n_images[i])
     else:
         dist_dataset(absolut, perc, names, n_images)
-    plt.show()
+    if pgf:
+        plt.savefig(path / f'ds_{n_images}.pgf')
+    else:
+        plt.show()
 
+    plt.figure()
     fig, ax = plt.subplots()
     im = ax.imshow(absolut)
     ax.set_xticks(np.arange(len(names)))
@@ -107,7 +112,10 @@ def plot_dataset(
 
     ax.set_title("Matriz Confusao")
     fig.tight_layout()
-    plt.show()
+    if pgf:
+        plt.savefig(path / f'mc_sem_formatacao_{n_images}.pgf')
+    else:
+        plt.show()
 
     fig, ax = plt.subplots()
     im, cbar = heatmap(
@@ -121,15 +129,10 @@ def plot_dataset(
     ax.set_xlabel("Rótulo Verdadeiro")
     ax.set_ylabel("Rótulo Predição")
     fig.tight_layout()
-    # if path is not None:
-    #     fig_path = os.path.join(path,'matriz_confusao.png')
-    #     if overwrite:
-    #         i = 0
-    #         while os.path.exists(fig_path):
-    #             fig_path = os.path.join(path,'matriz_confusao_{}.png'.format(i))
-    #             i += 1
-    #     plt.savefig(fig_path,dpi=fig.dpi)
-    plt.show()
+    if pgf:
+        plt.savefig(path / f'mc_{n_images}.pgf')
+    else:
+        plt.show()
     if not isinstance(path,Path):
         path = Path(path)
     mc_path = path / f"mc_{n_images}_pacotes.png"

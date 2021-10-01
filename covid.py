@@ -30,11 +30,10 @@ from src.models.classificacao.funcional_model import (
     save_weights,
 )
 
-np.random.seed(20)
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 CHANNELS = 1
-K_SPLIT = 1
+K_SPLIT = 5
 BATCH_SIZE = 1
 EPOCHS = 2
 TAMANHO = 2
@@ -45,7 +44,7 @@ TEST_PATH = DATA / "test"
 LABELS = ["Covid", "Normal", "Pneumonia"]
 
 REDES = ["ResNet50V2", "InceptionResNetV2", "VGG19", "DenseNet121"]
-NET = REDES[3]
+NET = REDES[1]
 ds_train = Dataset(path_data=TRAIN_PATH, train=False)
 ds_test = Dataset(path_data=TEST_PATH, train=False)
 
@@ -90,13 +89,6 @@ callbacks = get_callbacks()
 
 # print("Make Grad Cam")
 
-# winner = make_grad_cam(
-#     model=model,
-#     image=test_generator.x[0],
-#     n_splits=K_SPLIT,
-#     threshold=0.1,
-#     orig_dim=DIM_ORIGINAL,
-# )
 
 output = Path("outputs") / NET
 
@@ -109,17 +101,13 @@ model.load_weights(output / "weights\\best.weights.hdf5")
 #     threshold=0.1,
 #     orig_dim=DIM_ORIGINAL,
 # )
+matriz = confusion_matrix(model,test_generator,K_SPLIT)
 
-# matriz = confusion_matrix(model,test_generator,K_SPLIT)
+# matriz = np.array([[267,3,1],[1,502,27],[14,46,845]])
 
-# plot_dataset(matriz,K_SPLIT,path=output / "figures")
+# import matplotlib
 
-plot_mc_in_csv(
-    model=model,
-    test_generator=test_generator,
-    path_to_save=output / 'parametros.csv',
-    n_imagens=[1]
-)
+plot_dataset(matriz,K_SPLIT,path=output / "figures",pgf=True)
 
 parar = True
 

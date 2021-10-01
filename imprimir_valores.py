@@ -26,7 +26,7 @@ plt.ylabel("Acurácia")
 plt.xlabel("Épocas")
 plt.legend(["Treino", "Validação"])
 plt.grid(True)
-save_png(fig=fig, path=output / "figures" / "acuracia.png", overwrite=True)
+# save_png(fig=fig, path=output / "figures" / "acuracia.png", overwrite=True)
 plt.show()
 
 # plt.figure()
