@@ -36,7 +36,7 @@ CHANNELS = 1
 K_SPLIT = 400
 BATCH_SIZE = 1
 EPOCHS = 2
-TAMANHO = 0
+TAMANHO = 10
 
 DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
 TRAIN_PATH = DATA / "train"

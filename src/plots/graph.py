@@ -96,7 +96,6 @@ def plot_dataset(
     else:
         plt.show()
 
-    plt.figure()
     fig, ax = plt.subplots()
     im = ax.imshow(absolut)
     ax.set_xticks(np.arange(len(names)))
@@ -142,14 +141,14 @@ def plot_dataset(
             while os.path.exists(fig_path):
                 i += 1
                 fig_path = f"{mc_path}_{i}.png"
-            plt.savefig(fig_path, dpi=fig.dpi)
+            plt.savefig(fig_path, dpi=300)
             plt.show()
             return fig_path
         plt.show()
         print(f"[PLOT] Arquivo já existe: {str(path)}")
         return mc_path
+    plt.savefig(mc_path, dpi=300)
     plt.show()
-    plt.savefig(mc_path, dpi=fig.dpi)
 
 
 def heatmap(
