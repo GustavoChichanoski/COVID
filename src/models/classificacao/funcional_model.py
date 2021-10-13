@@ -215,7 +215,7 @@ def confusion_matrix(
         )
         true_index = labels.index(path.parts[-2])
         index = labels.index(elect)
-        matriz[true_index][index] += 1
+        matriz[index][true_index] += 1
     return matriz
 
 
