@@ -36,7 +36,7 @@ CHANNELS = 1
 K_SPLIT = 400
 BATCH_SIZE = 1
 EPOCHS = 2
-TAMANHO = 2
+TAMANHO = 0
 
 DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
 TRAIN_PATH = DATA / "train"
@@ -50,7 +50,7 @@ ds_test = Dataset(path_data=TEST_PATH, train=False)
 
 # fixa a aleatoriedade do numpy random
 np.random.seed(0)
-part_param = {"tamanho": 10, "shuffle": False}
+part_param = {"tamanho": TAMANHO, "shuffle": False}
 train, validation = ds_train.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = ds_test.partition(val_size=1e-3, **part_param)
 
@@ -103,9 +103,9 @@ model.load_weights(output / "weights\\best.weights.hdf5")
 #     threshold=0.1,
 #     orig_dim=DIM_ORIGINAL,
 # )
-matriz = confusion_matrix(model,test_generator,K_SPLIT)
+matriz = confusion_matrix(model,test_generator,1)
 
-matriz = np.array([[267,3,1],[1,502,27],[14,46,845]])
+# matriz = np.array([[267,3,1],[1,502,27],[14,46,845]])
 
 # import matplotlib
 
