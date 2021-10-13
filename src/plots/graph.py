@@ -131,8 +131,6 @@ def plot_dataset(
     fig.tight_layout()
     if pgf:
         plt.savefig(path / f'mc_{n_images}.pgf')
-    else:
-        plt.show()
     if not isinstance(path,Path):
         path = Path(path)
     mc_path = path / f"mc_{n_images}_pacotes.png"
@@ -145,9 +143,12 @@ def plot_dataset(
                 i += 1
                 fig_path = f"{mc_path}_{i}.png"
             plt.savefig(fig_path, dpi=fig.dpi)
+            plt.show()
             return fig_path
+        plt.show()
         print(f"[PLOT] Arquivo já existe: {str(path)}")
         return mc_path
+    plt.show()
     plt.savefig(mc_path, dpi=fig.dpi)
 
 

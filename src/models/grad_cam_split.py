@@ -7,6 +7,7 @@ import tensorflow as tf
 from tensorflow.python.keras.engine.base_layer import Layer
 from tensorflow.python.keras.layers.convolutional import Conv
 from tensorflow.python.keras.layers.core import Activation
+from tensorflow.python.keras.layers.pooling import Pooling2D
 from tensorflow.python.keras.models import Model
 from tensorflow.python.keras import Input
 from tensorflow.python.keras import backend as K
@@ -31,7 +32,7 @@ def last_act_after_conv_layer(model: Model) -> Layer:
             return last_act_after_conv_layer(layer)
         if isinstance(layer, Conv):
             return act_conv_layer
-        if isinstance(layer, Activation):
+        if isinstance(layer, Activation) or isinstance(layer, Pooling2D):
             act_conv_layer = layer
 
 

@@ -33,7 +33,7 @@ from src.models.classificacao.funcional_model import (
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 CHANNELS = 1
-K_SPLIT = 5
+K_SPLIT = 400
 BATCH_SIZE = 1
 EPOCHS = 2
 TAMANHO = 2
@@ -44,10 +44,12 @@ TEST_PATH = DATA / "test"
 LABELS = ["Covid", "Normal", "Pneumonia"]
 
 REDES = ["ResNet50V2", "InceptionResNetV2", "VGG19", "DenseNet121"]
-NET = REDES[1]
+NET = REDES[0]
 ds_train = Dataset(path_data=TRAIN_PATH, train=False)
 ds_test = Dataset(path_data=TEST_PATH, train=False)
 
+# fixa a aleatoriedade do numpy random
+np.random.seed(0)
 part_param = {"tamanho": 10, "shuffle": False}
 train, validation = ds_train.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = ds_test.partition(val_size=1e-3, **part_param)
@@ -103,11 +105,11 @@ model.load_weights(output / "weights\\best.weights.hdf5")
 # )
 matriz = confusion_matrix(model,test_generator,K_SPLIT)
 
-# matriz = np.array([[267,3,1],[1,502,27],[14,46,845]])
+matriz = np.array([[267,3,1],[1,502,27],[14,46,845]])
 
 # import matplotlib
 
-plot_dataset(matriz,K_SPLIT,path=output / "figures",pgf=True)
+plot_dataset(matriz,K_SPLIT,path=output / "figures",pgf=False)
 
 parar = True
 
