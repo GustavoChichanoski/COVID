@@ -1,22 +1,22 @@
-from functools import reduce
+# from functools import reduce
 import numpy as np
 from src.models.grad_cam_split import div_cuts_per_pixel, sum_grads_cam
 import unittest
 
 
 class TestGradCam(unittest.TestCase):
-    def test_div_cuts_per_pixel(self) -> None:
+    # def test_div_cuts_per_pixel(self) -> None:
 
-        heatmap = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        div = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    #     heatmap = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    #     div = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
 
-        heatmap_divido = div_cuts_per_pixel(div, heatmap)
+    #     heatmap_divido = div_cuts_per_pixel(div, heatmap)
 
-        esperado = 9.0
-        heatmap_divido = reduce(
-            lambda a, b: a + b, reduce(lambda a, b: a + b, heatmap_divido)
-        )
-        self.assertTrue(esperado == heatmap_divido)
+    #     esperado = 9.0
+    #     heatmap_divido = reduce(
+    #         lambda a, b: a + b, reduce(lambda a, b: a + b, heatmap_divido)
+    #     )
+    #     self.assertTrue(esperado == heatmap_divido)
 
     def test_sum_grads_cam(self) -> None:
 

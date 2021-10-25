@@ -278,6 +278,40 @@ def annotate_heatmap(
 
     return texts
 
+def marker(predict, x: Path) -> Tuple[str,str]:
+    index = np.argmax(predict)
+    path = x.parts[-2]
+    color = 'tab:blue'
+    mark = '*'
+    if path == 'Covid':
+        color = 'tab:blue'
+    elif path == 'Normal':
+        color = 'tab:orange'
+    else:
+        color = 'tab:green'
+    if index == 0:
+        mark = '.'
+    elif index == 1:
+        mark = '^'
+    else:
+        mark = '*'
+    return mark, color, np.max(predict)
+
+def plot_predict_values(predicts, x) -> None:
+    fig = plt.figure('Scatter 3D')
+    ax = fig.add_subplot(projection='3d')
+    for predict, image in zip(predicts, x.x):
+        covid = predict[0]
+        normal = predict[1]
+        pneumonia = predict[2]
+        m, c, s = marker(predict=predict, x=image)
+        scatter = ax.scatter(covid, normal, pneumonia, marker=m, color=c, edgecolors='none', alpha=0.7)
+    ax.set_xlabel('Covid-19')
+    ax.set_ylabel('Normal')
+    ax.set_zlabel('Pneumonia')
+    ax.grid(True)
+    ax.legend()
+    plt.show()
 
 def test() -> None:
     matrix1 = [[246, 8, 28], [8, 501, 41], [14, 26, 835]]

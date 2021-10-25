@@ -33,11 +33,11 @@ params = {
 train_generator = SegDataGen(train[0],train[1],augmentation=True,**params)
 val_generator = SegDataGen(val[0],val[1],augmentation=True,**params)
 
-model.fit(
-    x=train_generator,
-    validation_data=val_generator,
-    epochs=2
-)
+# model.fit(
+#     x=train_generator,
+#     validation_data=val_generator,
+#     epochs=2
+# )
 
 # model.save_weights('D:\\Mestrado\\pesos\')
 model.load_weights('D:\\Mestrado\\pesos\\pesos.hdf5')

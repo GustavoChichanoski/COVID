@@ -388,6 +388,39 @@ def find_base(model: Model) -> Model:
         if isinstance(layer, Model):
             return layer
 
+def predicts_values(
+    model: Model,
+    x: Union[str, Path],
+    n_splits: int = 100,
+    threshold: float = 0.35,
+    verbose: bool = True,
+    split_dim: int = 224,
+    channels: int = 1,
+) -> str:
+    predicts = np.array([])
+    for image in tqdm(x.x):
+        params_splits = {
+            "verbose": verbose,
+            "dim": split_dim,
+            "channels": channels,
+            "threshold": threshold,
+            "n_splits": n_splits,
+        }
+        cuts, positions = split(image, **params_splits)
+        shape = (1, n_splits, split_dim, split_dim, channels)
+        if isinstance(image, list):
+            shape = (len(image), n_splits, split_dim, split_dim, channels)
+        cuts = cuts.reshape(shape)
+        predict_params = {"verbose": 0}
+        cuts = np.reshape(cuts, (n_splits, split_dim, split_dim, channels))
+        predict_array = predict(model, cuts, **predict_params)
+        zeros = np.zeros((3))
+        for b in predict_array:
+            zeros += b
+        zeros /= n_splits
+        predicts = np.append(zeros, predicts)
+    predicts = np.reshape(predicts, (len(x.x),3))
+    return predicts
 
 def make_grad_cam(
     model: Model,

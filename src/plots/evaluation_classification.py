@@ -45,7 +45,7 @@ def precision(tp: float, tn: float, fp: float, fn: float) -> float:
 
 
 def accuracy(tp: float, tn: float, fp: float, fn: float) -> float:
-    den = (tp + tn + fp + fn)
+    den = tp + tn + fp + fn
     return (tp + tn) / den if den != 0 else 1
 
 
@@ -65,7 +65,7 @@ def plot_mc_in_csv(
     model: Model,
     test_generator: ClassificationDatasetGenerator,
     path_to_save: Path,
-    n_imagens: List[int]
+    n_imagens: List[int],
 ) -> None:
     colunas = np.array([])
     colums_name = [
@@ -114,13 +114,12 @@ def plot_mc_in_csv(
         colunas = np.append(linha, colunas)
     colunas = np.reshape(colunas, (len(n_imagens), len(colums_name)))
     df = pd.DataFrame(data=colunas, columns=colums_name)
-    df.index.name='index'
-    df.to_csv(path_to_save,index=True, index_label='Index')
+    df.index.name = "index"
+    df.to_csv(path_to_save, index=True, index_label="Index")
 
 
 def calculate_parameters_evaluation(
-    matriz: tfa.types.TensorLike,
-    label: int
+    matriz: tfa.types.TensorLike, label: int
 ) -> tfa.types.TensorLike:
     linha = np.array([])
     tp = true_positive(matriz, label)

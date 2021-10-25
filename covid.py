@@ -1,7 +1,7 @@
 from os import path
 from pathlib import Path
 from src.plots.evaluation_classification import plot_mc_in_csv
-from src.plots.graph import plot_dataset, test
+from src.plots.graph import plot_dataset, plot_predict_values, test
 from src.output_result.folders import remove_folder, zip_folder
 
 from numpy.testing._private.utils import assert_equal
@@ -27,16 +27,17 @@ from src.models.classificacao.funcional_model import (
     get_callbacks,
     get_classifier_layer_names,
     make_grad_cam,
+    predicts_values,
     save_weights,
 )
 
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 CHANNELS = 1
-K_SPLIT = 400
+K_SPLIT = 5
 BATCH_SIZE = 1
 EPOCHS = 2
-TAMANHO = 10
+TAMANHO = 285
 
 DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
 TRAIN_PATH = DATA / "train"
@@ -49,7 +50,6 @@ ds_train = Dataset(path_data=TRAIN_PATH, train=False)
 ds_test = Dataset(path_data=TEST_PATH, train=False)
 
 # fixa a aleatoriedade do numpy random
-np.random.seed(0)
 part_param = {"tamanho": TAMANHO, "shuffle": False}
 train, validation = ds_train.partition(val_size=0.2, **part_param)
 test_values, _test_val_v = ds_test.partition(val_size=1e-3, **part_param)
@@ -96,20 +96,21 @@ output = Path("outputs") / NET
 
 model.load_weights(output / "weights\\best.weights.hdf5")
 
-# winner = make_grad_cam(
-#     model=model,
-#     image=test_generator.x[0],
-#     n_splits=K_SPLIT,
-#     threshold=0.1,
-#     orig_dim=DIM_ORIGINAL,
-# )
-matriz = confusion_matrix(model,test_generator,1)
+predicts = predicts_values(
+    model=model,
+    x=test_generator,
+    n_splits=K_SPLIT,
+    threshold=0.1,
+    verbose=False
+)
+plot_predict_values(predicts,test_generator)
+# matriz = confusion_matrix(model,test_generator,100)
 
-# matriz = np.array([[267,3,1],[1,502,27],[14,46,845]])
+# matriz = np.array([[271,2,1],[0,511,24],[10,38,850]])
 
 # import matplotlib
-
-plot_dataset(matriz,K_SPLIT,path=output / "figures",pgf=False)
+# 
+# plot_dataset(matriz,K_SPLIT,path=output / "figures",pgf=False)
 
 parar = True
 
