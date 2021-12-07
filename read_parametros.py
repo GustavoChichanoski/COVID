@@ -7,9 +7,6 @@ import pandas as pd
 
 from pathlib import Path
 
-from pandas.core.arrays import boolean
-from pandas.io.parquet import read_parquet
-
 def legenda_correta_parametros(parameter:str, label: str) -> str:
   if parameter == 'n_cuts':
     return 'Número de Pacotes'
@@ -106,7 +103,7 @@ def plot_history(
 
 REDES = ["ResNet50V2", "InceptionResNetV2", "VGG19", "DenseNet121"]
 
-rede = REDES[2]
+rede = REDES[0]
 output = Path('outputs') / rede
 
 history = output / 'history' / 'history.csv'
@@ -134,6 +131,9 @@ def idontcare(parameter: str, real_name: str, rede: str, df: pd.DataFrame, x: pd
     pneumonia=covid,
     parameter=real_name
   )
+
+tp = df['covid_true_positive']
+tn = df['covid_true_negative']
 
 idontcare('precision', 'Precisão', rede, df, x)
 idontcare('accuraccy', 'Acurácia', rede, df, x)

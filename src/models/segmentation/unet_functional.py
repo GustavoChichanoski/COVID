@@ -146,9 +146,17 @@ def unet_conv(
         padding='same',
         name=f'conv_{k}'
     )(layer)
-    layer = BatchNormalization(name=f'bn_{k}')(layer)
-    layer = Activation(activation, name=f'act_{k}')(layer)
-    layer = Dropout(rate=rate * 2, name=f'drop_{k}')(layer)
+    layer = BatchNormalization(
+        name=f'bn_{k}'
+    )(layer)
+    layer = Activation(
+        activation,
+        name=f'act_{k}'
+    )(layer)
+    layer = Dropout(
+        rate=rate * 2, 
+        name=f'drop_{k}'
+    )(layer)
     return layer
 
 def unet_fit(

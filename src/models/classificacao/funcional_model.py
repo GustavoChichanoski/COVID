@@ -292,7 +292,7 @@ def save_weights(
         metric_value = history.history[metric][-1]
         filename = f"{filename}_{metric}_{metric_value:0.2f}"
         if history_path is not None:
-            pandas2csv(history.history, history_path)
+            pandas2csv(history, history_path)
     filename = parent / filename if parent is not None else filename
     filename = f"{filename}.hdf5"
     print_info(f"Pesos salvos em: {filename}")
