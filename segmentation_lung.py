@@ -1,39 +1,22 @@
 # %% [code]
-from keras.utils import plot_model
 import os
-import cv2 as cv
-import h5py
-import numpy as np  # linear algebra
 import random as rd
-import sklearn.model_selection as ms
+
+import cv2 as cv
 import matplotlib.pyplot as plt
-from tqdm import tqdm
+import numpy as np  # linear algebra
+import sklearn.model_selection as ms
 from keras import backend as K
+from keras.callbacks import EarlyStopping, ModelCheckpoint, ReduceLROnPlateau
+from keras.layers import (Activation, Concatenate, Conv2D, Dropout, Input, MaxPooling2D, UpSampling2D)
+from keras.metrics import (BinaryAccuracy, FalseNegatives, FalsePositives,
+                           TrueNegatives, TruePositives)
 from keras.models import Model
-from keras.layers import Input
-from keras.layers import Dense
-from keras.layers import Lambda
-from keras.layers import Conv2D
-from keras.layers import Dropout
-from keras.layers import Flatten
-from keras.layers import Activation
-from keras.layers import Concatenate
-from keras.layers import UpSampling2D
-from keras.layers import MaxPooling2D
-from keras.layers import LocallyConnected2D
-from keras.layers.normalization import BatchNormalization
-from keras.metrics import TruePositives
-from keras.metrics import TrueNegatives
-from keras.metrics import FalsePositives
-from keras.metrics import FalseNegatives
-from keras.metrics import BinaryAccuracy
-from keras.callbacks import EarlyStopping
-from keras.callbacks import ModelCheckpoint
-from keras.callbacks import ReduceLROnPlateau
-from keras.optimizers import Adam
-from keras.optimizers import SGD
-from keras.regularizers import l1_l2
+from keras.optimizers import SGD, Adam
 from keras.preprocessing import image_dataset_from_directory
+from keras.regularizers import l1_l2
+from keras.utils import plot_model
+from tqdm import tqdm
 
 # %% [code]
 
@@ -454,7 +437,7 @@ model.save(
     'model_acc_{:.02f}.h5'.format(val_acc),
     overwrite=True)
 file_name_weight = 'weights_N_{}_depth_{}_act_{}_acc_{:.02f}.hdf5'.format(
-    i, j, act, val_acc).format(val_acc)
+    i, i, act, val_acc).format(val_acc)
 model.save_weights(
     file_name_weight,
     overwrite=False)
