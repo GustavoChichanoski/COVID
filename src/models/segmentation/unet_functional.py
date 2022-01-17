@@ -8,7 +8,7 @@ from tensorflow.python.keras.layers.convolutional import Conv2D, Convolution1D, 
 from tensorflow.python.keras.layers.core import Dropout
 from tensorflow.python.keras.layers.core import Activation
 from tensorflow.python.keras.layers.merge import Concatenate
-from tensorflow.python.keras.layers.normalization_v2 import BatchNormalization
+from tensorflow.python.keras.layers.normalization.batch_normalization_v1 import BatchNormalization
 from tensorflow.python.keras.layers.pooling import MaxPooling2D
 from tensorflow.python.keras.regularizers import l1_l2
 from tensorflow.python.keras.regularizers import l2
