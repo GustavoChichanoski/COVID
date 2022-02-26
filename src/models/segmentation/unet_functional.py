@@ -1,15 +1,17 @@
+import tensorflow as tf
+
 from gc import garbage
 from typing import Any, List, Optional, Tuple
 
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback, EarlyStopping, History, ModelCheckpoint, ReduceLROnPlateau, TerminateOnNaN
 from tensorflow.python.keras.engine.base_layer import Layer
-from tensorflow.python.keras.layers.convolutional import Conv2D, Convolution1D, UpSampling2D
-from tensorflow.python.keras.layers.core import Dropout
-from tensorflow.python.keras.layers.core import Activation
-from tensorflow.python.keras.layers.merge import Concatenate
-from tensorflow.python.keras.layers.normalization.batch_normalization_v1 import BatchNormalization
-from tensorflow.python.keras.layers.pooling import MaxPooling2D
+from tensorflow.python.keras.layers import Conv2D, UpSampling2D
+from tensorflow.python.keras.layers import Dropout
+from tensorflow.python.keras.layers import Activation
+from tensorflow.python.keras.layers import Concatenate
+from tensorflow.python.keras.layers import BatchNormalization
+from tensorflow.python.keras.layers import MaxPooling2D
 from tensorflow.python.keras.regularizers import l1_l2
 from tensorflow.python.keras.regularizers import l2
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
@@ -18,12 +20,10 @@ from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras.models import Input
 from tensorflow.python.keras.utils.data_utils import Sequence
 
-from src.dataset.generator import KerasGenerator
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.models.metrics.f1_score import F1score
 from src.models.losses.dice_loss import DiceError
 from src.models.callbacks.clear_garbage import ClearGarbage
-import tensorflow as tf
 
 def inner_callbacks() -> List[Callback]:
     checkpoint = ModelCheckpoint(
