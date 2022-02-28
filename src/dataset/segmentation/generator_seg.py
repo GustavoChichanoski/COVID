@@ -98,7 +98,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
         self,
         batch: tfa.types.TensorLike,
         angle: float = 0
-    ) -> Tuple[Any,Any]:
+    ) -> Tuple[tfa.types.TensorLike,tfa.types.TensorLike]:
         """
             Get th data of dataset with position initial in idx to idx plus batch_size.
 
@@ -122,13 +122,7 @@ class SegmentationDatasetGenerator(KerasGenerator):
                 horizontal=self.flip_horizontal,
                 vertical=self.flip_vertical
             )
-        if self.top:
-            batch_out = np.append(batch_out,batch)
-        if self.bot:
-            batch_out = np.append(batch_out,batch)
-        if self.right:
-            batch_out = np.append(batch_out,batch)
-        if self.left:
+        if self.top or self.bot or self.right or self.left:
             batch_out = np.append(batch_out,batch)
         shape = (int(batch_out.size / (self.dim * self.dim)),self.dim,self.dim,self.channels)
         batch_out = batch_out.reshape(shape)

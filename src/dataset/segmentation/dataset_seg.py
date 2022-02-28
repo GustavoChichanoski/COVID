@@ -6,12 +6,14 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
 from dataclasses import dataclass
+import tensorflow as tf
+
 
 @dataclass
 class SegmentationDataset:
     """ Cria o dataset para o keras. """
     path_lung: Path
-    path_mask: Optional[Path]= None
+    path_mask: Optional[Path] = None
     """
         Args:
             path_data (str): Caminho onde se encontra os dados dos raios-x
@@ -87,7 +89,8 @@ class SegmentationDataset:
                 (train), (val): Saida para o keras.
         """
         # t : train - v : validation
-        tam_max = tamanho if tamanho > 0 and tamanho < len(self.x) else len(self.x)
+        tam_max = tamanho if tamanho > 0 and tamanho < len(
+            self.x) else len(self.x)
         x = self.x[:tam_max]
         y = self.y[:tam_max]
 

@@ -7,3 +7,4 @@ varname
 tensorflow_datasets
 tensorflow_addons
 albumentations
+opencv-contrib-python
