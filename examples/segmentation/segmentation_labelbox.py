@@ -4,7 +4,7 @@ from labelbox import Client, Project
 from getpass import getpass
 from PIL import Image
 from pathlib import Path
-from src.dataset.segmentation.dataset_seg import SegmentationDataset
+from src.data.segmentation.dataset_seg import SegmentationDataset
 from src.images.read_image import read_images
 from io import BytesIO
 from typing import Dict, Any, Tuple

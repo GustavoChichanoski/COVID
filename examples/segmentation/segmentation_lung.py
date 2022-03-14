@@ -38,8 +38,8 @@ import tensorflow as tf
 
 sys.path.append('./Covid')
 from src.models.metrics.f1_score import F1score
-from src.dataset.dataset_seg import SegmentationDataset
-from src.dataset.dataset_seg import SegmentationDataGenerator
+from src.data.dataset_seg import SegmentationDataset
+from src.data.dataset_seg import SegmentationDataGenerator
 
 def conv_unet(
     layer,
@@ -58,10 +58,10 @@ def conv_unet(
     layer = Activation(act,name=act_name)(layer)
     layer = Dropout(0.75,name=drop_name)(layer)
     return layer
-    
+
 def Up_plus_Concatenate(layer,connection,i):
     # Define names of layers
-    up_name = 'UpSampling{}_1'.format(i) 
+    up_name = 'UpSampling{}_1'.format(i)
     conc_name = 'UpConcatenate{}_1'.format(i)
     # Create the layer sequencial
     layer = UpSampling2D(name=up_name)(layer)
@@ -76,15 +76,15 @@ def model_unet(
     n_class=1,
     final_activation='sigmoid',
     filter_root=32):
-    
+
     store_layers = {}
-    
+
     inputs = Input(input_size)
-    
+
     first_layer = inputs
-    
+
     for i in range(depth):
-    
+
         filters = (2**i) * filter_root
 
         # Cria as duas convoluções da camada
@@ -119,13 +119,13 @@ def model_unet(
                 activation,i,j)
 
         first_layer = layer
-        
+
     layer = Dropout(0.5,name='Drop_1')(layer)
     outputs = Conv2D(
         n_class,(1,1),padding='same',
         activation=final_activation, name='output'
     )(layer)
-    
+
     return Model(inputs,outputs,name="UNet")
 
 def dice_coef(y_true, y_pred):
@@ -141,7 +141,7 @@ def dice_coef(y_true, y_pred):
     class_num = 1
 
     for class_now in range(class_num):
-    
+
     # Converte y_pred e y_true em vetores
         y_true_f = K.flatten(y_true[:,:,:,class_now])
         y_pred_f = K.flatten(y_pred[:,:,:,class_now])
@@ -157,12 +157,12 @@ def dice_coef(y_true, y_pred):
         num = (K.constant(2) * intersection + 1)
         den = (union + smooth)
         loss = num / den
-        
+
         if class_now == 0:
             total_loss = loss
         else:
             total_loss = total_loss + loss
-    
+
     total_loss = total_loss / class_num
 
     return total_loss
@@ -312,22 +312,22 @@ for i in history:
 
     training_loss += i.history['loss']
     validation_loss += i.history['val_loss']
-    
+
     training_accuracy += i.history['accuracy']
     validation_accuracy += i.history['val_accuracy']
-    
+
 #     training_tp += i.history['tp']
 #     validation_tp += i.history['val_tp']
-    
+
 #     training_fp += i.history['fp']
 #     validation_fp += i.history['val_fp']
-    
+
 #     training_tn += i.history['tn']
 #     validation_tn += i.history['val_tn']
-    
+
 #     training_fn += i.history['fn']
 #     validation_fn += i.history['val_fn']
-    
+
     training_f1 += i.history['f1']
     validation_f1 += i.history['val_f1']
 
@@ -347,7 +347,7 @@ model.save_weights(
 
 # %% [code] {"execution":{"iopub.status.busy":"2021-06-11T14:41:49.674546Z","iopub.status.idle":"2021-06-11T14:41:49.675257Z"}}
 fig, axs = plt.subplots(1,2,figsize=(10,10))
-    
+
 epoch_count = range(1,len(training_loss) + 1)
 
 str_val, str_train = "Validação ", "Treinamento "
@@ -466,7 +466,7 @@ len_test_masks = test_masks.shape[0]
 randomIndex = np.random.randint(1,len_test_masks,6)
 
 for i in range(0,6,2):
-    
+
     index = randomIndex[i]
 
     fig, axs = plt.subplots(3,2,figsize = (10, 5))
@@ -474,12 +474,12 @@ for i in range(0,6,2):
     plt.imshow(np.squeeze(tests[index]),cmap='gray')
     plt.axis('off')
     plt.xlabel('Base Image')
-    
+
     plt.subplot(1,2,2)
     plt.imshow(np.squeeze(test_masks[index]),cmap = 'gray')
     plt.axis('off')
     plt.xlabel("Prediction")
-    
+
     plt.show()
 
 # %% [code] {"jupyter":{"outputs_hidden":false},"execution":{"iopub.status.busy":"2021-06-11T14:41:49.688563Z","iopub.status.idle":"2021-06-11T14:41:49.689285Z"}}
@@ -491,19 +491,19 @@ n_images = 3
 random_index = np.random.randint(1,pred_train_mask.shape[0],10)
 
 for i in range(n_images):
-    
+
     index = randomIndex[i]
-    
+
     fig, axs = plt.subplots(1,3,figsize=(20,20))
-    
+
     axs[0].imshow(np.squeeze(lung_train[index]),cmap='gray')
     axs[0].axis('off')
     axs[0].set_title('Imagem Base')
-    
+
     axs[1].imshow(np.squeeze(mask_train[index]),cmap='gray')
     axs[1].axis('off')
     axs[1].set_title('Máscara')
-    
+
     axs[2].imshow(np.squeeze(pred_train_mask[index]),cmap='gray')
     axs[2].axis('off')
     axs[2].set_title("Predição")
@@ -522,7 +522,7 @@ def dice_coef_max(y_true, y_pred):
     class_num = 1
 
     for class_now in range(class_num):
-    
+
     # Converte y_pred e y_true em vetores
         y_true_f = K.flatten(y_true[:,:,:])
         y_pred_f = K.flatten(y_pred[:,:,:])
@@ -538,12 +538,12 @@ def dice_coef_max(y_true, y_pred):
         num = (K.constant(2)*intersection + 1)
         den = (union + smooth)
         loss = num / den
-        
+
         if class_now == 0:
             total_loss = loss
         else:
             total_loss = total_loss + loss
-    
+
     total_loss = total_loss / class_num
 
     return 1 - total_loss
@@ -560,13 +560,13 @@ error = np.array([])
 
 for mask, pred in zip(mask_train,pred_train_mask):
     jac = np.append(jac,jaccard(mask, pred))
-    
+
 for mask, pred in zip(mask_train,pred_train_mask):
     error = np.append(error, jaccard(mask, pred))
 
 print('Jaccard desvio padrao {:0.2f}'.format(100*np.std(jac)))
 print('Jaccard média {:0.2f}'.format(np.mean(jac)*100))
-    
+
 import seaborn as sns
 from matplotlib.pyplot import figure
 
@@ -586,9 +586,9 @@ print('desvio padrao {:0.2f}'.format(100*np.std(error)))
 print('Média {:0.2f}'.format(100 - np.mean(error)*100))
 
 plt.plot(range(len(error)),np.sort(error))
-    
+
 indexes, erros, acertos = [], [], []
-    
+
 for i in range(0,5):
     indexes.append(error.argmin())
     erros.append(error[indexes[i]])
@@ -599,7 +599,7 @@ i = 0
 for e in erros:
     print('error {}: {:0.2f}'.format(i, (1 - e)*100))
     i += 1
-    
+
 error = np.array([])
 for mask, pred in zip(mask_train,pred_train_mask):
     error = np.append(error, jaccard(mask, pred))
@@ -624,19 +624,19 @@ def segmentation_lung(lung, mask):
 
 # %% [code] {"execution":{"iopub.status.busy":"2021-06-11T14:41:49.697748Z","iopub.status.idle":"2021-06-11T14:41:49.698489Z"}}
 for index in max_indexes:
-        
+
     plt.imshow(np.squeeze(lung_train[index]),cmap='gray')
     plt.axis('off')
     plt.show()
-    
+
     plt.imshow(np.squeeze(mask_train[index]),cmap='gray')
     plt.axis('off')
     plt.show()
-    
+
     plt.imshow(np.squeeze(pred_train_mask[index]),cmap='gray')
     plt.axis('off')
     plt.show()
-    
+
     plt.imshow(segmentation_lung(lung_train[index],pred_train_mask[index]).reshape((256,256)),cmap='gray')
     plt.axis('off')
     plt.show()
@@ -650,17 +650,17 @@ from src.output_result.folders import create_folders
 create_folders('fig')
 
 for i in range(n_images):
-    
+
     index = randomIndex[i]
-    
+
     plt.imshow(np.squeeze(lung_train[index]),cmap='gray')
     plt.axis('off')
     plt.show()
-    
+
     plt.imshow(np.squeeze(mask_train[index]),cmap='gray')
     plt.axis('off')
     plt.show()
-    
+
     plt.imshow(np.squeeze(pred_train_mask[index]),cmap='gray')
     plt.axis('off')
     plt.show()

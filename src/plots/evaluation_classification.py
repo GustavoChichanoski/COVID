@@ -1,4 +1,4 @@
-from src.dataset import generator
+from src.data import generator
 from typing import List
 import tensorflow_addons as tfa
 from tensorflow.python.keras import Model
@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.dataset.classification.cla_generator import ClassificationDatasetGenerator
+from src.data.classification.cla_generator import ClassificationDatasetGenerator
 from src.models.classificacao.funcional_model import confusion_matrix
 
 

@@ -8,7 +8,7 @@ from tensorflow.python.keras.layers.convolutional import Conv2D, UpSampling2D
 from tensorflow.python.keras.layers.core import Dropout
 from tensorflow.python.keras.layers.core import Activation
 from tensorflow.python.keras.layers.merge import Concatenate
-from tensorflow.python.keras.layers.normalization_v2 import BatchNormalization
+from tensorflow.python.keras.layers.normalization import BatchNormalization
 from tensorflow.python.keras.layers.pooling import MaxPooling2D
 from tensorflow.python.keras.regularizers import l1_l2
 from tensorflow.python.keras.regularizers import l2
@@ -18,7 +18,7 @@ from tensorflow.python.keras.metrics import BinaryAccuracy
 from tensorflow.python.keras.models import Input
 from tensorflow.python.keras.utils.data_utils import Sequence
 
-from src.dataset.generator import KerasGenerator
+from src.data.generator import KerasGenerator
 from src.models.losses.log_cosh_dice_loss import LogCoshDiceError
 from src.models.metrics.f1_score import F1score
 from src.models.losses.dice_loss import DiceError
@@ -109,7 +109,7 @@ class Unet(Model):
 
         # Unique layers
         self.last_conv = Conv2D(
-            n_class, 
+            n_class,
             (1,1),
             padding='same',
             activation=final_activation,

@@ -1,5 +1,5 @@
 import unittest
-from src.dataset.segmentation.dataset_seg import SegmentationDataset
+from src.data.segmentation.dataset_seg import SegmentationDataset
 from pathlib import Path
 import numpy as np
 

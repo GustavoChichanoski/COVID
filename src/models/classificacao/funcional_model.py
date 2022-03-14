@@ -10,7 +10,7 @@ from tensorflow.python.keras.losses import Loss
 from tensorflow_addons.utils.types import Optimizer
 
 from src.images.process_images import split
-from src.dataset.classification.cla_generator import ClassificationDatasetGenerator
+from src.data.classification.cla_generator import ClassificationDatasetGenerator
 from src.images.read_image import read_images
 from src.models.grad_cam_split import last_act_after_conv_layer, prob_grad_cam
 from src.output_result.folders import pandas2csv
@@ -47,7 +47,7 @@ from tensorflow.python.keras.preprocessing.image import img_to_array
 def get_callbacks() -> List[Callback]:
     """
     Retorna a lista callbacks do modelo
-    
+
     Returns:
     --------
         (List[Callback]): lista dos callbacks

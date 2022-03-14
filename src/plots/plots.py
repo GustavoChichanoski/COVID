@@ -12,7 +12,7 @@ from pathlib import Path
 
 from tensorflow.python.keras import Model
 
-from src.dataset.classification.cla_generator import ClassificationDatasetGenerator
+from src.data.classification.cla_generator import ClassificationDatasetGenerator
 
 def plot_model(path: Path, model: Model) -> str:
     for layers in model.layers:

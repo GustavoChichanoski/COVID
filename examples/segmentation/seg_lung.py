@@ -3,8 +3,8 @@ from pathlib import Path
 
 import numpy as np
 
-from src.dataset.segmentation.generator_seg import SegmentationDatasetGenerator as SegDataGen
-from src.dataset.segmentation.dataset_seg import SegmentationDataset
+from src.data.segmentation.generator_seg import SegmentationDatasetGenerator as SegDataGen
+from src.data.segmentation.dataset_seg import SegmentationDataset
 from src.models.segmentation.unet import Unet
 
 DIM = 128

@@ -1,11 +1,14 @@
 # %%
 from pathlib import Path
-
+import tensorflow as tf
 import numpy as np
 
-from src.dataset.segmentation.generator_seg import SegmentationDatasetGenerator as SegDataGen
-from src.dataset.segmentation.dataset_seg import SegmentationDataset
+from src.data.segmentation.generator_seg import SegmentationDatasetGenerator as SegDataGen
+from src.data.segmentation.dataset_seg import SegmentationDataset
 from src.models.segmentation.unet import Unet
+
+lungs = tf.data.Dataset.list_files('./dataset/lungs/*.png')
+masks = tf.data.Dataset.list_files('./dataset/masks/*.png')
 
 DIM = 128
 BATCH_SIZE = 1

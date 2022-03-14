@@ -15,8 +15,8 @@ from tensorflow.python.keras.callbacks import Callback
 from tensorflow.python import keras
 from tensorflow import keras
 
-from src.dataset.classification.cla_dataset import Dataset
-from src.dataset.classification.cla_generator import (
+from src.data.classification.cla_dataset import Dataset
+from src.data.classification.cla_generator import (
     ClassificationDatasetGenerator as ClaDataGen,
 )
 from src.models.grad_cam_split import grad_cam, last_act_after_conv_layer
@@ -109,7 +109,7 @@ plot_predict_values(predicts,test_generator)
 # matriz = np.array([[271,2,1],[0,511,24],[10,38,850]])
 
 # import matplotlib
-# 
+#
 # plot_dataset(matriz,K_SPLIT,path=output / "figures",pgf=False)
 
 parar = True

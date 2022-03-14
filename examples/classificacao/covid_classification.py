@@ -5,8 +5,8 @@
 """
 from src.plots.history import plot_history
 from src.models.classificacao.model import ModelCovid
-from src.dataset.classification.cla_dataset import Dataset
-from src.dataset.classification.cla_generator import ClassificationDatasetGenerator as ClaDataGen
+from src.data.classification.cla_dataset import Dataset
+from src.data.classification.cla_generator import ClassificationDatasetGenerator as ClaDataGen
 from src.output_result.folders import *
 from pathlib import Path
 from os import listdir
@@ -74,7 +74,7 @@ val_generator = ClaDataGen(validation[0],validation[1],**params)
 test_generator = ClaDataGen(test_values[0],test_values[1],**params)
 # %% [code]
 for net, net_path in zip(NETS[1:], nets_path[1:]):
-    
+
     model = net
     net_path = net_path
 
