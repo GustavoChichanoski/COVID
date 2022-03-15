@@ -43,7 +43,7 @@ def normalize(
   Returns:
       Tuple[tf.Tensor, tf.Tensor]: Normalized image and its annotation.
   """
-  image = (tf.cast(image, tf.float32) - 127.5) / 127.5
+  image = tf.cast(image, tf.float32) / 255.0
   return image, mask
 
 @tf.function
