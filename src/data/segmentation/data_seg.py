@@ -14,7 +14,7 @@ def parse_image(img_path: str) -> dict:
       dict: Dicionary mapping an image and its annotation
   """
   image = tf.io.read_file(img_path)
-  image = tf.image.decode_jpeg(image, channels=3)
+  image = tf.image.decode_png(image, channels=3)
   image = tf.image.convert_image_dtype(image, tf.uint8)
 
   # find the mask path
@@ -23,8 +23,8 @@ def parse_image(img_path: str) -> dict:
   # datasets/masks/0001.png
   mask_path = tf.strings.regex_replace(img_path, "lungs", "masks")
   mask = tf.io.read_file(mask_path)
-  mask = tf.image.decode_png(mask, channels=1)
-  mask = tf.where(mask > 127, np.dtype('uint8').type(0), mask)
+  mask = tf.image.decode_png(mask, channels=3)
+  mask = tf.where(mask > 1, np.dtype('uint8').type(1), mask)
 
   return {'image': image, 'mask': mask}
 
