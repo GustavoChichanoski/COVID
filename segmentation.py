@@ -1,7 +1,10 @@
 from pathlib import Path
+import scipy.ndimage as ndimage
 import pandas as pd
+import numpy as np
 import segmentation_models as sm
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 from src.data.segmentation.data_seg import (
     parse_image, load_image_train, load_image_test
@@ -88,9 +91,35 @@ dataset_path['valid'] = dataset_path['valid'].prefetch(buffer_size=AUTOTUNE)
 
 dataset_path['tests'] = dataset_path['tests'].map(parse_image)
 dataset_path['tests'] = dataset_path['tests'].map(load_image_test)
-dataset_path['tests'] = dataset_path['tests'].repeat()
+# dataset_path['tests'] = dataset_path['tests'].repeat()
 dataset_path['tests'] = dataset_path['tests'].batch(BATCH_SIZE)
 dataset_path['tests'] = dataset_path['tests'].prefetch(buffer_size=AUTOTUNE)
+
+def plot_batch_sizes(ds):
+  batch_sizes = [batch.shape[0] for batch in ds]
+  plt.bar(range(len(batch_sizes)), batch_sizes)
+  plt.xlabel('Batch number')
+  plt.ylabel('Batch size')
+
+def random_rotate_image(image, mask):
+  angle = np.random.uniform(-30, 30)
+  image = ndimage.rotate(image, angle, reshape=False)
+  mask = ndimage.rotate(mask, angle, reshape=False)
+  return image, mask
+
+def show(image, mask):
+  plt.figure()
+  plt.subplot(2,1,1)
+  plt.imshow(image[0,:,:,0])
+  plt.title('pulmao')
+  plt.subplot(2,1,2)
+  plt.imshow(mask[0,:,:,0])
+  plt.title('mascara')
+  plt.axis('off')
+
+for image, mask in dataset_path['tests'].take(2):
+  image, mask = random_rotate_image(image, mask)
+  show(image, mask)
 
 # %% create model
 sm.set_framework('tf.keras')
@@ -102,8 +131,22 @@ dataset_path['train'] = preprocess_input(dataset_path['train'])
 dataset_path['valid'] = preprocess_input(dataset_path['valid'])
 dataset_path['tests'] = preprocess_input(dataset_path['tests'])
 
+input_layer = tf.keras.Input((256,256, 3))
+layer = tf.keras.layers.RandomFlip("horizontal", seed=SEED)(input_layer)
+layer = tf.keras.layers.RandomZoom(
+        height_factor=(-0.1, -0.1),
+        width_factor=(-0.1, -0.1),
+        seed=SEED) (layer)
+layer = tf.keras.layers.RandomRotation(0.3)(layer)
 
-model = sm.Unet(BACKBONE, encoder_weights='imagenet', classes=1, activation='sigmoid')
+layer = sm.Unet(
+    BACKBONE,
+    encoder_weights='imagenet',
+    classes=1,
+    activation='sigmoid'
+  ) (layer)
+model = tf.keras.Model(inputs=input_layer, outputs=layer)
+
 model.compile(
   'Adam',
   sm.losses.bce_jaccard_loss,
@@ -113,6 +156,9 @@ model.compile(
 model.fit(
   x=dataset_path['train'],
   batch_size=BATCH_SIZE,
-  epochs=100,
+  epochs=2,
   validation_data=dataset_path['valid']
 )
+
+sm.utils.set_trainable(model)
+model.fit()
