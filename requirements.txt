@@ -1,6 +1,5 @@
 numpy
 pandas
-tensorflow
 keras
 opencv-python
 varname
