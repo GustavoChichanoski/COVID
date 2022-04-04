@@ -18,7 +18,7 @@ def calculate_parts(
   return [num_files_train, num_files_valid, num_files_tests]
 
 
-def read_path(path: Path, valid: float = 0.2, test: float = 0.1) -> dict:
+def read_path_valids(path: Path, valid: float = 0.2, test: float = 0.1) -> dict:
 
   if path.is_dir() is True:
 
@@ -54,4 +54,4 @@ def read_path(path: Path, valid: float = 0.2, test: float = 0.1) -> dict:
     df_files.to_csv(path / 'metadata_segmentation.csv')
 
 
-read_path(Path('dataset\\segmentation'))
+# read_path_valids(Path('dataset\\segmentation'))
