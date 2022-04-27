@@ -5,58 +5,19 @@ import pandas as pd
 import albumentations as A
 import tensorflow_addons as tfa
 
-from typing import Dict, Tuple
+from typing import Dict
 from pathlib import Path
 from tqdm import tqdm
 from create_csv_of_dataset_segmentation import calculate_parts
-from src.images.data_augmentation import (
-    add_random_ellipse_brightess, random_brightness, random_contrast,
-    random_gamma, random_rotate_image
-)
-from src.images.data_augmentation import (
-    flip_vertical_image, flip_horizontal_image, cut_bot_image, cut_left_image,
-    cut_right_image, cut_top_image
-)
-
-def augmentation(
-    i: int, dataset_path: Path, dataset: Dict, lung: tfa.types.TensorLike,
-    mask: tfa.types.TensorLike, pixel_start: Tuple[int, int],
-    pixel_end: Tuple[int, int], type: str
-) -> Tuple[Dict, int]:
-  lung_top = cut_top_image(lung, px_start=pixel_start, px_end=pixel_end)
-  lung_bot = cut_bot_image(lung, px_start=pixel_start, px_end=pixel_end)
-  lung_left = cut_left_image(lung, px_start=pixel_start, px_end=pixel_end)
-  lung_right = cut_right_image(lung, px_start=pixel_start, px_end=pixel_end)
-  lung_ellipse = add_random_ellipse_brightess(
-      img=lung, px_start=pixel_start, px_end=pixel_end, n_ellipse=2
-  )
-  lung_brightness = random_brightness(lung)
-  lung_contrast = random_contrast(lung)
-  lung_gamma = random_gamma(lung)
-
-  dataset = save_image(lung, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_top, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_bot, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_left, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_right, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_ellipse, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_brightness, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_contrast, mask, dataset_path, i, dataset, type)
-  i += 1
-  dataset = save_image(lung_gamma, mask, dataset_path, i, dataset, type)
-  i += 1
-  return (dataset, i)
-
+import tensorflow_addons as tfa
 
 def save_image(
-    lung, mask, path: Path, i: int, dataset: dict, type: str
+  lung: tfa.types.TensorLike,
+  mask: tfa.types.TensorLike,
+  path: Path,
+  i: int,
+  dataset: dict,
+  type: str
 ) -> Dict:
   lung_path = path / 'lungs' / '{:04d}.png'.format(i)
   mask_path = path / 'masks' / '{:04d}.png'.format(i)
@@ -68,7 +29,13 @@ def save_image(
   return dataset
 
 
-def read_path(path: Path, new_path: Path,  valid: float = 0.2, test: float = 0.2) -> dict:
+def read_path(
+  path: Path,
+  new_path: Path,
+  valid: float = 0.2,
+  test: float = 0.2,
+  n_copies: int = 8000
+) -> Dict:
   if path.is_dir():
     types = ['train', 'valid', 'tests']
 
@@ -81,10 +48,20 @@ def read_path(path: Path, new_path: Path,  valid: float = 0.2, test: float = 0.2
     files = list(path.glob('lungs/*.png'))
     num_files = len(files)
     num_files_by_types = calculate_parts(num_files, test, valid)
+    copies_per_image = np.floor(
+        n_copies * (num_files_by_types / (num_files * num_files))
+    ).astype(int)
 
     lung_id = 0
 
-    for num_files_of_type, type_file in tqdm(zip(num_files_by_types, types)):
+    transform_ori = A.Compose(
+        [A.InvertImg(always_apply=True),
+         A.Equalize(always_apply=True)]
+    )
+    transform_train = compose_train()
+    for num_files_of_type, type_file, copy_per_type in tqdm(
+        zip(num_files_by_types, types, copies_per_image)
+    ):
       for file in tqdm(random.sample(files, num_files_of_type)):
         file_mask = convert_lung_mask_path(file)
 
@@ -92,13 +69,21 @@ def read_path(path: Path, new_path: Path,  valid: float = 0.2, test: float = 0.2
         dataset['lung'][str(lung_id)] = str(file)
         dataset['mask'][str(lung_id)] = str(file_mask)
 
-        lung = cv2.imread(str(file))
-        mask = cv2.imread(str(file_mask))
+        lung = cv2.cvtColor(cv2.imread(str(file)), cv2.COLOR_BGR2GRAY)
+        mask = cv2.cvtColor(cv2.imread(str(file_mask)), cv2.COLOR_BGR2GRAY)
 
-        lung = cv2.cvtColor(lung, cv2.COLOR_BGR2GRAY)
-        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        image_ori = transform_ori(image=lung, mask=mask)
 
+        dataset = save_image(
+            lung=image_ori['image'],
+            mask=image_ori['mask'],
+            path=new_path,
+            i=lung_id,
+            dataset=dataset,
+            type=type_file
+        )
         lung_id += 1
+
         if len(lung.shape) > 2:
           y_nonzero, x_nonzero = np.nonzero(mask[:, :, 0])
         else:
@@ -106,26 +91,70 @@ def read_path(path: Path, new_path: Path,  valid: float = 0.2, test: float = 0.2
         px_start, px_end = (np.min(y_nonzero), np.min(x_nonzero)), \
                             (np.max(y_nonzero), np.max(x_nonzero))
 
-        if type_file != 'tests':
-          dataset, lung_id = augmentation(
+        for _ in range(copy_per_type):
+          image = transform_train(
+              image=image_ori['image'], mask=image_ori['mask']
+          )
+          dataset = save_image(
+              lung=image['image'],
+              mask=image['mask'],
+              path=new_path,
               i=lung_id,
-              dataset_path=new_dataset_path,
               dataset=dataset,
-              lung=lung,
-              mask=mask,
-              pixel_start=px_start,
-              pixel_end=px_end,
               type=type_file
           )
-        lung_id += 1
+          lung_id += 1
         files.remove(file)
     return dataset
 
+
+def compose_train() -> A.Compose:
+  return A.Compose(
+      [
+          A.HorizontalFlip(p=0.5),
+          A.RandomGamma(
+              always_apply=False, p=0.4, gamma_limit=(23, 81), eps=1e-07
+          ),
+          A.RandomBrightnessContrast(
+              always_apply=False,
+              p=0.4,
+              brightness_limit=(-0.2, 0.2),
+              contrast_limit=(-0.2, 0.2),
+              brightness_by_max=True
+          ),
+          A.GaussNoise(var_limit=(200, 300), p=0.4),
+          A.ElasticTransform(
+              always_apply=False,
+              p=0.4,
+              alpha=3.0,
+              sigma=50.0,
+              alpha_affine=50.0,
+              interpolation=0,
+              border_mode=0,
+              value=(0, 0, 0),
+              mask_value=None,
+              approximate=False
+          ),
+          A.GridDistortion(
+              always_apply=False,
+              p=0.4,
+              num_steps=5,
+              distort_limit=(-0.3, 0.3),
+              interpolation=0,
+              border_mode=0,
+              value=(0, 0, 0),
+              mask_value=None
+          )
+      ]
+  )
+
+
 def convert_lung_mask_path(file: Path) -> Path:
-    file_parts = list(file.parts)
-    file_parts[-2] = 'masks'
-    file_mask = Path(*file_parts)
-    return file_mask
+  file_parts = list(file.parts)
+  file_parts[-2] = 'masks'
+  file_mask = Path(*file_parts)
+  return file_mask
+
 
 def generate_dict_lungs(path: Path) -> Dict:
   lung_mask_path = {}
@@ -145,7 +174,8 @@ def generate_dict_lungs(path: Path) -> Dict:
         raise ValueError
   return lung_mask_path
 
-dict_lungs = generate_dict_lungs(Path('dataset\lungs'))
+
+dict_lungs = generate_dict_lungs(Path('dataset\\lungs'))
 df_dataset = pd.DataFrame(dict_lungs)
 
 df_dataset['lung'] = df_dataset['lung'].apply(lambda x: str(Path.cwd() / x))
@@ -163,7 +193,9 @@ dataset['type'] = {}
 dataset['lung'] = {}
 dataset['mask'] = {}
 
-dataset = read_path(dataset_path, new_dataset_path)
+dataset = read_path(dataset_path, new_dataset_path, valid=0.2, test=0.1)
 
 df = pd.DataFrame(dataset)
-df.to_csv(Path('dataset') / 'dataset' / 'metadata_segmentation_augmentation.csv')
+df.to_csv(
+    Path('dataset') / 'dataset' / 'metadata_segmentation_augmentation.csv'
+)

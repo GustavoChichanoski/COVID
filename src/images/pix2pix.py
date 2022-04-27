@@ -2,6 +2,8 @@ from pathlib import Path
 from typing import Tuple
 import pandas as pd
 import tensorflow as tf
+from tensorflow.image import ResizeMethod
+import tensorflow_addons as tfa
 
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 IMG_WIDTH = 256
@@ -13,24 +15,24 @@ def load(path: str):
   image = tf.cast(image, tf.float32)
   return image
 
-def resize(image, height: int, width: int):
+def resize(image: tfa.types.TensorLike, height: int, width: int):
   image = tf.image.resize(image,
                           [height, width],
-                          method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+                          method=ResizeMethod.NEAREST_NEIGHBOR)
   return image
 
-def normalize(image):
+def normalize(image: tfa.types.TensorLike):
   norm_image = (image / 127.5) - 1
   return norm_image
 
-def find_mask_image_path(path):
+def find_mask_image_path(path: str):
     mask = Path(path)
     mask = list(mask.parts)
     mask[-2] = 'mask'
     mask = Path(*mask)
     return mask
 
-def load_image(path):
+def load_image(path: str):
   mask_path = find_mask_image_path(path)
 
   lung = load(path)

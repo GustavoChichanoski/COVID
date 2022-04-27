@@ -79,19 +79,16 @@ dataset_path = {
 dataset_path['train'] = dataset_path['train'].map(parse_image, num_parallel_calls=AUTOTUNE)
 dataset_path['train'] = dataset_path['train'].map(load_image_train, num_parallel_calls=AUTOTUNE)
 dataset_path['train'] = dataset_path['train'].shuffle(buffer_size=BUFFER_SIZE, seed=SEED)
-# dataset_path['train'] = dataset_path['train'].repeat()
 dataset_path['train'] = dataset_path['train'].batch(BATCH_SIZE)
 dataset_path['train'] = dataset_path['train'].prefetch(buffer_size=AUTOTUNE)
 
 dataset_path['valid'] = dataset_path['valid'].map(parse_image)
 dataset_path['valid'] = dataset_path['valid'].map(load_image_test)
-# dataset_path['valid'] = dataset_path['valid'].repeat()
 dataset_path['valid'] = dataset_path['valid'].batch(BATCH_SIZE)
 dataset_path['valid'] = dataset_path['valid'].prefetch(buffer_size=AUTOTUNE)
 
 dataset_path['tests'] = dataset_path['tests'].map(parse_image)
 dataset_path['tests'] = dataset_path['tests'].map(load_image_test)
-# dataset_path['tests'] = dataset_path['tests'].repeat()
 dataset_path['tests'] = dataset_path['tests'].batch(BATCH_SIZE)
 dataset_path['tests'] = dataset_path['tests'].prefetch(buffer_size=AUTOTUNE)
 

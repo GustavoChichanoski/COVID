@@ -9,9 +9,9 @@ import cv2
 from src.images.process_images import random_pixel
 import albumentations as A
 
+
 def random_rotate_image(
-    image: tfa.types.TensorLike,
-    angle: float = 0.0
+    image: tfa.types.TensorLike, angle: float = 0.0
 ) -> tfa.types.TensorLike:
   """
         Rotate `image` with tensorflow_addons, based in angle deggres in `angle`, image need be NHWC (number_images,height,width,channels) or HW(height,width)
@@ -55,11 +55,43 @@ def flip_horizontal_image(image: tfa.types.TensorLike) -> tfa.types.TensorLike:
   valid_shape(image, 3, 4)
   return tf.image.flip_left_right(image)
 
+
 def flip_vertical_image(image: tfa.types.TensorLike) -> tfa.types.TensorLike:
   valid_shape(image, 3, 4)
   return tf.image.flip_up_down(image)
 
-def cut_top(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
+def cut_half(
+  image: tfa.types.TensorLike,
+  px_start: Tuple[int,int] = (-1,-1),
+  px_end: Tuple[int,int] = (-1,-1),
+  p: float = 1.0
+) -> tfa.types.TensorLike:
+  if p < np.random.random():
+    return image
+  prob = np.random.random_integers(0, 3)
+  if prob == 0:
+    image = cut_top_image(
+        image, px_start=px_start, px_end=px_end
+    )
+  if prob == 1:
+    image = cut_bot_image(
+        image, px_start=px_start, px_end=px_end
+    )
+  if prob == 2:
+    image = cut_left_image(
+        image, px_start=px_start, px_end=px_end
+    )
+  if prob == 3:
+    image = cut_right_image(
+        image, px_start=px_start, px_end=px_end
+    )
+  return image
+
+def cut_top(
+    images: tfa.types.TensorLike, p: float = 1.0
+) -> tfa.types.TensorLike:
+  if (p < np.random.random()):
+    return images
   shape = images.shape
   out = np.array([])
   if len(shape) > 3:
@@ -72,10 +104,11 @@ def cut_top(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
   out = np.reshape(out, shape)
   return out
 
+
 def cut_top_image(
     image: tfa.types.TensorLike,
-    px_start: Tuple[int, int] = (-1,-1),
-    px_end: Tuple[int,int] = (-1,-1)
+    px_start: Tuple[int, int] = (-1, -1),
+    px_end: Tuple[int, int] = (-1, -1)
 ) -> tfa.types.TensorLike:
   new_image = image.copy()
   dim = new_image.shape[1]
@@ -83,7 +116,10 @@ def cut_top_image(
   new_image[:dim2, :] = np.zeros((dim2, dim))
   return new_image
 
-def cut_bot(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
+
+def cut_bot(images: tfa.types.TensorLike, p: float = 1.0) -> tfa.types.TensorLike:
+  if (p < np.random.random()):
+    return images
   out = np.array([])
   shape = images.shape[-2]
   if len(shape) > 3:
@@ -95,28 +131,34 @@ def cut_bot(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
   out = np.reshape(out, shape)
   return out
 
+
 def random_gamma(image: tfa.types.TensorLike) -> tfa.types.TensorLike:
   gamma = normalize(np.random.random_sample(), 0.5, .9)
   return adjust_gamma(image, gamma)
 
+
 def adjust_gamma(image: tfa.types.TensorLike, gamma: float = 1.0):
-	# build a lookup table mapping the pixel values [0, 255] to
-	# their adjusted gamma values
-	inv_gamma = 1.0 / gamma
-	table = np.array([((i / 255.0) ** inv_gamma) * 255
-		for i in np.arange(0, 256)]).astype("uint8")
-	# apply gamma correction using the lookup table
-	return cv2.LUT(image, table)
+  # build a lookup table mapping the pixel values [0, 255] to
+  # their adjusted gamma values
+  inv_gamma = 1.0 / gamma
+  table = np.array([((i / 255.0)**inv_gamma) * 255 for i in np.arange(0, 256)]
+                  ).astype("uint8")
+  # apply gamma correction using the lookup table
+  return cv2.LUT(image, table)
+
 
 def random_contrast(img: tfa.types.TensorLike) -> tfa.types.TensorLike:
   contrast = normalize(np.random.random_sample(), 0.1, .4) * 255
   return adjust_contrast(img, int(contrast))
 
-def adjust_contrast(img: tfa.types.TensorLike, contrast) -> tfa.types.TensorLike:
+
+def adjust_contrast(
+    img: tfa.types.TensorLike, contrast
+) -> tfa.types.TensorLike:
   num_channels = 1 if len(img.shape) < 3 else img.shape[-1]
   img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR) if num_channels == 1 else img
   hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-  f = 131 * (contrast  + 127) / (127 * (131 - contrast))
+  f = 131 * (contrast + 127) / (127 * (131 - contrast))
   alpha_c = f
   gamma_c = 127 * (1 - f)
   hsv = cv2.addWeighted(hsv, alpha_c, hsv, 0, gamma_c)
@@ -124,20 +166,23 @@ def adjust_contrast(img: tfa.types.TensorLike, contrast) -> tfa.types.TensorLike
   img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if num_channels == 1 else img
   return img
 
+
 def random_brightness(
-  img: tfa.types.TensorLike,
-  min_value: float = 0.1,
-  max_value: float = 0.3
+    img: tfa.types.TensorLike,
+    min_value: float = 0.1,
+    max_value: float = 0.3
 ) -> tfa.types.TensorLike:
   brightness = normalize(np.random.random_sample(), min_value, max_value) * 255
   return adjust_brightness(img, int(brightness))
+
 
 def normalize(value: float, min_val: float = 0, max_val: float = 1) -> float:
   norm_value = (value * min_val) + (max_val - min_val)
   return norm_value
 
+
 def adjust_brightness(
-  img: tfa.types.TensorLike, value: int
+    img: tfa.types.TensorLike, value: int
 ) -> tfa.types.TensorLike:
   num_channels = 1 if len(img.shape) < 3 else img.shape[-1]
   img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR) if num_channels == 1 else img
@@ -145,14 +190,14 @@ def adjust_brightness(
   h, s, v = cv2.split(hsv)
 
   if value >= 0:
-      lim = 255 - value
-      v[v > lim] = 255
-      v[v <= lim] += value
+    lim = 255 - value
+    v[v > lim] = 255
+    v[v <= lim] += value
   else:
-      value = int(-value)
-      lim = 0 + value
-      v[v < lim] = 0
-      v[v >= lim] -= value
+    value = int(-value)
+    lim = 0 + value
+    v[v < lim] = 0
+    v[v >= lim] -= value
 
   final_hsv = cv2.merge((h, s, v))
 
@@ -160,10 +205,11 @@ def adjust_brightness(
   img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if num_channels == 1 else img
   return img
 
+
 def cut_bot_image(
     image: tfa.types.TensorLike,
-    px_start: Tuple[int, int] = (-1,-1),
-    px_end: Tuple[int,int] = (-1,-1)
+    px_start: Tuple[int, int] = (-1, -1),
+    px_end: Tuple[int, int] = (-1, -1)
 ) -> tfa.types.TensorLike:
   new_image = image.copy()
   dim = new_image.shape[1]
@@ -171,17 +217,20 @@ def cut_bot_image(
   new_image[dim2:, :] = np.zeros((1024 - dim2, dim))
   return new_image
 
+
 def hort_med(
-  dim: int,
-  px_start: Tuple[int,int],
-  px_end: Tuple[int,int]
+    dim: int, px_start: Tuple[int, int], px_end: Tuple[int, int]
 ) -> int:
   if px_start[0] != -1:
     return int((px_end[0] + px_start[0]) / 2)
   return int(dim / 2)
 
-def cut_left(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
+
+def cut_left(images: tfa.types.TensorLike, p: float = 1) -> tfa.types.TensorLike:
+  if (p < np.random.random()):
+    return images
   out = np.array([])
+  shape = images.shape
   if len(shape) > 3:
     for image in images:
       image = cut_left_image(image)
@@ -193,9 +242,9 @@ def cut_left(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
 
 
 def cut_left_image(
-  image: tfa.types.TensorLike,
-  px_start: Tuple[int, int] = (-1,-1),
-  px_end: Tuple[int,int] = (-1,-1)
+    image: tfa.types.TensorLike,
+    px_start: Tuple[int, int] = (-1, -1),
+    px_end: Tuple[int, int] = (-1, -1)
 ) -> tfa.types.TensorLike:
   new_image = image.copy()
   dim = image.shape[1]
@@ -204,7 +253,9 @@ def cut_left_image(
   return new_image
 
 
-def cut_right(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
+def cut_right(images: tfa.types.TensorLike, p: float = 1.0) -> tfa.types.TensorLike:
+  if (p < np.random.random()):
+    return images
   out = np.array([])
   shape = images.shape
   if len(shape) > 3:
@@ -218,9 +269,9 @@ def cut_right(images: tfa.types.TensorLike) -> tfa.types.TensorLike:
 
 
 def cut_right_image(
-  image: tfa.types.TensorLike,
-  px_start: Tuple[int, int] = (-1,-1),
-  px_end: Tuple[int,int] = (-1,-1)
+    image: tfa.types.TensorLike,
+    px_start: Tuple[int, int] = (-1, -1),
+    px_end: Tuple[int, int] = (-1, -1)
 ) -> tfa.types.TensorLike:
   new_image = image.copy()
   dim = new_image.shape[1]
@@ -228,43 +279,45 @@ def cut_right_image(
   new_image[:, dim2:] = np.zeros((dim, 1024 - dim2))
   return new_image
 
-def med_vert(dim: int, px_start: Tuple[int,int], px_end: Tuple[int,int]) -> int:
+
+def med_vert(
+    dim: int, px_start: Tuple[int, int], px_end: Tuple[int, int]
+) -> int:
   if px_start[1] != -1:
     dim2 = int((px_end[1] + px_start[1]) / 2)
   else:
     dim2 = int(dim / 2)
   return dim2
 
+
 def is_inside_ellipse(
-  px: Tuple[int,int],
-  px_center: Tuple[int,int],
-  length: Tuple[int,int]
+    px: Tuple[int, int], px_center: Tuple[int, int], length: Tuple[int, int]
 ) -> bool:
-  hort = ((px[0] - px_center[0]) ** 2) / (length[0] ** 2)
-  vert = ((px[1] - px_center[1]) ** 2) / (length[1] ** 2)
+  hort = ((px[0] - px_center[0])**2) / (length[0]**2)
+  vert = ((px[1] - px_center[1])**2) / (length[1]**2)
   return hort + vert <= 1
 
+
 def add_random_ellipse_brightess(
-  img: tfa.types.TensorLike,
-  px_start: Tuple[int,int],
-  px_end: Tuple[int,int],
-  ellipse_perc: float = 0.05,
-  n_ellipse: int = 2
+    img: tfa.types.TensorLike,
+    px_start: Tuple[int, int],
+    px_end: Tuple[int, int],
+    ellipse_perc: float = 0.05,
+    n_ellipse: int = 2
 ) -> tfa.types.TensorLike:
   dim_img = img.shape[1]
   ellipse_dim = int(img.shape[1] * ellipse_perc)
-  length = (ellipse_dim,ellipse_dim)
+  length = (ellipse_dim, ellipse_dim)
   new_img = img.copy()
   for _ in range(n_ellipse):
     px_center = random_pixel(px_start, px_end, ellipse_dim)
     new_img = add_ellipse_brightess(new_img, px_center, length, dim_img)
   return new_img
 
+
 def add_ellipse_brightess(
-  img: tfa.types.TensorLike,
-  center: Tuple[int,int],
-  length: Tuple[int,int],
-  max_value: int
+    img: tfa.types.TensorLike, center: Tuple[int, int], length: Tuple[int, int],
+    max_value: int
 ) -> tfa.types.TensorLike:
   new_img = img.copy()
   bright_img = random_brightness(new_img, 0.1, 0.4)
@@ -275,9 +328,10 @@ def add_ellipse_brightess(
 
   for y in range(y_min_value, y_max_value):
     for x in range(x_min_value, x_max_value):
-      if is_inside_ellipse((y,x), center, length):
-        new_img[y,x] = bright_img[y,x]
+      if is_inside_ellipse((y, x), center, length):
+        new_img[y, x] = bright_img[y, x]
   return new_img
+
 
 def augmentation(
     batch: tfa.types.TensorLike,

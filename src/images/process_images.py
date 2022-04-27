@@ -88,10 +88,8 @@ def split_images_n_times(
     # Cria os n_splits cortes
     iter_n_splits = range(n_split)
     pbar = tqdm(iter_n_splits) if verbose else iter_n_splits
-    i = 0
     for _ in pbar:
         # Recebe um corte da imagem não inteiramente preto
-        i += 1
         cut, pos = create_non_black_cut(
             image=image,
             start=pixel_start,
@@ -220,7 +218,7 @@ def split(
         Returns:
             (np.array|tuple(np.array,np.array)): return list of splits images or
                                                     return list of splits images and positions
-            
+
             shape = (batch_size, dim, dim, channels)
     """
     batch_size = 1
@@ -252,5 +250,5 @@ def split(
         pbar.close()
     positions = pos.reshape((batch_size,n_splits, 2))
     cuts_reshape = cuts.reshape(shape)
-        
+
     return cuts_reshape, positions

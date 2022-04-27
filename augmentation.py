@@ -14,18 +14,23 @@ lung = augmented['image']
 lung_mask = augmented['mask']
 
 transform = A.Compose([
-  A.RandomBrightnessContrast(always_apply=False, p=1.0, brightness_limit=(-0.2, 0.2), contrast_limit=(-0.2, 0.2), brightness_by_max=True),
+  A.InvertImg(p=1.0),
+  A.Equalize(p=1.0),
   A.HorizontalFlip(p=0.5),
   A.RandomGamma(always_apply=False, p=1.0, gamma_limit=(23, 81), eps=1e-07),
-  A.Blur(always_apply=False, p=1.0, blur_limit=(15, 22)),
-  A.Equalize(p=0.5),
+  A.RandomBrightnessContrast(always_apply=False, p=1.0, brightness_limit=(-0.2, 0.2), contrast_limit=(-0.2, 0.2), brightness_by_max=True),
   A.GaussNoise(var_limit=(200,300), p=0.5),
-  A.InvertImg(p=0.5)
+  A.ElasticTransform(always_apply=False, p=0.5, alpha=3.0,
+                     sigma=50.0, alpha_affine=50.0, interpolation=0,
+                     border_mode=0, value=(0, 0, 0), mask_value=None,
+                     approximate=False
+  ),
+  A.GridDistortion(always_apply=False, p=1.0, num_steps=5, distort_limit=(-0.3, 0.3), interpolation=0, border_mode=0, value=(0, 0, 0), mask_value=None)
 ])
 
 for i in range(10):
-  lung_mask2 = transform(image=original, mask=mask)
 
+  lung_mask2 = transform(image=original, mask=mask)
 
   image = lung_mask2['image']
   image2 = lung_mask2['mask']
