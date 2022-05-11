@@ -168,7 +168,7 @@ def classification_model(
     layers = Conv2D(filters=3, kernel_size=(3, 3), padding="same")(layers)
     layers = Activation(activation=activation)(layers)
     layers = Dropout(rate=drop_rate)(layers)
-    layers = base(model_name=model_name, split_dim=224)(layers)
+    layers = base(model_name=model_name, split_dim=dim)(layers)
     layers = Flatten()(layers)
     layers = Dense(units=classes)(layers)
     layers = Activation(activation=final_activation)(layers)

@@ -78,6 +78,10 @@ def split_images_n_times(
     cut_img = np.array([]) # lista de cortes
     cut_pos = np.array([]) # lista de posicoes do corte
 
+    if len(image.shape) < 4:
+        image = np.reshape(image,
+                           (1, image.shape[0], image.shape[1], image.shape[2]))
+
     # Define os pixels em que a imgem começa
     y_nonzero, x_nonzero = np.nonzero(image[0,:,:,0])
     pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), \
@@ -223,11 +227,12 @@ def split(
 
             shape = (batch_size, dim, dim, channels)
     """
-    batch_size = 1
-    if isinstance(path_images, list):
+    try:
         batch_size = len(path_images)
+    except TypeError:
+        batch_size = 1
     shape = (batch_size, n_splits, dim, dim, channels)
-    if isinstance(path_images, list):
+    if len(path_images) > 1:
         images = [read_images(path) for path in path_images]
     else:
         images = [read_images(path_images)]

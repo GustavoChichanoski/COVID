@@ -34,7 +34,9 @@ class ClassificationDatasetGenerator(KerasGenerator):
         super().__init__(x_set=x_set,y_set=y_set,**params)
         self.threshold = threshold
 
-    def step_x(self, batch: tfa.types.TensorLike, angle: float = 0) -> tfa.types.TensorLike:
+    def step_x(
+        self, batch: tfa.types.TensorLike, angle: float = 0
+    ) -> tfa.types.TensorLike:
         """
             Get th data of dataset with position initial in idx to idx plus batch_size.
 

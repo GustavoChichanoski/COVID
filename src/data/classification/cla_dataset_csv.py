@@ -130,9 +130,21 @@ class DatasetCsv:
             labels = ['Covid', 'Normal','Pneumonia']
         self.label_names = labels
 
+    def calcular_tamanhos_datasets(
+        self,
+        tamanho_total: int,
+        test_size: float = 0.1,
+        validation_size: float = 0.2,
+    ) -> List[int]:
+        tests_dataset = int(tamanho_total * test_size)
+        valid_datatet = int((tamanho_total - tests_dataset) * validation_size)
+        train_dataset = tamanho_total - tests_dataset - valid_datatet
+        return [train_dataset, valid_datatet, tests_dataset]
+
     def partition(
         self,
         val_size: float = 0.2,
+        test_size: float = 0.1,
         tamanho: int = 0,
         shuffle: bool = True
     ) -> Tuple[Tuple[Any, Any], Tuple[Any, Any]]:
@@ -154,10 +166,22 @@ class DatasetCsv:
                 (train), (val): Saida para o keras.
         """
         # t : train - v : validation
-        tam_max = tamanho if tamanho > 0 and tamanho < len(self.x) else len(self.x)
+        if tamanho > 0 and tamanho < len(self.x):
+            tam_max = tamanho
+        else:
+            tam_max = len(self.x)
+
         x, y = self.x[:tam_max], self.y[:tam_max]
-        train_in, val_in, train_out, val_out = train_test_split(
-            x, y, test_size=val_size, shuffle=shuffle
+
+        train_in, tests_in, train_out, tests_out = train_test_split(
+            x, y, test_size=test_size, shuffle=shuffle
         )
-        train, val = (train_in, train_out), (val_in, val_out)
-        return train, val
+        train_in, val_in, train_out, val_out = train_test_split(
+            train_in, train_out, test_size=val_size, shuffle=shuffle
+        )
+
+        train = (train_in, train_out)
+        val = (val_in, val_out)
+        test = (tests_in, tests_out)
+
+        return train, val, test
