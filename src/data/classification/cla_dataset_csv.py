@@ -20,6 +20,7 @@ class DatasetCsv:
     train: bool = True
     column_x: str = 'segmentation'
     column_y: str = 'type'
+    labels: List[str] = ['Covid-19', 'Normal', 'Pneumonia']
     """
         Args:
             path_data (str): Caminho onde se encontra os dados dos raios-x
@@ -81,8 +82,7 @@ class DatasetCsv:
                 List[Path]: [description]
         """
         if self._lazy_label_names is None:
-            folder_names = self.path_data.iterdir()
-            self._lazy_label_names = sorted(folder_names)
+            self._lazy_label_names = sorted(self.labels)
         return self._lazy_label_names
 
 
