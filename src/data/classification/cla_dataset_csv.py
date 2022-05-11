@@ -20,10 +20,7 @@ class DatasetCsv:
     train: bool = True
     column_x: str = 'segmentation'
     column_y: str = 'type'
-    labels_names: List[str] = field(
-        default_factory=list,
-        default=['Covid-19', 'Normal', 'Pneumonia']
-    )
+    labels_names: Optional[List[str]] = None
     """
         Args:
             path_data (str): Caminho onde se encontra os dados dos raios-x
@@ -111,7 +108,7 @@ class DatasetCsv:
                 # label verdadeiro
                 # Acha o index da label
                 for i in range(len_labels):
-                    if labels[i].name in x_label:
+                    if labels[i] in x_label:
                         break
                 out = label_eyes[i]
                 outputs = np.append(outputs,out)
@@ -124,6 +121,14 @@ class DatasetCsv:
         if self._lazy_x is None:
             self._lazy_x = self.dataset[self.column_x].values
         return self._lazy_x
+
+    def set_labels(
+        self,
+        labels: List[str] = None
+    ) -> None:
+        if labels is None:
+            labels = ['Covid', 'Normal','Pneumonia']
+        self.label_names = labels
 
     def partition(
         self,
