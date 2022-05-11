@@ -1,7 +1,7 @@
 """
     Gera o dataset.
 """
-from pandas import pd
+import pandas as pd
 from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 from sklearn.model_selection import train_test_split
