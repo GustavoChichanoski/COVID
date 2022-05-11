@@ -47,7 +47,7 @@ class DatasetCsv:
         return self._lazy_files_in_folder
 
     @property
-    def number_files_in_folders(self) -> List[Union[List[int],int]]:
+    def number_files_in_folders(self) -> List[Union[List[int], int]]:
         """ The number of files in each folders.
 
             Examples:
@@ -85,7 +85,6 @@ class DatasetCsv:
     #         self._lazy_label_names = sorted(self.labels)
     #     return self._lazy_label_names
 
-
     @property
     def y(self) -> tensorflow_addons.types.TensorLike:
         """
@@ -111,7 +110,7 @@ class DatasetCsv:
                     if labels[i] in x_label:
                         break
                 out = label_eyes[i]
-                outputs = np.append(outputs,out)
+                outputs = np.append(outputs, out)
             outputs = outputs.reshape(len(self.x), len_labels)
             self._lazy_y = outputs
         return self._lazy_y
@@ -127,7 +126,7 @@ class DatasetCsv:
         labels: List[str] = None
     ) -> None:
         if labels is None:
-            labels = ['Covid', 'Normal','Pneumonia']
+            labels = ['Covid', 'Normal', 'Pneumonia']
         self.label_names = labels
 
     def calcular_tamanhos_datasets(
@@ -166,11 +165,7 @@ class DatasetCsv:
                 (train), (val): Saida para o keras.
         """
         # t : train - v : validation
-        if tamanho > 0 and tamanho < len(self.x):
-            tam_max = tamanho
-        else:
-            tam_max = len(self.x)
-
+        tam_max = self.tamanho_maximo(tamanho)
         x, y = self.x[:tam_max], self.y[:tam_max]
 
         train_in, tests_in, train_out, tests_out = train_test_split(
@@ -185,3 +180,10 @@ class DatasetCsv:
         test = (tests_in, tests_out)
 
         return train, val, test
+
+    def tamanho_maximo(self, tamanho: int) -> int:
+        if tamanho == 0:
+            return len(self.x)
+        if tamanho < len(self.x) + 1:
+            return tamanho
+        return len(self.x)

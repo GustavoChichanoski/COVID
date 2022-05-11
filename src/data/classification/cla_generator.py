@@ -5,6 +5,7 @@ from src.images.process_images import split
 from src.data.generator import KerasGenerator
 import tensorflow_addons as tfa
 
+
 class ClassificationDatasetGenerator(KerasGenerator):
 
     def __init__(
@@ -31,12 +32,11 @@ class ClassificationDatasetGenerator(KerasGenerator):
                 the minimum precent valid pixel in split image.
                 Defaults to 0.45.
         """
-        super().__init__(x_set=x_set,y_set=y_set,**params)
+        super().__init__(x_set=x_set, y_set=y_set, **params)
         self.threshold = threshold
 
-    def step_x(
-        self, batch: tfa.types.TensorLike, angle: float = 0
-    ) -> tfa.types.TensorLike:
+    def step_x(self,
+               batch: tfa.types.TensorLike) -> tfa.types.TensorLike:
         """
             Get th data of dataset with position initial in idx to idx plus batch_size.
 
@@ -54,12 +54,13 @@ class ClassificationDatasetGenerator(KerasGenerator):
             'threshold': self.threshold,
             'n_splits': 1
         }
-        batch_x, _positions = split(batch, **params_splits)
+        batch_x, _positions = split(path_images=batch, **params_splits)
         new_shape = (self.batch_size, self.dim, self.dim, self.channels)
-        batch_x = np.reshape(batch_x,new_shape)
+        batch_x = np.reshape(batch_x, new_shape)
         return batch_x
 
-    def step_y(self, batch: tfa.types.TensorLike, angle: float = 0.0) -> tfa.types.TensorLike:
+    def step_y(self,
+               batch: tfa.types.TensorLike) -> tfa.types.TensorLike:
         """
             Get th data of dataset with position initial in idx to idx plus batch_size.
 
