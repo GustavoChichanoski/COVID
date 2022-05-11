@@ -6,7 +6,7 @@ from typing import Any, List, Optional, Tuple, Union
 import numpy as np
 from sklearn.model_selection import train_test_split
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import tensorflow_addons
 
 
@@ -20,7 +20,10 @@ class DatasetCsv:
     train: bool = True
     column_x: str = 'segmentation'
     column_y: str = 'type'
-    labels: List[str] = ['Covid-19', 'Normal', 'Pneumonia']
+    labels_names: List[str] = field(
+        default_factory=list,
+        default=['Covid-19', 'Normal', 'Pneumonia']
+    )
     """
         Args:
             path_data (str): Caminho onde se encontra os dados dos raios-x
@@ -73,17 +76,17 @@ class DatasetCsv:
             self._lazy_number_files_in_folders = files
         return self._lazy_number_files_in_folders
 
-    @property
-    def label_names(self) -> List[Path]:
-        """
-            Name of classes base in the last folders before images
+    # @property
+    # def label_names(self) -> List[Path]:
+    #     """
+    #         Name of classes base in the last folders before images
 
-            Returns:
-                List[Path]: [description]
-        """
-        if self._lazy_label_names is None:
-            self._lazy_label_names = sorted(self.labels)
-        return self._lazy_label_names
+    #         Returns:
+    #             List[Path]: [description]
+    #     """
+    #     if self._lazy_label_names is None:
+    #         self._lazy_label_names = sorted(self.labels)
+    #     return self._lazy_label_names
 
 
     @property
