@@ -205,9 +205,6 @@ def create_segmentation_model(backbone: str, unet_params,
 
 def segmentation_model_compile(model: Model) -> None:
     opt = tf.keras.optimizers.Adam(learning_rate=0.01)
-    # dice_loss = sm.losses.DiceLoss()
-    # focal_loss = sm.losses.BinaryFocalLoss()
-    # total_loss = focal_loss + dice_loss
     log_dice = LogCoshDiceError(regularization_factor=100)
     model.compile(opt,
                   loss=log_dice,

@@ -60,6 +60,7 @@ def flip_vertical_image(image: tfa.types.TensorLike) -> tfa.types.TensorLike:
   valid_shape(image, 3, 4)
   return tf.image.flip_up_down(image)
 
+
 def cut_half(
   image: tfa.types.TensorLike,
   px_start: Tuple[int,int] = (-1,-1),
@@ -86,6 +87,7 @@ def cut_half(
         image, px_start=px_start, px_end=px_end
     )
   return image
+
 
 def cut_top(
     images: tfa.types.TensorLike, p: float = 1.0

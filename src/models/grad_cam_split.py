@@ -38,10 +38,10 @@ def last_act_after_conv_layer(model: Model) -> Layer:
 
 def prob_grad_cam(
     cuts_images: tfa.types.TensorLike,
-    classifier: List[str],
-    last_conv_layer_name: str,
     paths_start_positions: tfa.types.TensorLike,
     model: Model,
+    classifier: List[str] = ['post_relu', 'flatten',
+                             'dense', 'activation_1', 'dropout_1'],
     dim_orig: int = 1024,
     winner_pos: int = 0,
 ) -> tfa.types.TensorLike:
@@ -74,14 +74,12 @@ def prob_grad_cam(
         dim_image=dimensao_imagem,
     )
     # Cria o modelo com as camadas após a ultima convolução
-    model_after_last_conv = model_after(
-        model=model, classifier_layer_names=classifier, last_conv_layer=last_conv_layer
-    )
-    predicoes = model.predict(cuts_images[0])
+    model_after_last_conv = model_after(model=model)
+    predicoes = model.predict(cuts_images)
     entrada_modelo = model.input_shape
     shape = (1, entrada_modelo[1], entrada_modelo[2], entrada_modelo[3])
     for predicao, cut_image, position_pixel in tqdm(
-        zip(predicoes, cuts_images[0], paths_start_positions[0])
+        zip(predicoes, cuts_images, paths_start_positions)
     ):
         # Os pacotes chegam com dimensões (None,224,224,3) e
         # precisam ser redimensionados para a (1,224,224,3)
@@ -92,7 +90,8 @@ def prob_grad_cam(
         last_conv_layer_output = generate_grads_image(
             grad_cam, cut_image, model_after_last_conv
         )
-        gradcam_pacote = create_heatmap(last_conv_layer_output, dimensao_imagem)
+        gradcam_pacote = create_heatmap(
+            last_conv_layer_output, dimensao_imagem)
         # Multiplica a possibilidade do canal pelo grad cam gerado
         grad_cam_predicao = predicao_pacote * gradcam_pacote
         # Soma com a predicoes anteriores
@@ -114,10 +113,10 @@ def modelo_grad_cam(
 ) -> Model:
     input_layer = Input((dim_image, dim_image, 1))
     new_model = input_layer
-    inner_model = None
     for layer in modelo.layers:
         if isinstance(layer, Model):
-            layer = Model([layer.inputs], [layer.get_layer(last_conv_layer_name).output, layer.output])
+            layer = Model([layer.inputs], [layer.get_layer(
+                last_conv_layer_name).output, layer.output])
             new_model = layer(new_model)
             break
         else:
@@ -129,7 +128,7 @@ def modelo_grad_cam(
 def get_layer(model: Model, last_conv_layer_name: str) -> Layer:
     for layer in reversed(model.layers):
         if isinstance(model, Model):
-            return get_layer(layer)
+            return get_layer(layer, last_conv_layer_name)
         if layer.name == last_conv_layer_name:
             return layer
 
@@ -182,8 +181,9 @@ def sum_grads_cam(
     final_x = final_x if final_x < dim_orig else dim_orig
     final_y = final_y if final_y < dim_orig else dim_orig
 
-    grad_cam_full[int(start[0]) : final_x, int(start[1]) : final_y] += grad_cam_cut
-    used_pixels[int(start[0]) : final_x, int(start[1]) : final_y] += ones
+    grad_cam_full[int(start[0]): final_x, int(
+        start[1]): final_y] += grad_cam_cut
+    used_pixels[int(start[0]): final_x, int(start[1]): final_y] += ones
     return (grad_cam_full, used_pixels)
 
 
@@ -223,8 +223,8 @@ def find_base_model(model: Model) -> Model:
 def grad_cam(
     image: tfa.types.TensorLike,
     model: Model,
-    classifier_layer_names: List[str],
     last_conv_layer_name: str = "avg_pool",
+    pred_index: int = None,
 ) -> tfa.types.TensorLike:
     """Gera o mapa de processamento da CNN.
     Args:
@@ -256,23 +256,23 @@ def grad_cam(
     new_model = Model(inputs, new_model)
 
     # Cria o modelo com as camadas após a ultima convolução
-    model_after_last_conv = model_after(
-        last_conv_layer=new_model,
-        model=model,
-        classifier_layer_names=classifier_layer_names,
-    )
+    model_after_last_conv = model_after(model=new_model)
     # Gera os valores da ultima convolucao
     last_conv_layer_output = generate_grads_image(
         model_until_last_conv=new_model,
         image=image_reshape,
         classifier_model=model_after_last_conv,
+        pred_index=pred_index,
     )
     heatmap = np.array(last_conv_layer_output)
     return heatmap
 
 
 def generate_grads_image(
-    model_until_last_conv: Model, image: tfa.types.TensorLike, classifier_model: Model
+    model_until_last_conv: Model,
+    image: tfa.types.TensorLike,
+    classifier_model: Model,
+    pred_index: int = None
 ) -> tfa.types.TensorLike:
     """
     Compute the gradient of the top predicted
@@ -299,25 +299,28 @@ def generate_grads_image(
         tape.watch(last_cnn_output)
         # Calcula a predicao da camada de saída
         preds = classifier_model(last_cnn_output)
+        if pred_index is None:
+            pred_index = tf.argmax(preds[0])
         # Recebe o index da maior predicao do sistema
-        top_pred_index = tf.argmax(preds[0])
         # Recebe todas as predições da predicao ganhadora
-        top_class_channel = preds[:, top_pred_index]
+        class_channel = preds[:, pred_index]
 
-        heatmap = grads_calc(
-            tape=tape,
-            last_cnn_output=last_cnn_output,
-            top_class_channel=top_class_channel,
-        )
+    heatmap = grads_calc(
+        tape=tape,
+        last_cnn_output=last_cnn_output,
+        class_channel=class_channel,
+    )
     return heatmap
 
 
 def grads_calc(
-    tape: tf.GradientTape, last_cnn_output: Model, top_class_channel: List[List[int]]
+    tape: tf.GradientTape,
+    last_cnn_output: Model,
+    class_channel: List[List[int]]
 ) -> tfa.types.TensorLike:
     """"""
     # Calcula o gradiente do modelo para saída máxima (pesos)
-    grads = tape.gradient(top_class_channel, last_cnn_output)
+    grads = tape.gradient(class_channel, last_cnn_output)
     # Retira pela media dos pixel (global average pooling)
     pooled_grads = tf.reduce_mean(grads, axis=(0, 1, 2))
     last_conv_layer_output = last_cnn_output[0]
@@ -331,56 +334,40 @@ def print_model(model: Model) -> None:
         print(layer.name)
 
 
-def model_after(
-    last_conv_layer: Layer,
-    model: Model,
-    classifier_layer_names: List[str],
-) -> Model:
-    """
-    Cria apenas o modelo de classificação do modelo passado pelo usuario
-    Args:
-        last_conv_layer (Keras.model.layers): ultima camada de convolução (ativação)
-        resnet_model (Keras.model): modelo da cnn do usuario
-        model (Keras.model): modelo passado pelo usuario
-        classifier_layer_names (list.Strings): Nome das camadas de classificação
-    Returns:
-        Keras.model: modelo de classificação do usuario
-    Exemplo:
-    --------
-    """
-    class_names = classifier_layer_names
-    classifier_input = Input(shape=last_conv_layer.output.shape[1:])
-    new_model = classifier_input
-    classifier_layers = []
+def model_inner_after(model: Model) -> List[str]:
+    after = []
+    for layer in reversed(model.layers):
+        if isinstance(layer, Activation) \
+        or isinstance(layer, Conv) \
+        or isinstance(layer, Pooling2D):
+            return after
+        after.insert(0, layer)
+    return after
+
+def model_after(model: Model) -> Model:
+    after = []
+
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
-            for inner_layer in reversed(layer.layers):
-                if inner_layer.name in class_names:
-                    classifier_layers.insert(0, inner_layer)
-                    try :
-                        class_names.remove(inner_layer.name)
-                    except:
-                        pass
-                    if len(class_names) < 1:
-                        return class_model(new_model, classifier_layers, classifier_input)
-        if layer.name in class_names:
-            classifier_layers.insert(0, layer)
-            try:
-                class_names.remove(layer.name)
-            except:
-                pass
-            if len(class_names) < 1:
-                    return class_model(new_model, classifier_layers, classifier_input)
-    
+            layers = model_inner_after(layer)
+            layers.extend(after)
+            break
 
-def class_model(new_model, classifier_layers, classifier_input):
+        after.insert(0, layer)
+
+    classifier_input = Input(shape=layers[0].input.shape[1:])
+    return class_model(layers, classifier_input)
+
+
+def class_model(
+    classifier_layers: List[Layer],
+    classifier_input: Layer
+) -> Model:
+    new_model = classifier_input
     for layer in classifier_layers:
         new_model = layer(new_model)
     classifier_model = Model(classifier_input, new_model)
     return classifier_model
-
-
-
 
 
 def resize(image: tfa.types.TensorLike, dim: int) -> tfa.types.TensorLike:

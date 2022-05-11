@@ -2,10 +2,9 @@
     Biblioteca referente ao processamento das imagens
 """
 import numpy as np
-import tensorflow as tf
 import tensorflow_addons as tfa
 from src.images.read_image import read_images
-from typing import Optional, Tuple
+from typing import  Tuple
 from tqdm import tqdm
 from pathlib import Path
 from typing import List, Union
@@ -48,7 +47,7 @@ def normalize_image(
     if len(images.shape) > 3:
         new_images = np.array([])
         for image in images:
-            new_images.append(new_images, normalize_image(image))
+            new_images= np.append(new_images, normalize_image(image))
         new_images = np.reshape(new_images,images.shape)
         return new_images
     norm = images / 255
@@ -80,7 +79,7 @@ def split_images_n_times(
     cut_pos = np.array([]) # lista de posicoes do corte
 
     # Define os pixels em que a imgem começa
-    y_nonzero, x_nonzero = np.nonzero(image[:,:,0])
+    y_nonzero, x_nonzero = np.nonzero(image[0,:,:,0])
     pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), \
                              (np.max(y_nonzero), np.max(x_nonzero))
     shape_cut = (n_split,dim_split,dim_split,1)
@@ -179,7 +178,10 @@ def create_recort(
             (np.array): Recorte da imagem
     """
     pos_end = (pos_start[0] + dim_split, pos_start[1] + dim_split)
-    cut = image[pos_start[0] : pos_end[0], pos_start[1] : pos_end[1]]
+    if len(image.shape) < 3:
+        cut = image[pos_start[0] : pos_end[0], pos_start[1] : pos_end[1]]
+    else:
+        cut = image[0,pos_start[0] : pos_end[0], pos_start[1] : pos_end[1], 0]
     return cut
 
 def relu(image: tfa.types.TensorLike) -> tfa.types.TensorLike:

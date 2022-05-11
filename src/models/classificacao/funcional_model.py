@@ -3,8 +3,9 @@ from typing import List, Optional, Union
 from matplotlib import cm, pyplot as plt
 
 from tensorflow.python.eager.monitoring import Metric
-from tensorflow.python.keras.engine.base_layer import Layer
+from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers.convolutional import Conv
+from tensorflow.python.keras.layers import Activation
 from tensorflow.python.keras.losses import Loss
 
 from tensorflow_addons.utils.types import Optimizer
@@ -12,7 +13,7 @@ from tensorflow_addons.utils.types import Optimizer
 from src.images.process_images import split
 from src.data.classification.cla_generator import ClassificationDatasetGenerator
 from src.images.read_image import read_images
-from src.models.grad_cam_split import last_act_after_conv_layer, prob_grad_cam
+from src.models.grad_cam_split import prob_grad_cam
 from src.output_result.folders import pandas2csv
 from src.prints.prints import print_info
 
@@ -38,11 +39,11 @@ from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3
 
 import tensorflow_addons as tfa
 import numpy as np
+import cv2
 from tqdm import tqdm
 
 from tensorflow.python.keras.preprocessing.image import array_to_img
 from tensorflow.python.keras.preprocessing.image import img_to_array
-
 
 def get_callbacks() -> List[Callback]:
     """
@@ -80,7 +81,6 @@ def get_callbacks() -> List[Callback]:
     callbacks = [checkpoint, reduce_lr, terminate]
     return callbacks
 
-
 def model_compile(
     model: Model,
     optimizer: Optional[Union[str, Optimizer]] = None,
@@ -104,7 +104,6 @@ def model_compile(
     optimizer = Adamax(learning_rate=lr) if optimizer is None else optimizer
     metrics = ["accuracy"] if metrics is None else metrics
     model.compile(optimizer=optimizer, loss=loss, metrics=metrics, **kwargs)
-
 
 def base(model_name: str = "ResNet50V2", split_dim: int = 224) -> Model:
     """
@@ -136,7 +135,6 @@ def base(model_name: str = "ResNet50V2", split_dim: int = 224) -> Model:
     else:
         base = MobileNetV3(**params)
     return base
-
 
 def classification_model(
     dim: int = 256,
@@ -217,7 +215,6 @@ def confusion_matrix(
         index = labels.index(elect)
         matriz[index][true_index] += 1
     return matriz
-
 
 def last_conv_layer(model: Model) -> str:
     """
@@ -357,6 +354,35 @@ def get_classifier_layer_names(model: Model, layer_name: str) -> List[str]:
     return classifier_layers_names
 
 
+def get_classifier_layer(
+    model: Model,
+    classifier_names: List[str] = None,
+) -> List[str]:
+
+    classifier_names = [] if classifier_names is None else classifier_names
+    last_activation = ''
+
+    for layer in reversed(model.layers):
+
+        if isinstance(layer, Model):
+            return get_classifier_layer(model, classifier_names)
+
+        if isinstance(layer, Conv):
+            break
+
+        if isinstance(layer, Activation):
+            last_activation = layer.name
+
+        classifier_names.insert(0, layer.name)
+
+    for classifier in classifier_names:
+        if classifier != last_activation:
+            classifier_names.remove(classifier)
+        else:
+            break
+
+    return classifier_names
+
 def get_last_conv_layer_name(model: Model) -> Layer:
     """Get a layer in model with submodels.
 
@@ -373,7 +399,6 @@ def get_last_conv_layer_name(model: Model) -> Layer:
                     return inner_layer.name
         if isinstance(layer, Conv):
             return layer.name
-
 
 def find_base(model: Model) -> Model:
     """Get first submodel in a model.
@@ -445,10 +470,10 @@ def make_grad_cam(
     if isinstance(image, list):
         shape = (len(image), n_splits, split_dim, split_dim, channels)
     cuts = cuts.reshape(shape)
-    imagemColor = read_images(image, color=True)
+    image_color = read_images(image, color=True)
     if verbose:
-        last_conv_layer_name = last_act_after_conv_layer(model).name
-        class_names = get_classifier_layer_names(model, last_conv_layer_name)
+        last_conv_layer_name = ['post_relu', 'flatten', 'dense', 'activation_1', 'dropout_1']
+        class_names = get_classifier_layer(model=model)
 
         if isinstance(image, list):
             winner_label = labels.index(image[0].parts[-2])
@@ -464,18 +489,54 @@ def make_grad_cam(
             dim_orig=orig_dim,
             winner_pos=winner_label,
         )
-        plot_gradcam(heatmap, imagemColor, True)
+        plot_gradcam(heatmap, image_color, True)
     predict_params = {"verbose": 0}
     cuts = np.reshape(cuts, (n_splits, split_dim, split_dim, channels))
     votes = predict(model, cuts, **predict_params)
     elect = winner(labels=labels, votes=votes)
     return elect
 
+def superimposed_image_generate(
+    heatmap: tfa.types.TensorLike,
+    image: tfa.types.TensorLike,
+    dim: int = 1024,
+    alpha: float = 0.4,
+) -> tfa.types.TensorLike:
+    """Function to merge `heatmap` to `image` with original `dim` size with `alpha`
+    opacity, if `grad` is `True` then plot grad cam probabilistic, if name is not
+    `None` then save figure in the name file.
+
+    Args:
+        heatmap (tfa.types.TensorLike): heatmap to merge in image.
+        image (tfa.types.TensorLike): image of input
+        grad (bool, optional): flag to plot grad cam. Defaults to True.
+        name (str, optional): name of png output file. Defaults to None.
+        dim (int, optional): original dimension of image. Defaults to 1024.
+        alpha (float, optional): opacity value. Defaults to 0.4.
+
+    Returns:
+        str: path where save png
+    """
+    if np.max(heatmap) < 1.1:
+        heatmap = np.uint8(255 * heatmap)
+    if len(image.shape) < 3:
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+
+    jet = cm.get_cmap("jet")
+    jet_color = jet(np.arange(256))[:, :3]
+    jet_heatmap = jet_color[heatmap]
+
+    jet_heatmap0 = array_to_img(jet_heatmap)
+    jet_heatmap1 = jet_heatmap0.resize((dim, dim))
+    jet_heatmap2 = img_to_array(jet_heatmap1)
+    superimposed_image = jet_heatmap2 * alpha + image
+    return superimposed_image
+
 
 def plot_gradcam(
     heatmap: tfa.types.TensorLike,
     image: tfa.types.TensorLike,
-    grad: bool = True,
+    grad: bool = False,
     name: str = None,
     dim: int = 1024,
     alpha=0.4,
@@ -495,25 +556,19 @@ def plot_gradcam(
     Returns:
         str: path where save png
     """
-    heatmap = np.uint8(255 * heatmap)
-    jet = cm.get_cmap("jet")
-    jet_color = jet(np.arange(256))[:, :3]
-    jet_heatmap = jet_color[heatmap]
-
-    jet_heatmap0 = array_to_img(jet_heatmap)
-    jet_heatmap1 = jet_heatmap0.resize((dim, dim))
-    jet_heatmap2 = img_to_array(jet_heatmap1)
-
-    superimposed_image = jet_heatmap2 * alpha + image
-    superimposed_image = array_to_img(superimposed_image)
-
-    fig = plt.figure()
-    plt.imshow(superimposed_image, cmap="gray")
-    # Salvar imagem
-    path = ""
-    if name is not None:
-        path = "{}.png".format(name)
-        plt.savefig(path, dpi=fig.dpi)
+    superimposed_image = superimposed_image_generate(
+        heatmap=heatmap,
+        image=image,
+        dim=dim,
+        alpha=alpha
+    )
     if grad:
+        fig = plt.figure()
+        plt.imshow(superimposed_image, cmap="gray")
+        # Salvar imagem
+        path = ""
+        if name is not None:
+            path = "{}.png".format(name)
+            plt.savefig(path, dpi=fig.dpi)
         plt.show()
-    return path
+    return superimposed_image

@@ -3,7 +3,7 @@ from tensorflow.python.keras.engine.base_layer import Layer
 from tensorflow.python.keras.layers import Conv2D
 from tensorflow.python.keras.layers.core import Activation, Dense, Dropout, Flatten
 from tensorflow.python.keras.layers.pooling import MaxPooling2D
-from tensorflow.python.keras.layers.normalization_v2 import BatchNormalization
+from tensorflow.python.keras.layers import BatchNormalization
 
 class CovidNet(keras.Model):
 

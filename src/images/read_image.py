@@ -69,7 +69,7 @@ def read_images(
     id_end: int = -1,
     color: bool = False,
     dim: int = 1024
-) -> tfa.types.TensorLike:
+):
     """
         Lê as imagens do listas de caminhos da imagem de start até end -1
 
@@ -82,7 +82,7 @@ def read_images(
                                     Defaults to -1.
             output_dim (int, optional): Image output dimension.
                                         Defaults to -1.
-        
+
         Returns:
             (np.array or list): retorna uma lista np.array das imagens lidas
     """
@@ -126,7 +126,7 @@ def adjust_gamma(
     image: tfa.types.TensorLike,
     gamma: float = 0.5
 ) -> tfa.types.TensorLike:
-    # build a lookup table mapping the pixel values [0, 255] 
+    # build a lookup table mapping the pixel values [0, 255]
     # to their adjusted gamma values
     image = tf.image.adjust_gamma(image,gamma=gamma)
     return image

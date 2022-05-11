@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 from src.data.segmentation.generator_seg import SegmentationDataset
 from src.images.read_image import read_images
+
 data_path = Path('D:\\Mestrado\\data\\Lung Segmentation')
 new_data_path = Path('D:\\Mestrado\\data_segmentation\\train')
 

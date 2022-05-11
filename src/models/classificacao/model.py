@@ -303,7 +303,7 @@ class ModelCovid(Model):
         cuts, positions = split(image, **params_splits)
         shape = (n_splits,self.split_dim,self.split_dim,self.channels)
         cuts = cuts.reshape(shape)
-        imagemColor = ri(image, color=True)
+        image_color = ri(image, color=True)
         class_names = list(self.classifier_layers_names)
         heatmap = prob_grad_cam(
             cuts_images=cuts,
@@ -314,7 +314,7 @@ class ModelCovid(Model):
             dim_orig=self.orig_dim,
             winner_pos=self.labels.index(image[0].parts[-2])
         )
-        plt_gradcam(heatmap, imagemColor, True)
+        plt_gradcam(heatmap, image_color, True)
         votes = self.predict(cuts)
         elect = self.winner(votes=votes)
         return elect

@@ -89,11 +89,12 @@ def read_path(
         else:
           y_nonzero, x_nonzero = np.nonzero(mask[:, :])
         px_start, px_end = (np.min(y_nonzero), np.min(x_nonzero)), \
-                            (np.max(y_nonzero), np.max(x_nonzero))
+                           (np.max(y_nonzero), np.max(x_nonzero))
 
         for _ in range(copy_per_type):
           image = transform_train(
-              image=image_ori['image'], mask=image_ori['mask']
+              image=image_ori['image'],
+              mask=image_ori['mask']
           )
           dataset = save_image(
               lung=image['image'],
@@ -174,28 +175,29 @@ def generate_dict_lungs(path: Path) -> Dict:
         raise ValueError
   return lung_mask_path
 
+if __name__ == '__main__':
 
-dict_lungs = generate_dict_lungs(Path('dataset\\lungs'))
-df_dataset = pd.DataFrame(dict_lungs)
+  dict_lungs = generate_dict_lungs(Path('dataset\\lungs'))
+  df_dataset = pd.DataFrame(dict_lungs)
 
-df_dataset['lung'] = df_dataset['lung'].apply(lambda x: str(Path.cwd() / x))
-df_dataset['mask'] = df_dataset['mask'].apply(lambda x: str(Path.cwd() / x))
+  df_dataset['lung'] = df_dataset['lung'].apply(lambda x: str(Path.cwd() / x))
+  df_dataset['mask'] = df_dataset['mask'].apply(lambda x: str(Path.cwd() / x))
 
-lungs_path = list(df_dataset['lung'].values)
-masks_path = list(df_dataset['mask'].values)
+  lungs_path = list(df_dataset['lung'].values)
+  masks_path = list(df_dataset['mask'].values)
 
-i = 0
+  i = 0
 
-dataset_path = Path('dataset')
-new_dataset_path = Path('dataset') / 'dataset'
-dataset = {}
-dataset['type'] = {}
-dataset['lung'] = {}
-dataset['mask'] = {}
+  dataset_path = Path('dataset')
+  new_dataset_path = Path('dataset') / 'dataset'
+  dataset = {}
+  dataset['type'] = {}
+  dataset['lung'] = {}
+  dataset['mask'] = {}
 
-dataset = read_path(dataset_path, new_dataset_path, valid=0.2, test=0.1)
+  dataset = read_path(dataset_path, new_dataset_path, valid=0.2, test=0.1)
 
-df = pd.DataFrame(dataset)
-df.to_csv(
-    Path('dataset') / 'dataset' / 'metadata_segmentation_augmentation.csv'
-)
+  df = pd.DataFrame(dataset)
+  df.to_csv(
+      Path('dataset') / 'dataset' / 'metadata_segmentation_augmentation.csv'
+  )
