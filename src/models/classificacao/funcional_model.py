@@ -249,12 +249,14 @@ def names_classification_layers(model: Model) -> List[str]:
     layers_names = []
     for layer in reversed(model.layers):
         if isinstance(layer, Model):
-            if isinstance(layer, Conv2D):
-                break
+            for inner in layer.layers:
+                if isinstance(inner, Conv2D):
+                    return layers_names
+                layers_names.insert(0, inner.name)
             layers_names.insert(0, layer.name)
         else:
             if isinstance(layer, Conv2D):
-                break
+                return layers_names
             layers_names.insert(0, layer.name)
     return layers_names
 
@@ -472,7 +474,6 @@ def make_grad_cam(
     cuts = cuts.reshape(shape)
     image_color = read_images(image, color=True)
     if verbose:
-        last_conv_layer_name = ['post_relu', 'flatten', 'dense', 'activation_1', 'dropout_1']
         class_names = get_classifier_layer(model=model)
 
         if isinstance(image, list):
@@ -483,7 +484,6 @@ def make_grad_cam(
         heatmap = prob_grad_cam(
             cuts_images=cuts,
             classifier=class_names,
-            last_conv_layer_name=last_conv_layer_name,
             paths_start_positions=positions,
             model=model,
             dim_orig=orig_dim,

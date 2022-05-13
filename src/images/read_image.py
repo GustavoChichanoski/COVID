@@ -68,10 +68,11 @@ def read_images(
     id_start: Union[List[int], int] = 0,
     id_end: int = -1,
     color: bool = False,
-    dim: int = 1024
+    dim: int = 1024,
+    tensor: bool = True
 ):
     """
-        Lê as imagens do listas de caminhos da imagem de start até end -1
+        Lê as imagens contidas na listas de caminhos
 
         Args:
             images_paths (str or list): Arrays contndo os caminhos das
@@ -98,8 +99,9 @@ def read_images(
         image = cv.imread(str(images_paths))
     else:
         image = cv.imread(str(images_paths), cv.IMREAD_GRAYSCALE)
-    image = resize_image(image,dim,color)
-    return image
+    if tensor:
+        return resize_image(image,dim,color)
+    return cv.resize(image, (dim,dim))
 
 def resize_image(
     image: tfa.types.TensorLike,

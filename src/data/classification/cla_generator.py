@@ -54,7 +54,7 @@ class ClassificationDatasetGenerator(KerasGenerator):
             'threshold': self.threshold,
             'n_splits': 1
         }
-        batch_x, _positions = split(path_images=batch, **params_splits)
+        batch_x, _positions = split(images=batch, **params_splits)
         new_shape = (self.batch_size, self.dim, self.dim, self.channels)
         batch_x = np.reshape(batch_x, new_shape)
         return batch_x

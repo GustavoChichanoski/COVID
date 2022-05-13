@@ -1,13 +1,13 @@
 from abc import abstractmethod
-from typing import Any, Tuple
 from tensorflow.python.keras.utils.data_utils import Sequence
-from src.images.process_images import split
 import albumentations as A
 from albumentations import Compose
 import numpy as np
 import tensorflow_addons as tfa
 import tensorflow as tf
 import math
+
+from src.images.read_image import read_images
 
 
 class KerasGenerator(Sequence):
@@ -18,6 +18,7 @@ class KerasGenerator(Sequence):
         y_set: tfa.types.TensorLike,
         batch_size: int = 64,
         dim: int = 224,
+        dim_orig: int = 1024,
         n_class: int = 1,
         channels: int = 1,
         threshold: float = 0.45,
@@ -51,7 +52,8 @@ class KerasGenerator(Sequence):
         self.channels = channels
         self.threshold = threshold
         self.desire_len = desire_len
-        if compose is None:
+        self.dim_orig = dim_orig
+        if compose is not None:
             self.compose = compose
         else:
             self.compose = Compose([
@@ -78,33 +80,41 @@ class KerasGenerator(Sequence):
         idi = index * self.batch_size
         idf = (index + 1) * self.batch_size
 
-        idi = idi % self.len_x
-        idf = idf % self.len_x
-
         batch_x, batch_y = self.completar_array(idi, idf)
+
         batch_x = self.step_x(batch_x)
-        if self.y is not None:
-            batch_y = self.y[idi:idf]
-            batch_y = self.step_y(batch_y)
-            return batch_x, batch_y
-        return batch_x
+        batch_y = self.step_y(batch_y)
+
+        return batch_x, batch_y
 
     def completar_array(self,
                         indice_inicial: int = 0,
                         indice_final: int = 0):
-        if indice_final > self.len_x:
-            indice_inicial = int(indice_inicial % self.len_x)
-            indice_final = int(indice_final % self.len_x)
-            batch_x = self.x[indice_inicial:self.len_x]
-            batch_y = self.y[indice_inicial:self.len_x]
-            for indice in range(indice_inicial - indice_final):
-                image = self.compose(self.x[indice])
-                batch_x = np.append(batch_x, image)
-                batch_y = np.append(batch_y, self.y[indice])
-            return batch_x, batch_y
-        batch_x = self.x[indice_inicial:indice_final]
-        batch_y = self.y[indice_inicial:indice_final]
-        return batch_x, batch_y
+
+        indice_inicial = int(indice_inicial % self.len_x)
+        indice_final = int(indice_final % self.len_x)
+
+        batch_x = self.create_batch(indice_inicial, indice_final, self.x)
+        batch_y = self.create_batch(indice_inicial, indice_final, self.y)
+
+        images = np.array([])
+
+        for path in batch_x:
+            image = read_images(path, tensor=False)
+            image = self.compose(image=image)['image']
+            images = np.append(images, image)
+
+        shape = (self.batch_size, self.dim_orig, self.dim_orig, 1)
+        images = np.reshape(images, shape)
+
+        return images, batch_y
+
+    def create_batch(self, indice_inicial, indice_final, array):
+        if indice_final < indice_inicial:
+            batch = array[indice_inicial:len(array)]
+            batch.extend(array[:indice_final])
+            return batch
+        return array[indice_inicial:indice_final]
 
     @abstractmethod
     def step_x(self) -> tfa.types.TensorLike:

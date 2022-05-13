@@ -203,7 +203,7 @@ def relu(image: tfa.types.TensorLike) -> tfa.types.TensorLike:
     return np.clip(image, 0, None)
 
 def split(
-    path_images: Union[List[Path], Path],
+    images: tfa.types.TensorLike,
     dim: int = 224,
     channels: int = 1,
     n_splits: int = 100,
@@ -227,15 +227,8 @@ def split(
 
             shape = (batch_size, dim, dim, channels)
     """
-    try:
-        batch_size = len(path_images)
-    except TypeError:
-        batch_size = 1
+    batch_size = len(images)
     shape = (batch_size, n_splits, dim, dim, channels)
-    if len(path_images) > 1:
-        images = [read_images(path) for path in path_images]
-    else:
-        images = [read_images(path_images)]
     pos = np.array([])
     cuts = np.array([])
     if verbose:

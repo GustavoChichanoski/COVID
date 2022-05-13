@@ -28,9 +28,6 @@ def parse_image(img_path: str) -> dict:
 
   return {'image': image, 'mask': mask}
 
-# def tf_random_rotate_image(image, mask):
-#   im_shape = image.shape
-#   [image, mask] = tf.py_function(random_rotate_image, [image], [tf.float])
 
 @tf.function
 def normalize(
