@@ -112,7 +112,7 @@ class KerasGenerator(Sequence):
     def create_batch(self, indice_inicial, indice_final, array):
         if indice_final < indice_inicial:
             batch = array[indice_inicial:len(array)]
-            batch.extend(array[:indice_final])
+            batch = np.append(batch, array[:indice_final])
             return batch
         return array[indice_inicial:indice_final]
 
