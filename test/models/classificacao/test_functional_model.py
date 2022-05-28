@@ -1,12 +1,8 @@
 from pathlib import Path
 from src.plots.graph import plot_dataset
-from src.output_result.folders import remove_folder, zip_folder
-
-from numpy.testing._private.utils import assert_equal
 import unittest
 
 import numpy as np
-import tensorflow as tf
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
 from tensorflow.python.keras import Model
 from tensorflow.python.keras.callbacks import Callback
@@ -23,15 +19,8 @@ from src.models.classificacao.funcional_model import (
     classification_model,
     confusion_matrix,
     get_callbacks,
-    get_classifier_layer_names,
-    make_grad_cam,
-    save_weights,
+    get_classifier_layer_names
 )
-
-# Display
-from IPython.display import Image, display
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
 
 
 class TestFuncionalModel(unittest.TestCase):
@@ -79,12 +68,10 @@ class TestFuncionalModel(unittest.TestCase):
     def teste_model(self) -> None:
 
         np.random.seed(20)
-        DIM_ORIGINAL = 1024
         DIM_SPLIT = 224
         CHANNELS = 1
         K_SPLIT = 1
         BATCH_SIZE = 1
-        EPOCHS = 2
         TAMANHO = 0
 
         DATA = Path("D:\\Mestrado") / "datasets" / "new_data"
@@ -114,48 +101,12 @@ class TestFuncionalModel(unittest.TestCase):
             "channels": CHANNELS,
             "threshold": 0.25,
         }
-        train_generator = ClaDataGen(train[0], train[1], **params)
-        val_generator = ClaDataGen(validation[0], validation[1], **params)
         test_generator = ClaDataGen(test_values[0], test_values[1], **params)
-
-        callbacks = get_callbacks()
-
-        # history = model.fit(
-        #     x=train_generator,
-        #     validation_data=val_generator,
-        #     epochs=EPOCHS,
-        #     batch_size=BATCH_SIZE,
-        #     callbacks=callbacks,
-        # )
-
-        # save_weights(
-        #     modelname="resnet",
-        #     model=model,
-        #     history=history,
-        # )
-
-        # print("Make Grad Cam")
-
-        # winner = make_grad_cam(
-        #     model=model,
-        #     image=test_generator.x[0],
-        #     n_splits=K_SPLIT,
-        #     threshold=0.1,
-        #     orig_dim=DIM_ORIGINAL,
-        # )
 
         model.load_weights("outputs\\ResNet50V2\\weights\\best.weights.hdf5")
 
         matriz = confusion_matrix(model,test_generator,K_SPLIT)
         plot_dataset(matriz,K_SPLIT,path="outputs\\ResNet50V2\\figures")
-
-        parar = True
-
-        # zip_folder(Path.cwd())
-
-        # remove_folder('./Covid')
-
-        # assert_equal(winner, "Covid")
 
     def test_grad_cam(self) -> None:
 
@@ -163,8 +114,6 @@ class TestFuncionalModel(unittest.TestCase):
         model_builder = keras.applications.xception.Xception
         preprocess_input = keras.applications.xception.preprocess_input
         decode_predictions = keras.applications.xception.decode_predictions
-
-        last_conv_layer_name = "block14_sepconv2_act"
 
         # The local path to our target image
         img_path = keras.utils.get_file(
@@ -185,15 +134,11 @@ class TestFuncionalModel(unittest.TestCase):
         print("Predicted:", decode_predictions(preds, top=1)[0])
 
         last_act_name = last_act_after_conv_layer(model)
-        classification_layers_names = get_classifier_layer_names(
-            model, last_conv_layer_name
-        )
 
         # Generate class activation heatmap
         heatmap = grad_cam(
             image=img_array,
             model=model,
-            classifier_layer_names=classification_layers_names,
             last_conv_layer_name=last_act_name,
         )
 

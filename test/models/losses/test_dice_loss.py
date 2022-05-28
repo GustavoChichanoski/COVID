@@ -1,7 +1,6 @@
 import unittest
 import numpy as np
 from tensorflow.python.eager.backprop import GradientTape
-from tensorflow.python.training import optimizer
 from src.models.losses.dice_loss import DiceError
 import tensorflow as tf
 from tensorflow.keras import layers
@@ -99,7 +98,7 @@ class TestDiceError(unittest.TestCase):
                 # Open a GradientTape to record the operations run
                 # during the forward pass, witch enables auto-differentiation.
                 with GradientTape(True) as tape:
-                    
+
                     # Run the forward pass of the layer.
                     # The operations that the layer applies
                     # to its inputs are going to be recorded

@@ -40,8 +40,6 @@ def prob_grad_cam(
     cuts_images: tfa.types.TensorLike,
     paths_start_positions: tfa.types.TensorLike,
     model: Model,
-    classifier: List[str] = ['post_relu', 'flatten',
-                             'dense', 'activation_1', 'dropout_1'],
     dim_orig: int = 1024,
     winner_pos: int = 0,
 ) -> tfa.types.TensorLike:

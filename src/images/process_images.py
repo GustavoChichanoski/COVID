@@ -3,11 +3,8 @@
 """
 import numpy as np
 import tensorflow_addons as tfa
-from src.images.read_image import read_images
 from typing import  Tuple
 from tqdm import tqdm
-from pathlib import Path
-from typing import List, Union
 
 def random_pixel(
     start: Tuple[int,int] = (0, 0),
@@ -26,10 +23,23 @@ def random_pixel(
         Returns:
             (tuple): pixel gerados aleatoriamente
     """
-    x_i, y_i = start
-    x_e, y_e = end
-    pixel_x = np.random.randint(x_i, x_e - dim_split)
-    pixel_y = np.random.randint(y_i, y_e - dim_split)
+    xs, ys = start
+    xe, ye = end
+
+    xe -= dim_split
+    ye -= dim_split
+
+    if xe - dim_split > xs:
+        aux = xe
+        xe = xs
+        xs = aux
+    if ye - dim_split > ys:
+        aux = ye
+        ye = ys
+        ys = aux
+
+    pixel_x = np.random.randint(xs, xe)
+    pixel_y = np.random.randint(ys, ye)
     return pixel_x, pixel_y
 
 def normalize_image(
