@@ -21,7 +21,7 @@ fig
 *.h5
 *.zip
 ./desktop.ini
-./article
+article
 .gitignore
 
 Segmentacao/cxr_reg_weights.best.hdf5

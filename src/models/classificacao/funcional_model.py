@@ -22,7 +22,6 @@ from tensorflow.python.keras.layers import Conv2D, Activation
 from tensorflow.python.keras import Input
 from tensorflow.python.keras.layers.core import Dense, Dropout, Flatten
 from tensorflow.python.keras.layers import BatchNormalization
-from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2
 from tensorflow.python.keras.callbacks import (
     Callback,
     History,
@@ -31,10 +30,11 @@ from tensorflow.python.keras.callbacks import (
     TerminateOnNaN,
 )
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
+from tensorflow.python.keras.applications.vgg16 import VGG16
 from tensorflow.python.keras.applications.vgg19 import VGG19
 from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
-from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2
-from tensorflow.python.keras.applications.densenet import DenseNet121
+from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2, ResNet101V2, ResNet152V2
+from tensorflow.python.keras.applications.densenet import DenseNet121, DenseNet169, DenseNet201
 from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3
 
 import tensorflow_addons as tfa
@@ -126,12 +126,22 @@ def base(model_name: str = "ResNet50V2", split_dim: int = 224) -> Model:
     }
     if model_name == "VGG19":
         base = VGG19(**params)
+    elif model_name == "VGG16":
+        base = VGG16(**params)
     elif model_name == "InceptionResNetV2":
         base = InceptionResNetV2(**params)
     elif model_name == "ResNet50V2":
         base = ResNet50V2(**params)
+    elif model_name == "ResNet101V2":
+        base = ResNet101V2(**params)
+    elif model_name == "ResNet152V2":
+        base = ResNet152V2(**params)
     elif model_name == "DenseNet121":
         base = DenseNet121(**params)
+    elif model_name == "DenseNet169":
+        base = DenseNet169(**params)
+    elif model_name == "DenseNet201":
+        base = DenseNet201(**params)
     else:
         base = MobileNetV3(**params)
     return base
