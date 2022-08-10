@@ -140,10 +140,8 @@ def base(model_name: str = "ResNet50V2", split_dim: int = 224) -> Model:
         base = DenseNet121(**params)
     elif model_name == "DenseNet169":
         base = DenseNet169(**params)
-    elif model_name == "DenseNet201":
-        base = DenseNet201(**params)
     else:
-        base = MobileNetV3(**params)
+        base = DenseNet201(**params)
     return base
 
 def classification_model(
