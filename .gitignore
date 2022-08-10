@@ -21,7 +21,7 @@ fig
 *.h5
 *.zip
 ./desktop.ini
-
+./article
 .gitignore
 
 Segmentacao/cxr_reg_weights.best.hdf5
@@ -40,3 +40,4 @@ yolov5
 dataset
 data
 Brixia-score-COVID-19
+out

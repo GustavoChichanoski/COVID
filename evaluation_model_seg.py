@@ -270,13 +270,13 @@ def save_image_in_dataset(labels: List[str],
                                   columns=columns,
                                   model_seg=model_seg)
     # gravação das imagens de classicação nas pastas
-    save_image_classification(image=seg,
-                              image_norm=seg,
-                              models=models,
-                              labels=labels,
-                              redes=redes,
-                              columns=columns,
-                              **params_splits)
+    # save_image_classification(image=seg,
+    #                           image_norm=seg,
+    #                           models=models,
+    #                           labels=labels,
+    #                           redes=redes,
+    #                           columns=columns,
+    #                           **params_splits)
     return columns
 
 def lista_imagem_criada(survival:str,
@@ -397,52 +397,3 @@ if __name__ == '__main__':
     segmentation_model_compile(model_seg)
     model_seg.load_weights('.\\kaggle\\model.hdf5')
     # %% classification model
-    models = []
-    for rede, peso in zip(REDES, PESOS):
-        model = classification_model(DIM_SPLIT,
-                                     channels=CHANNELS,
-                                     classes=len(LABELS),
-                                     drop_rate=0,
-                                     model_name=rede)
-        model.compile(loss="binary_crossentropy",
-                      optimizer=Adamax(learning_rate=LR),
-                      metrics="accuracy")
-        model.load_weights(peso)
-        models.append(model)
-
-    # %% split image
-    params_splits = {
-        'verbose': True,
-        'dim_split': SPLIT,
-        'threshold': THRESHOLD,
-        'n_split': N_SPLITS
-    }
-    rows = []
-    lung = Path('ieee_dataset\\lungs')
-    ieee_images = ieee_images.reset_index()
-    transform = compose_original(height=DIM_ORIGINAL, width=DIM_ORIGINAL)
-    i = 0
-    read_ieee_dataframe(redes=REDES,
-                        labels=LABELS,
-                        ieee_images=ieee_images,
-                        model_seg=model_seg,
-                        models=models,
-                        rows=rows,
-                        lung=lung,
-                        transform=transform,
-                        i = i,
-                        **params_splits,)
-    path_data = Path.cwd()
-    dataset = pd.read_csv('.\dataset\COVID-19_Radiography_Dataset\metadata.csv')
-    read_dataset(redes=REDES,
-                 labels=LABELS,
-                 dataset=dataset,
-                 model_seg=model_seg,
-                 models=models,
-                 rows=rows,
-                 data_path=path_data,
-                 transform=transform,
-                 i = i,
-                 **params_splits)
-    df = pd.DataFrame(rows, columns=COLUNM_NAMES)
-    df.to_csv('data\\metadata.csv')

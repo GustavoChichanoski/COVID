@@ -14,9 +14,7 @@ def calculate_parts(num_total_files: int,
     return np.array([num_files_train, num_files_valid, num_files_tests])
 
 
-def read_path_valids(path: Path,
-                     valid: float = 0.2,
-                     test: float = 0.1) -> Dict:
+def read_path_valids(path: Path) -> Dict:
 
     if path.is_dir() is True:
 

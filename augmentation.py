@@ -23,8 +23,7 @@ transform = A.Compose([
   A.ElasticTransform(always_apply=False, p=0.5, alpha=3.0,
                      sigma=50.0, alpha_affine=50.0, interpolation=0,
                      border_mode=0, value=(0, 0, 0), mask_value=None,
-                     approximate=False
-  ),
+                     approximate=False),
   A.GridDistortion(always_apply=False, p=1.0, num_steps=5, distort_limit=(-0.3, 0.3), interpolation=0, border_mode=0, value=(0, 0, 0), mask_value=None)
 ])
 

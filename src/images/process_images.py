@@ -29,11 +29,11 @@ def random_pixel(
     xe -= dim_split
     ye -= dim_split
 
-    if xe - dim_split > xs:
+    if xe < xs:
         aux = xe
         xe = xs
         xs = aux
-    if ye - dim_split > ys:
+    if ye < ys:
         aux = ye
         ye = ys
         ys = aux
@@ -96,7 +96,7 @@ def split_images_n_times(
     y_nonzero, x_nonzero = np.nonzero(image[0,:,:,0])
     pixel_start, pixel_end = (np.min(y_nonzero), np.min(x_nonzero)), \
                              (np.max(y_nonzero), np.max(x_nonzero))
-    shape_cut = (n_split,dim_split,dim_split,1)
+    shape_cut = (n_split,dim_split, dim_split, 1)
     shape_pos = (n_split,2)
     # Cria os n_splits cortes
     iter_n_splits = range(n_split)

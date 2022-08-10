@@ -3,6 +3,7 @@ from src.data.segmentation.dataset_seg import SegmentationDataset
 from pathlib import Path
 import numpy as np
 
+
 class TestDatasetSeg(unittest.TestCase):
 
     def test_create_dataset(self):

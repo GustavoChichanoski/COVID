@@ -21,7 +21,7 @@ from tensorflow.python.keras import Model
 from tensorflow.python.keras.layers import Conv2D, Activation
 from tensorflow.python.keras import Input
 from tensorflow.python.keras.layers.core import Dense, Dropout, Flatten
-from tensorflow.python.keras.layers.normalization.batch_normalization_v1 import BatchNormalization
+from tensorflow.python.keras.layers import BatchNormalization
 from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2
 from tensorflow.python.keras.callbacks import (
     Callback,
