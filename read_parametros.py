@@ -1,5 +1,4 @@
 from typing import List
-import matplotlib
 import matplotlib.pyplot as plt
 
 import numpy as np
@@ -10,14 +9,14 @@ from pathlib import Path
 def legenda_correta_parametros(parameter:str, label: str) -> str:
   if parameter == 'n_cuts':
     return 'Número de Pacotes'
-  
+
   output = ""
   trueFalse(parameter, output)
   positiveNegative(parameter, output)
-  
+
   if 'precision' in parameter:
     output += 'Precisão '
-  
+
   if 'accuraccy' in parameter:
     output += 'Acurácia '
 
@@ -26,7 +25,7 @@ def legenda_correta_parametros(parameter:str, label: str) -> str:
 
   if 'especifity' in parameter:
     output += 'Especificidade'
-  
+
   if 'sensibility' in parameter:
     output += 'Sensibildade '
 

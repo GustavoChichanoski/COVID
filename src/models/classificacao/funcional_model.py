@@ -35,7 +35,6 @@ from tensorflow.python.keras.applications.vgg19 import VGG19
 from tensorflow.python.keras.applications.inception_resnet_v2 import InceptionResNetV2
 from tensorflow.python.keras.applications.resnet_v2 import ResNet50V2, ResNet101V2, ResNet152V2
 from tensorflow.python.keras.applications.densenet import DenseNet121, DenseNet169, DenseNet201
-from tensorflow.python.keras.applications.mobilenet_v3 import MobileNetV3
 
 import tensorflow_addons as tfa
 import numpy as np
@@ -475,14 +474,15 @@ def make_grad_cam(
         "threshold": threshold,
         "n_splits": n_splits,
     }
-    cuts, positions = split(image, **params_splits)
+    image_color = read_images(image, color=True)
+    images = read_images(image)
+    cuts, positions = split(images, **params_splits)
     shape = (1, n_splits, split_dim, split_dim, channels)
     if isinstance(image, list):
         shape = (len(image), n_splits, split_dim, split_dim, channels)
     cuts = cuts.reshape(shape)
-    image_color = read_images(image, color=True)
     if verbose:
-        class_names = get_classifier_layer(model=model)
+        # class_names = get_classifier_layer(model=model)
 
         if isinstance(image, list):
             winner_label = labels.index(image[0].parts[-2])
@@ -491,7 +491,6 @@ def make_grad_cam(
 
         heatmap = prob_grad_cam(
             cuts_images=cuts,
-            classifier=class_names,
             paths_start_positions=positions,
             model=model,
             dim_orig=orig_dim,

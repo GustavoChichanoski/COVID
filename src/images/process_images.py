@@ -3,6 +3,7 @@
 """
 import numpy as np
 import tensorflow_addons as tfa
+import tensorflow as tf
 from typing import  Tuple
 from tqdm import tqdm
 
@@ -237,7 +238,12 @@ def split(
 
             shape = (batch_size, dim, dim, channels)
     """
-    batch_size = len(images)
+    batch_size = 1
+    if len(images.shape) > 3:
+        batch_size = images.shape[0]
+    else:
+        shape = (batch_size, images.shape[0],images.shape[1], channels)
+        images = tf.reshape(images, shape)
     shape = (batch_size, n_splits, dim, dim, channels)
     pos = np.array([])
     cuts = np.array([])

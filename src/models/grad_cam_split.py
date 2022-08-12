@@ -73,15 +73,19 @@ def prob_grad_cam(
     )
     # Cria o modelo com as camadas após a ultima convolução
     model_after_last_conv = model_after(model=model)
+    cuts_images = tf.reshape(cuts_images, cuts_images.shape[1:])
     predicoes = model.predict(cuts_images)
     entrada_modelo = model.input_shape
     shape = (1, entrada_modelo[1], entrada_modelo[2], entrada_modelo[3])
     for predicao, cut_image, position_pixel in tqdm(
-        zip(predicoes, cuts_images, paths_start_positions)
+        zip(predicoes, cuts_images, paths_start_positions[0])
     ):
         # Os pacotes chegam com dimensões (None,224,224,3) e
         # precisam ser redimensionados para a (1,224,224,3)
-        cut_image = cut_image.reshape(shape)
+        try:
+            cut_image = cut_image.reshape(shape)
+        except:
+            cut_image = tf.reshape(cut_image,(shape))
         # Define a predição do canal vencedor geral
         predicao_pacote = predicao[winner_pos]
         # Calcula o grad cam para o canal vencedor

@@ -30,6 +30,7 @@ Segmentacao/model_5_32_acc_95.93.h5
 
 block_segmentation.py
 
+figs
 ieee_dataset
 eurorad_cache
 rad_mhtml_cache
