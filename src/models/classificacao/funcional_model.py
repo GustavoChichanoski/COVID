@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional, Union
 from matplotlib import cm, pyplot as plt
 
+import tensorflow as tf
 from tensorflow.python.eager.monitoring import Metric
 from tensorflow.python.keras.layers import Layer
 from tensorflow.python.keras.layers.convolutional import Conv
@@ -465,6 +466,7 @@ def make_grad_cam(
     split_dim: int = 224,
     orig_dim: int = 1024,
     channels: int = 1,
+    name: str = None,
     labels: List[str] = ["Covid", "Normal", "Pneumonia"],
 ) -> str:
     params_splits = {
@@ -496,7 +498,7 @@ def make_grad_cam(
             dim_orig=orig_dim,
             winner_pos=winner_label,
         )
-        plot_gradcam(heatmap, image_color, True)
+        plot_gradcam(heatmap=heatmap, image=image_color, grad=True, name=name)
     predict_params = {"verbose": 0}
     cuts = np.reshape(cuts, (n_splits, split_dim, split_dim, channels))
     votes = predict(model, cuts, **predict_params)
@@ -570,8 +572,9 @@ def plot_gradcam(
         alpha=alpha
     )
     if grad:
+        superimposed_image = tf.cast(superimposed_image, np.uint8)
         fig = plt.figure()
-        plt.imshow(superimposed_image, cmap="gray")
+        plt.imshow(superimposed_image, cmap="plasma")
         # Salvar imagem
         path = ""
         if name is not None:
