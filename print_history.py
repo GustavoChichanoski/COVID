@@ -2,44 +2,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import cv2
 
 from tensorflow.python.keras.optimizer_v2.adamax import Adamax
-from tensorflow.python.keras import Model
-from tensorflow.python.keras.callbacks import Callback
-from tensorflow.python import keras
-from tensorflow import keras
 from pathlib import Path
 
 from src.models.classificacao.funcional_model import classification_model
 
-from src.data.classification.cla_dataset import Dataset
-from src.data.classification.cla_generator import (
-    ClassificationDatasetGenerator as ClaDataGen,
-)
-from src.output_result.folders import remove_folder, zip_folder
-from src.models.grad_cam_split import grad_cam, last_act_after_conv_layer
-from src.plots.graph import plot_dataset
 from src.models.classificacao.funcional_model import (
-    base,
     classification_model,
-    get_callbacks,
-    get_classifier_layer_names,
-    make_grad_cam,
-    confusion_matrix,
-    save_weights
+    make_grad_cam
 )
-from src.plots.evaluation_classification import plot_mc_in_csv
-
-from tensorflow.python.keras.callbacks import (
-    Callback,
-    History,
-    ModelCheckpoint,
-    ReduceLROnPlateau,
-    TerminateOnNaN,
-    EarlyStopping
-)
-
 DIM_ORIGINAL = 1024
 DIM_SPLIT = 224
 CHANNELS = 1
@@ -52,11 +24,11 @@ TEST = 'data/0000.png'
 TAMANHO = 0
 LR = 1e-4
 WEIGHTS = ['resnet.best.weights.hdf5', 'inception.best.weights.hdf5', 'vgg.best.weights.hdf5', 'best.weights.hdf5']
-REDES = ["VGG16", "ResNet50V2", "InceptionResNetV2", "VGG19", "DenseNet121"]
+REDES = ["DenseNet169", "VGG16", "ResNet50V2", "InceptionResNetV2", "VGG19", "DenseNet121"]
 LABELS = ["Covid", "Normal", "Pneumonia"]
 
-rede = 'ResNet101V2'
-hist = pd.read_csv(f'figs/{rede}/history_{rede}.csv')
+rede = 'DenseNet169'
+# hist = pd.read_csv(f'figs/{rede}/history_{rede}.csv')
 
 # plt.plot(hist['lr'])
 # plt.xlabel('Epochs')
@@ -111,6 +83,9 @@ model.compile(
 model.summary()
 
 winner = make_grad_cam(model=model,
-                       image= DATA / 'Covid' / '0000.png',
-                       n_splits=400,
-                       threshold=0.1)
+                       image= DATA / 'Covid' / '1720.png',
+                       n_splits=10,
+                       threshold=0.35,
+                       name=f'figs/{rede}/grad_{rede}.png')
+
+print('agua')

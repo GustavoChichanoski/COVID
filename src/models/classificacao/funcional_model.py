@@ -539,6 +539,7 @@ def superimposed_image_generate(
     jet_heatmap1 = jet_heatmap0.resize((dim, dim))
     jet_heatmap2 = img_to_array(jet_heatmap1)
     superimposed_image = jet_heatmap2 * alpha + image
+    superimposed_image = array_to_img(superimposed_image)
     return superimposed_image
 
 
